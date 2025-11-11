@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TheBootRoom.app — Coming Soon</title>
+  <meta name="description" content="TheBootRoom helps skiers find the perfect ski boot fit with data-driven matching and expert insights." />
+  <meta property="og:title" content="TheBootRoom.app — Coming Soon" />
+  <meta property="og:description" content="Data-driven ski boot fit matching. Launching soon." />
+  <meta property="og:type" content="website" />
+  <style>
+    :root { --bg:#0a0d12; --card:#111621; --txt:#eaf2ff; --muted:#a8b3c6; --accent:#7cc0ff; }
+    *{box-sizing:border-box} html,body{margin:0;height:100%} body{background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif}
+    .wrap{max-width:960px;margin:0 auto;padding:24px}
+    .card{background:var(--card);border-radius:20px;padding:28px}
+    .hero{display:flex;flex-direction:column;gap:10px;margin:28px 0 16px}
+    h1{font-size:clamp(28px,5vw,44px);line-height:1.1;margin:0}
+    p{color:var(--muted);margin:0}
+    .grid{display:grid;grid-template-columns:1fr;gap:14px;margin:22px 0}
+    .pill{display:inline-block;background:#1b2334;color:var(--txt);border:1px solid #26314a;border-radius:999px;padding:8px 12px;font-size:14px}
+    .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+    .btn{background:var(--accent);color:#04101e;border:none;border-radius:10px;padding:12px 16px;font-weight:600;cursor:pointer;text-decoration:none}
+    .btn:focus{outline:2px solid white;outline-offset:2px}
+    .btn-secondary{background:#1b2334;color:var(--txt);border:1px solid #2a3550}
+    footer{margin-top:28px;color:var(--muted);font-size:14px}
+    nav a, footer a {color:var(--muted);text-decoration:none}
+    nav a:hover, footer a:hover {text-decoration:underline}
+    nav{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+    @media(min-width:720px){ .grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a href="/">Home</a>
+      <a href="/disclosure.html">Affiliate Disclosure</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+
+    <div class="card">
+      <div class="hero">
+        <span class="pill">Coming Soon — Winter 2025</span>
+        <h1>TheBootRoom.app</h1>
+        <p>Find your perfect ski boot fit with data-driven matching, expert insights, and retailer links.</p>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2 style="margin-top:0">What we do</h2>
+          <p>We analyse foot shape (instep, heel/ankle, lower leg, and toe box) and match you to
+             boots that actually fit — then link you to trusted retailers.</p>
+        </div>
+        <div class="card">
+          <h2 style="margin-top:0">Why it matters</h2>
+          <p>Better fit = better skiing. No more guesswork, painful pressure points, or random returns.</p>
+        </div>
+      </div>
+
+      <div class="cta">
+        <!-- Uses mailto so you don't need any service yet -->
+        <a class="btn" href="mailto:hello@thebootroom.app?subject=Waitlist&body=Please add me to the waitlist.">Join the Waitlist</a>
+        <a class="btn btn-secondary" href="/disclosure.html">Read our Affiliate Policy</a>
+      </div>
+    </div>
+
+    <footer>
+      © <span id="y"></span> TheBootRoom. All rights reserved. ·
+      <a href="/privacy.html">Privacy</a> · <a href="/disclosure.html">Affiliate Disclosure</a> · <a href="/contact.html">Contact</a>
+    </footer>
+  </div>
+
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>
