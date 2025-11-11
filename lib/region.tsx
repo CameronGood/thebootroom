@@ -1,7 +1,18 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { detectRegion, setRegion as setStoredRegion, getStoredRegion, Region } from "./getRegion";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import {
+  detectRegion,
+  setRegion as setStoredRegion,
+  getStoredRegion,
+  Region,
+} from "./getRegion";
 
 interface RegionContextType {
   region: Region | null;
@@ -63,4 +74,3 @@ export function useRegion() {
   }
   return context;
 }
-

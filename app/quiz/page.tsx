@@ -6,7 +6,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { QuizAnswers } from "@/types";
-import { createOrUpdateSession, getSession } from "@/lib/firestore/quizSessions";
+import {
+  createOrUpdateSession,
+  getSession,
+} from "@/lib/firestore/quizSessions";
 import { useAuth } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
@@ -41,7 +44,7 @@ export default function QuizPage() {
     const loadExistingAnswers = async () => {
       // Check if we're editing an existing session
       const editSessionId = searchParams.get("editSessionId");
-      
+
       if (editSessionId) {
         // Try to load answers from sessionStorage first (faster)
         const storedAnswers = sessionStorage.getItem("editQuizAnswers");
@@ -53,14 +56,14 @@ export default function QuizPage() {
             // Use the existing sessionId for editing
             setSessionId(editSessionId);
             localStorage.setItem("quizSessionId", editSessionId); // Update localStorage
-            
+
             // Initialize session
             if (editSessionId && user) {
               createOrUpdateSession(editSessionId, { userId: user.uid });
             } else if (editSessionId) {
               createOrUpdateSession(editSessionId, {});
             }
-            
+
             // Clear URL parameter after a brief delay to avoid re-render issues
             setTimeout(() => {
               if (window.location.search.includes("editSessionId")) {
@@ -72,7 +75,7 @@ export default function QuizPage() {
             console.error("Error parsing stored answers:", error);
           }
         }
-        
+
         // If not in sessionStorage, fetch from Firestore
         setLoadingAnswers(true);
         try {
@@ -81,7 +84,7 @@ export default function QuizPage() {
             setAnswers(session.answers);
             setSessionId(editSessionId);
             localStorage.setItem("quizSessionId", editSessionId); // Update localStorage
-            
+
             // Initialize session
             if (editSessionId && user) {
               createOrUpdateSession(editSessionId, { userId: user.uid });
@@ -175,9 +178,15 @@ export default function QuizPage() {
     } as QuizAnswers;
 
     // Validate required fields before submitting
-    if (!completeAnswers.gender || !completeAnswers.toeShape || !completeAnswers.instepHeight || 
-        !completeAnswers.calfVolume || !completeAnswers.weightKG || !completeAnswers.ability || 
-        !completeAnswers.touring) {
+    if (
+      !completeAnswers.gender ||
+      !completeAnswers.toeShape ||
+      !completeAnswers.instepHeight ||
+      !completeAnswers.calfVolume ||
+      !completeAnswers.weightKG ||
+      !completeAnswers.ability ||
+      !completeAnswers.touring
+    ) {
       toast.error("Please complete all required fields");
       return;
     }
@@ -196,24 +205,30 @@ export default function QuizPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || errorData.error || `Server error: ${response.status}`;
+        const errorMessage =
+          errorData.message ||
+          errorData.error ||
+          `Server error: ${response.status}`;
         console.error("Match API error:", errorMessage, errorData);
         console.error("Quiz answers sent:", answers);
         throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      
+
       // Check if we got any boots back
       if (!data.boots || data.boots.length === 0) {
-        toast.error("No matching boots found. Please try adjusting your answers.");
+        toast.error(
+          "No matching boots found. Please try adjusting your answers."
+        );
         return;
       }
-      
+
       router.push(`/results?sessionId=${sessionId}`);
     } catch (error: any) {
       console.error("Error submitting quiz:", error);
-      const errorMessage = error.message || "Failed to submit quiz. Please try again.";
+      const errorMessage =
+        error.message || "Failed to submit quiz. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -349,11 +364,20 @@ export default function QuizPage() {
   // Show loading spinner while loading answers from session
   if (loadingAnswers) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50" style={{ backgroundColor: '#f9fafb' }}>
-        <div className="sticky top-0 z-50 bg-gray-50 pt-4" style={{ backgroundColor: '#f9fafb' }}>
+      <div
+        className="min-h-screen flex flex-col bg-gray-50"
+        style={{ backgroundColor: "#f9fafb" }}
+      >
+        <div
+          className="sticky top-0 z-50 bg-gray-50 pt-4"
+          style={{ backgroundColor: "#f9fafb" }}
+        >
           <Header />
         </div>
-        <main className="flex-grow flex items-center justify-center bg-gray-50" style={{ backgroundColor: '#f9fafb' }}>
+        <main
+          className="flex-grow flex items-center justify-center bg-gray-50"
+          style={{ backgroundColor: "#f9fafb" }}
+        >
           <Spinner size="lg" />
         </main>
         <Footer />
@@ -362,11 +386,20 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50" style={{ backgroundColor: '#f9fafb' }}>
-      <div className="sticky top-0 z-50 bg-gray-50 pt-4" style={{ backgroundColor: '#f9fafb' }}>
+    <div
+      className="min-h-screen flex flex-col bg-gray-50"
+      style={{ backgroundColor: "#f9fafb" }}
+    >
+      <div
+        className="sticky top-0 z-50 bg-gray-50 pt-4"
+        style={{ backgroundColor: "#f9fafb" }}
+      >
         <Header />
       </div>
-      <main className="flex-grow bg-gray-50 pb-8" style={{ backgroundColor: '#f9fafb' }}>
+      <main
+        className="flex-grow bg-gray-50 pb-8"
+        style={{ backgroundColor: "#f9fafb" }}
+      >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -404,4 +437,3 @@ export default function QuizPage() {
     </div>
   );
 }
-

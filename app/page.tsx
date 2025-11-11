@@ -13,14 +13,14 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       <main className="flex-grow">
         {/* Hero Section */}
-        <section 
+        <section
           className="relative pt-0 pb-20 min-h-screen flex items-center justify-center overflow-hidden bg-gray-900"
           style={{
-            backgroundImage: 'url(/hero-background.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundAttachment: 'fixed',
+            backgroundImage: "url(/hero-background.jpg)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundAttachment: "fixed",
           }}
         >
           {/* Header positioned absolutely over hero at the very top */}
@@ -29,10 +29,10 @@ export default function Home() {
               <Header />
             </div>
           </div>
-          
+
           {/* Overlay for text readability - very subtle overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-black/25"></div>
-          
+
           <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20">
             <motion.h1
               initial={{ opacity: 0, y: -20 }}
@@ -56,11 +56,15 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <Button asChild size="lg" className="text-lg px-8 py-6 bg-white text-blue-600 hover:bg-blue-50 shadow-lg">
+              <Button
+                asChild
+                size="lg"
+                className="text-lg px-8 py-6 bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
+              >
                 <Link href="/quiz">Start Fitting</Link>
               </Button>
             </motion.div>
-        </div>
+          </div>
         </section>
 
         {/* Brand Banner */}
@@ -97,17 +101,20 @@ export default function Home() {
                 {
                   number: 1,
                   title: "Take the Quiz",
-                  description: "Answer 10 simple questions about your feet, skiing ability, and preferences.",
+                  description:
+                    "Answer 10 simple questions about your feet, skiing ability, and preferences.",
                 },
                 {
                   number: 2,
                   title: "Get Matched",
-                  description: "Our algorithm finds the top 3 boots that best fit your specific requirements.",
+                  description:
+                    "Our algorithm finds the top 3 boots that best fit your specific requirements.",
                 },
                 {
                   number: 3,
                   title: "Buy & Save",
-                  description: "Purchase through our affiliate links and save your results for later.",
+                  description:
+                    "Purchase through our affiliate links and save your results for later.",
                 },
               ].map((step, index) => (
                 <motion.div
@@ -129,14 +136,16 @@ export default function Home() {
                           {step.number}
                         </span>
                       </motion.div>
-                      <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
+                      <h3 className="text-xl font-semibold mb-2">
+                        {step.title}
+                      </h3>
                       <p className="text-gray-600">{step.description}</p>
                     </CardContent>
                   </Card>
                 </motion.div>
               ))}
             </div>
-        </div>
+          </div>
         </section>
       </main>
       <Footer />

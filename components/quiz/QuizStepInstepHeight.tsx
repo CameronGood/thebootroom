@@ -10,7 +10,12 @@ interface Props {
   onChange?: (value: Volume) => void;
 }
 
-export default function QuizStepInstepHeight({ value, onNext, onBack, onChange }: Props) {
+export default function QuizStepInstepHeight({
+  value,
+  onNext,
+  onBack,
+  onChange,
+}: Props) {
   const [selected, setSelected] = useState<Volume | undefined>(value);
 
   useEffect(() => {
@@ -43,9 +48,7 @@ export default function QuizStepInstepHeight({ value, onNext, onBack, onChange }
             </div>
             <div>
               <span className="text-lg font-semibold block">Low</span>
-              <span className="text-sm text-gray-600">
-                Flat or low instep
-              </span>
+              <span className="text-sm text-gray-600">Flat or low instep</span>
             </div>
           </div>
         </button>
@@ -108,4 +111,3 @@ export default function QuizStepInstepHeight({ value, onNext, onBack, onChange }
     </div>
   );
 }
-

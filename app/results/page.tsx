@@ -10,7 +10,10 @@ import PaymentForm from "@/components/PaymentForm";
 import { QuizSession, BootSummary, FittingBreakdown } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { upsertSavedResult } from "@/lib/firestore/users";
-import { calculateRecommendedMondo, shoeSizeToMondo } from "@/lib/mondo-conversions";
+import {
+  calculateRecommendedMondo,
+  shoeSizeToMondo,
+} from "@/lib/mondo-conversions";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -91,7 +94,9 @@ export default function ResultsPage() {
       setGeneratingBreakdown(true);
       const pollInterval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/breakdowns/${user.uid}/${sessionId}`);
+          const response = await fetch(
+            `/api/breakdowns/${user.uid}/${sessionId}`
+          );
           if (response.ok) {
             const breakdownData: FittingBreakdown = await response.json();
             setBreakdown(breakdownData);
@@ -115,7 +120,7 @@ export default function ResultsPage() {
 
   const fetchBreakdown = async () => {
     if (!user || !sessionId) return;
-    
+
     setLoadingBreakdown(true);
     try {
       const response = await fetch(`/api/breakdowns/${user.uid}/${sessionId}`);
@@ -155,7 +160,10 @@ export default function ResultsPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || `Server error: ${response.status}`;
+        const errorMessage =
+          errorData.error ||
+          errorData.message ||
+          `Server error: ${response.status}`;
         console.error("Payment intent API error:", errorMessage, errorData);
         throw new Error(errorMessage);
       }
@@ -167,7 +175,10 @@ export default function ResultsPage() {
       setClientSecret(secret);
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
-      toast.error(error.message || "Failed to initialize payment. Please check your Stripe configuration.");
+      toast.error(
+        error.message ||
+          "Failed to initialize payment. Please check your Stripe configuration."
+      );
       setShowPaymentForm(false);
     }
   };
@@ -201,7 +212,7 @@ export default function ResultsPage() {
   const handleSaveResult = async () => {
     // If not logged in, redirect to account page with message and sessionId
     if (!user) {
-      const redirectUrl = sessionId 
+      const redirectUrl = sessionId
         ? `/account?saveResults=true&sessionId=${sessionId}`
         : "/account?saveResults=true";
       router.push(redirectUrl);
@@ -259,11 +270,20 @@ export default function ResultsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50" style={{ backgroundColor: '#f9fafb' }}>
-      <div className="sticky top-0 z-50 bg-gray-50 pt-4" style={{ backgroundColor: '#f9fafb' }}>
+    <div
+      className="min-h-screen flex flex-col bg-gray-50"
+      style={{ backgroundColor: "#f9fafb" }}
+    >
+      <div
+        className="sticky top-0 z-50 bg-gray-50 pt-4"
+        style={{ backgroundColor: "#f9fafb" }}
+      >
         <Header />
       </div>
-      <main className="flex-grow bg-gray-50 pb-8" style={{ backgroundColor: '#f9fafb' }}>
+      <main
+        className="flex-grow bg-gray-50 pb-8"
+        style={{ backgroundColor: "#f9fafb" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
           {/* Header with Save/Login Button */}
           <motion.div
@@ -272,15 +292,18 @@ export default function ResultsPage() {
             transition={{ duration: 0.5 }}
             className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-12 gap-4"
           >
-             <h1 className="text-3xl font-bold text-gray-900">
-               Your Best Boot Matches
-             </h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Your Best Boot Matches
+            </h1>
             <div className="flex-shrink-0 flex gap-3">
               <Button
                 onClick={() => {
                   if (sessionId && session?.answers) {
                     // Store answers in sessionStorage to pre-fill quiz
-                    sessionStorage.setItem("editQuizAnswers", JSON.stringify(session.answers));
+                    sessionStorage.setItem(
+                      "editQuizAnswers",
+                      JSON.stringify(session.answers)
+                    );
                     router.push(`/quiz?editSessionId=${sessionId}`);
                   } else {
                     router.push("/quiz");
@@ -420,4 +443,3 @@ export default function ResultsPage() {
     </div>
   );
 }
-

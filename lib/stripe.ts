@@ -23,4 +23,3 @@ if (!stripe) {
 
 // Payment amount in pennies (GBP)
 export const BREAKDOWN_PRICE_GBP = 299; // £2.99
-

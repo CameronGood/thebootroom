@@ -1,6 +1,9 @@
 import { Boot, QuizAnswers, BootSummary, Gender, Ability } from "../types";
 import { listBoots } from "./firestore/boots";
-import { calculateRecommendedMondo, shoeSizeToMondo } from "./mondo-conversions";
+import {
+  calculateRecommendedMondo,
+  shoeSizeToMondo,
+} from "./mondo-conversions";
 
 // Extended Boot type with bootId
 type BootWithId = Boot & { bootId: string };
@@ -29,10 +32,10 @@ export function getAcceptableFlexValues(
     // Adjust for weight: <60kg → shift range down by 10, >95kg → shift range up by 10
     if (weightKG < 60) {
       // Shift down: [90, 100] → [80, 90], [100, 110] → [90, 100], [120, 130] → [110, 120]
-      baseFlexes = baseFlexes.map(flex => Math.max(70, flex - 10));
+      baseFlexes = baseFlexes.map((flex) => Math.max(70, flex - 10));
     } else if (weightKG > 95) {
       // Shift up: [90, 100] → [100, 110], [100, 110] → [110, 120], [120, 130] → [130, 140]
-      baseFlexes = baseFlexes.map(flex => flex + 10);
+      baseFlexes = baseFlexes.map((flex) => flex + 10);
     }
   } else {
     // Female
@@ -50,10 +53,10 @@ export function getAcceptableFlexValues(
     // Adjust for weight: <50kg → shift range down by 10, >80kg → shift range up by 10
     if (weightKG < 50) {
       // Shift down: [85, 95] → [75, 85], [95, 105] → [85, 95], [105, 115] → [95, 105]
-      baseFlexes = baseFlexes.map(flex => Math.max(70, flex - 10));
+      baseFlexes = baseFlexes.map((flex) => Math.max(70, flex - 10));
     } else if (weightKG > 80) {
       // Shift up: [85, 95] → [95, 105], [95, 105] → [105, 115], [105, 115] → [115, 125]
-      baseFlexes = baseFlexes.map(flex => flex + 10);
+      baseFlexes = baseFlexes.map((flex) => flex + 10);
     }
   }
 
@@ -79,7 +82,7 @@ function getUserWidthMM(answers: QuizAnswers): number | null {
   if (!answers.footWidth) {
     return null;
   }
-  
+
   // Check if it has left/right properties (mm measurement)
   if ("left" in answers.footWidth || "right" in answers.footWidth) {
     const width = answers.footWidth as { left?: number; right?: number };
@@ -89,7 +92,7 @@ function getUserWidthMM(answers: QuizAnswers): number | null {
     // Only return if we have a valid measurement (> 0)
     return maxWidth > 0 ? maxWidth : null;
   }
-  
+
   // If it has category, return null (no mm measurement)
   return null;
 }
@@ -123,7 +126,7 @@ function calculateWidthScore(
   if (targetWidth !== null) {
     const widthDelta = Math.abs(targetWidth - bootWidthMM);
     let widthScore = Math.max(0, 35 - widthDelta * 7);
-    
+
     // Adjust score based on instep height when boot width is within 2mm of target
     // This ensures that when user is between two boot widths, we choose the appropriate one
     // High instep: prefer wider boots (more volume for high instep)
@@ -166,7 +169,7 @@ function calculateWidthScore(
       }
       // Medium instep: no adjustment, use base score
     }
-    
+
     return widthScore;
   }
 
@@ -182,9 +185,11 @@ function calculateFlexScore(
 ): number {
   // Find the minimum distance to any acceptable flex value
   const minDelta = Math.min(
-    ...acceptableFlexes.map(acceptableFlex => Math.abs(bootFlex - acceptableFlex))
+    ...acceptableFlexes.map((acceptableFlex) =>
+      Math.abs(bootFlex - acceptableFlex)
+    )
   );
-  
+
   // Score: full points for exact match, decreasing by 1.33 per flex difference (20 max / 15 flex tolerance ≈ 1.33)
   const flexScore = Math.max(0, 20 - minDelta * 1.33);
   return flexScore;
@@ -231,9 +236,10 @@ function filterBoots(
 
     // If touring is required, boot must have bootType of "All-Mountain" or "Touring"
     if (answers.touring === "Yes") {
-      const isTouringBoot = boot.bootType === "Touring" || 
-                           boot.bootType === "All-Mountain" ||
-                           boot.bootType?.toLowerCase().includes("touring");
+      const isTouringBoot =
+        boot.bootType === "Touring" ||
+        boot.bootType === "All-Mountain" ||
+        boot.bootType?.toLowerCase().includes("touring");
       if (!isTouringBoot) {
         return false;
       }
@@ -246,13 +252,9 @@ function filterBoots(
     if (answers.features.includes("Rear Entry") && !boot.rearEntry) {
       return false;
     }
-    if (
-      answers.features.includes("Calf Adjustment") &&
-      !boot.calfAdjustment
-    ) {
+    if (answers.features.includes("Calf Adjustment") && !boot.calfAdjustment) {
       return false;
     }
-
 
     return true;
   });
@@ -279,7 +281,9 @@ function scoreBoot(
   );
   const featureScore = calculateFeatureScore(answers, boot);
 
-  return widthScore + flexScore + toeScore + instepScore + calfScore + featureScore;
+  return (
+    widthScore + flexScore + toeScore + instepScore + calfScore + featureScore
+  );
 }
 
 // Main matching function
@@ -288,7 +292,7 @@ export async function matchBoots(
 ): Promise<{ boots: BootSummary[]; recommendedMondo: string }> {
   // Get all boots
   const allBoots = await listBoots();
-  
+
   if (allBoots.length === 0) {
     throw new Error("No boots found in database. Please import boots first.");
   }
@@ -299,7 +303,7 @@ export async function matchBoots(
     answers.ability,
     answers.weightKG
   );
-  
+
   // Also calculate target flex for display/debugging (midpoint of acceptable values)
   const targetFlex = calculateTargetFlex(
     answers.gender,
@@ -309,7 +313,7 @@ export async function matchBoots(
 
   // Get user width data
   const userWidthMM = getUserWidthMM(answers);
-  
+
   // Extract width category - handle both union type structures
   let widthCategory: "Narrow" | "Average" | "Wide" | undefined = undefined;
   if (answers.footWidth) {
@@ -327,18 +331,36 @@ export async function matchBoots(
   console.log("footWidth from answers:", answers.footWidth);
   console.log("footWidth JSON:", JSON.stringify(answers.footWidth, null, 2));
   console.log("footWidth type:", typeof answers.footWidth);
-  console.log("footWidth keys:", answers.footWidth ? Object.keys(answers.footWidth) : "null/undefined");
-  console.log("has category property?:", answers.footWidth && "category" in answers.footWidth);
-  console.log("category value:", answers.footWidth && "category" in answers.footWidth ? (answers.footWidth as any).category : "N/A");
+  console.log(
+    "footWidth keys:",
+    answers.footWidth ? Object.keys(answers.footWidth) : "null/undefined"
+  );
+  console.log(
+    "has category property?:",
+    answers.footWidth && "category" in answers.footWidth
+  );
+  console.log(
+    "category value:",
+    answers.footWidth && "category" in answers.footWidth
+      ? (answers.footWidth as any).category
+      : "N/A"
+  );
   console.log("userWidthMM:", userWidthMM);
   console.log("widthCategory extracted:", widthCategory);
   console.log("========================\n");
 
   // Filter boots (need width data for filtering)
-  const filteredBoots = filterBoots(allBoots, answers, userWidthMM, widthCategory);
-  
+  const filteredBoots = filterBoots(
+    allBoots,
+    answers,
+    userWidthMM,
+    widthCategory
+  );
+
   if (filteredBoots.length === 0) {
-    throw new Error(`No boots match your criteria. Found ${allBoots.length} total boots, but none match gender: ${answers.gender}, touring: ${answers.touring}, features: ${answers.features.join(", ")}`);
+    throw new Error(
+      `No boots match your criteria. Found ${allBoots.length} total boots, but none match gender: ${answers.gender}, touring: ${answers.touring}, features: ${answers.features.join(", ")}`
+    );
   }
 
   // Score all filtered boots
@@ -350,10 +372,19 @@ export async function matchBoots(
       widthCategory
     );
     const flexScore = calculateFlexScore(boot.flex, acceptableFlexes);
-    const { toeScore, instepScore, calfScore } = calculateShapeScores(answers, boot);
+    const { toeScore, instepScore, calfScore } = calculateShapeScores(
+      answers,
+      boot
+    );
     const featureScore = calculateFeatureScore(answers, boot);
-    const score = widthScore + flexScore + toeScore + instepScore + calfScore + featureScore;
-    
+    const score =
+      widthScore +
+      flexScore +
+      toeScore +
+      instepScore +
+      calfScore +
+      featureScore;
+
     return {
       boot,
       score,
@@ -370,46 +401,72 @@ export async function matchBoots(
     return a.boot.brand.localeCompare(b.boot.brand);
   });
 
-        // Debug logging for width matching
-        console.log("\n=== WIDTH MATCHING DEBUG ===");
-        console.log(`User width: ${userWidthMM}mm, Category: ${widthCategory || "none"}`);
-        console.log(`Total filtered boots: ${filteredBoots.length}`);
-        
-        // Show all available widths in filtered boots
-        const availableWidths = [...new Set(filteredBoots.map(b => b.lastWidthMM))].sort((a, b) => a - b);
-        console.log(`Available boot widths: ${availableWidths.join(", ")}mm`);
-        
-        // Show top 10 boots with their width scores
-        console.log("\n=== TOP 10 BOOTS BY SCORE ===");
-        for (let i = 0; i < Math.min(10, scoredBoots.length); i++) {
-          const { boot, score, widthScore, flexScore } = scoredBoots[i];
-          const { toeScore, instepScore, calfScore } = calculateShapeScores(answers, boot);
-          const featureScore = calculateFeatureScore(answers, boot);
-          const widthDiff = userWidthMM ? Math.abs(userWidthMM - boot.lastWidthMM) : "N/A";
-          console.log(`${i + 1}. ${boot.brand} ${boot.model} | Width: ${boot.lastWidthMM}mm (diff: ${widthDiff}mm, score: ${widthScore}/35) | Total: ${score.toFixed(1)}/100`);
-        }
-        
-        // Debug logging for top 3 boots with full details
-        console.log("\n=== TOP 3 BOOTS DETAILED SCORING ===");
-        console.log(`Acceptable flex values: [${acceptableFlexes.join(", ")}]`);
-        for (let i = 0; i < Math.min(3, scoredBoots.length); i++) {
-          const { boot, score, widthScore, flexScore } = scoredBoots[i];
-          const { toeScore, instepScore, calfScore } = calculateShapeScores(answers, boot);
-          const featureScore = calculateFeatureScore(answers, boot);
-          const closestAcceptableFlex = acceptableFlexes.reduce((prev, curr) => 
-            Math.abs(curr - boot.flex) < Math.abs(prev - boot.flex) ? curr : prev
-          );
-          const widthDiff = userWidthMM ? Math.abs(userWidthMM - boot.lastWidthMM) : "N/A";
-          console.log(`\n--- Boot #${i + 1}: ${boot.brand} ${boot.model} ---`);
-          console.log(`  Width: ${boot.lastWidthMM}mm (user: ${userWidthMM}mm, diff: ${widthDiff}mm, score: ${widthScore}/35)`);
-          console.log(`  Flex: ${boot.flex} (acceptable: [${acceptableFlexes.join(", ")}], closest: ${closestAcceptableFlex}, score: ${flexScore}/20)`);
-          console.log(`  Toe: ${boot.toeBoxShape} (user: ${answers.toeShape}, score: ${toeScore}/10)`);
-          console.log(`  Instep: ${boot.instepHeight} (user: ${answers.instepHeight}, score: ${instepScore}/20)`);
-          console.log(`  Calf: ${boot.calfVolume} (user: ${answers.calfVolume}, score: ${calfScore}/10)`);
-          console.log(`  Features: ${featureScore}/5`);
-          console.log(`  TOTAL: ${score.toFixed(1)}/100`);
-        }
-        console.log("================================\n");
+  // Debug logging for width matching
+  console.log("\n=== WIDTH MATCHING DEBUG ===");
+  console.log(
+    `User width: ${userWidthMM}mm, Category: ${widthCategory || "none"}`
+  );
+  console.log(`Total filtered boots: ${filteredBoots.length}`);
+
+  // Show all available widths in filtered boots
+  const availableWidths = [
+    ...new Set(filteredBoots.map((b) => b.lastWidthMM)),
+  ].sort((a, b) => a - b);
+  console.log(`Available boot widths: ${availableWidths.join(", ")}mm`);
+
+  // Show top 10 boots with their width scores
+  console.log("\n=== TOP 10 BOOTS BY SCORE ===");
+  for (let i = 0; i < Math.min(10, scoredBoots.length); i++) {
+    const { boot, score, widthScore, flexScore } = scoredBoots[i];
+    const { toeScore, instepScore, calfScore } = calculateShapeScores(
+      answers,
+      boot
+    );
+    const featureScore = calculateFeatureScore(answers, boot);
+    const widthDiff = userWidthMM
+      ? Math.abs(userWidthMM - boot.lastWidthMM)
+      : "N/A";
+    console.log(
+      `${i + 1}. ${boot.brand} ${boot.model} | Width: ${boot.lastWidthMM}mm (diff: ${widthDiff}mm, score: ${widthScore}/35) | Total: ${score.toFixed(1)}/100`
+    );
+  }
+
+  // Debug logging for top 3 boots with full details
+  console.log("\n=== TOP 3 BOOTS DETAILED SCORING ===");
+  console.log(`Acceptable flex values: [${acceptableFlexes.join(", ")}]`);
+  for (let i = 0; i < Math.min(3, scoredBoots.length); i++) {
+    const { boot, score, widthScore, flexScore } = scoredBoots[i];
+    const { toeScore, instepScore, calfScore } = calculateShapeScores(
+      answers,
+      boot
+    );
+    const featureScore = calculateFeatureScore(answers, boot);
+    const closestAcceptableFlex = acceptableFlexes.reduce((prev, curr) =>
+      Math.abs(curr - boot.flex) < Math.abs(prev - boot.flex) ? curr : prev
+    );
+    const widthDiff = userWidthMM
+      ? Math.abs(userWidthMM - boot.lastWidthMM)
+      : "N/A";
+    console.log(`\n--- Boot #${i + 1}: ${boot.brand} ${boot.model} ---`);
+    console.log(
+      `  Width: ${boot.lastWidthMM}mm (user: ${userWidthMM}mm, diff: ${widthDiff}mm, score: ${widthScore}/35)`
+    );
+    console.log(
+      `  Flex: ${boot.flex} (acceptable: [${acceptableFlexes.join(", ")}], closest: ${closestAcceptableFlex}, score: ${flexScore}/20)`
+    );
+    console.log(
+      `  Toe: ${boot.toeBoxShape} (user: ${answers.toeShape}, score: ${toeScore}/10)`
+    );
+    console.log(
+      `  Instep: ${boot.instepHeight} (user: ${answers.instepHeight}, score: ${instepScore}/20)`
+    );
+    console.log(
+      `  Calf: ${boot.calfVolume} (user: ${answers.calfVolume}, score: ${calfScore}/10)`
+    );
+    console.log(`  Features: ${featureScore}/5`);
+    console.log(`  TOTAL: ${score.toFixed(1)}/100`);
+  }
+  console.log("================================\n");
 
   // Get top 3 unique models
   const topBoots: BootSummary[] = [];
@@ -454,5 +511,3 @@ export async function matchBoots(
     recommendedMondo,
   };
 }
-
-

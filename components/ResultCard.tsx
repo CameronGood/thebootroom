@@ -5,7 +5,12 @@ import { useAuth } from "@/lib/auth";
 import { useRegion } from "@/lib/region";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe } from "lucide-react";
@@ -19,7 +24,14 @@ interface Props {
   shoeSize?: { system: "UK" | "US" | "EU"; value: number };
 }
 
-export default function ResultCard({ boot, sessionId, index = 0, recommendedSize, footLength, shoeSize }: Props) {
+export default function ResultCard({
+  boot,
+  sessionId,
+  index = 0,
+  recommendedSize,
+  footLength,
+  shoeSize,
+}: Props) {
   const { user } = useAuth();
   const { region, setRegion } = useRegion();
   const [saving, setSaving] = useState(false);
@@ -35,19 +47,19 @@ export default function ResultCard({ boot, sessionId, index = 0, recommendedSize
     const params = new URLSearchParams({ bootId: boot.bootId });
     if (sessionId) params.append("sessionId", sessionId);
     if (user) params.append("userId", user.uid);
-    
+
     // If using new links structure
     if (vendor && region) {
       params.append("vendor", vendor);
       params.append("region", region);
     }
-    
+
     // If direct URL provided (for legacy or single vendor)
     if (linkUrl) {
       window.open(linkUrl, "_blank");
       return;
     }
-    
+
     window.open(`/api/redirect?${params.toString()}`, "_blank");
   };
 
@@ -87,11 +99,15 @@ export default function ResultCard({ boot, sessionId, index = 0, recommendedSize
             {recommendedSize && (
               <div className="pt-1">
                 <div className="text-lg font-medium text-gray-700">
-                  Recommended Size: <span className="text-blue-600 font-bold">{recommendedSize}</span>
+                  Recommended Size:{" "}
+                  <span className="text-blue-600 font-bold">
+                    {recommendedSize}
+                  </span>
                 </div>
                 {footLength && (
                   <div className="text-xs text-gray-500 mt-1">
-                    Foot Length: {footLength.left}mm (left) • {footLength.right}mm (right)
+                    Foot Length: {footLength.left}mm (left) • {footLength.right}
+                    mm (right)
                   </div>
                 )}
                 {shoeSize && !footLength && (
@@ -101,12 +117,19 @@ export default function ResultCard({ boot, sessionId, index = 0, recommendedSize
                 )}
                 <div className="text-sm text-gray-600 mt-2 space-y-1">
                   {boot.bootType && (
-                    <div>Type: <span className="font-medium">{boot.bootType}</span></div>
+                    <div>
+                      Type: <span className="font-medium">{boot.bootType}</span>
+                    </div>
                   )}
                   {boot.lastWidthMM && boot.lastWidthMM > 0 && (
-                    <div>Width: <span className="font-medium">{boot.lastWidthMM}mm</span></div>
+                    <div>
+                      Width:{" "}
+                      <span className="font-medium">{boot.lastWidthMM}mm</span>
+                    </div>
                   )}
-                  <div>Flex: <span className="font-medium">{boot.flex}</span></div>
+                  <div>
+                    Flex: <span className="font-medium">{boot.flex}</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -190,11 +213,7 @@ export default function ResultCard({ boot, sessionId, index = 0, recommendedSize
             </Button>
           ) : (
             // No affiliate links available
-            <Button
-              disabled
-              className="w-full"
-              size="lg"
-            >
+            <Button disabled className="w-full" size="lg">
               No retailers available
             </Button>
           )}
@@ -203,4 +222,3 @@ export default function ResultCard({ boot, sessionId, index = 0, recommendedSize
     </motion.div>
   );
 }
-

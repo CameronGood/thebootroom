@@ -10,7 +10,12 @@ interface Props {
   onChange?: (value: Ability) => void;
 }
 
-export default function QuizStepAbility({ value, onNext, onBack, onChange }: Props) {
+export default function QuizStepAbility({
+  value,
+  onNext,
+  onBack,
+  onChange,
+}: Props) {
   const [selected, setSelected] = useState<Ability | undefined>(value);
 
   useEffect(() => {
@@ -87,4 +92,3 @@ export default function QuizStepAbility({ value, onNext, onBack, onChange }: Pro
     </div>
   );
 }
-

@@ -10,7 +10,12 @@ interface Props {
   onChange?: (value: Volume) => void;
 }
 
-export default function QuizStepCalfVolume({ value, onNext, onBack, onChange }: Props) {
+export default function QuizStepCalfVolume({
+  value,
+  onNext,
+  onBack,
+  onChange,
+}: Props) {
   const [selected, setSelected] = useState<Volume | undefined>(value);
 
   useEffect(() => {
@@ -26,7 +31,8 @@ export default function QuizStepCalfVolume({ value, onNext, onBack, onChange }: 
     <div>
       <h2 className="text-2xl font-bold mb-4">What is your calf volume?</h2>
       <p className="text-gray-600 mb-6">
-        The calf is the upper section of your leg that sits inside the top of the boot.
+        The calf is the upper section of your leg that sits inside the top of
+        the boot.
       </p>
       <div className="space-y-4">
         <button
@@ -63,9 +69,7 @@ export default function QuizStepCalfVolume({ value, onNext, onBack, onChange }: 
             </div>
             <div>
               <span className="text-lg font-semibold block">Medium</span>
-              <span className="text-sm text-gray-600">
-                Average calf volume
-              </span>
+              <span className="text-sm text-gray-600">Average calf volume</span>
             </div>
           </div>
         </button>
@@ -108,4 +112,3 @@ export default function QuizStepCalfVolume({ value, onNext, onBack, onChange }: 
     </div>
   );
 }
-

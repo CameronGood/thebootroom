@@ -25,7 +25,9 @@ export default function QuizStepWeight({ value, onNext, onBack }: Props) {
         Your weight helps us determine the appropriate boot flex for you.
       </p>
       <div className="mb-6">
-        <label htmlFor="weightKG" className="block text-sm font-medium mb-2">Weight (kg)</label>
+        <label htmlFor="weightKG" className="block text-sm font-medium mb-2">
+          Weight (kg)
+        </label>
         <input
           id="weightKG"
           name="weightKG"
@@ -57,4 +59,3 @@ export default function QuizStepWeight({ value, onNext, onBack }: Props) {
     </div>
   );
 }
-

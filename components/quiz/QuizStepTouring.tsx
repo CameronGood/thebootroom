@@ -10,7 +10,12 @@ interface Props {
   onChange?: (value: Touring) => void;
 }
 
-export default function QuizStepTouring({ value, onNext, onBack, onChange }: Props) {
+export default function QuizStepTouring({
+  value,
+  onNext,
+  onBack,
+  onChange,
+}: Props) {
   const [selected, setSelected] = useState<Touring | undefined>(value);
 
   useEffect(() => {
@@ -24,7 +29,9 @@ export default function QuizStepTouring({ value, onNext, onBack, onChange }: Pro
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Do you need touring capability?</h2>
+      <h2 className="text-2xl font-bold mb-4">
+        Do you need touring capability?
+      </h2>
       <p className="text-gray-600 mb-6">
         Touring boots have walk mode for hiking uphill.
       </p>
@@ -74,4 +81,3 @@ export default function QuizStepTouring({ value, onNext, onBack, onChange }: Pro
     </div>
   );
 }
-

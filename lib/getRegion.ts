@@ -8,10 +8,33 @@ const COUNTRY_TO_REGION: { [key: string]: Region } = {
   // US
   US: "US",
   // EU countries
-  AT: "EU", BE: "EU", BG: "EU", HR: "EU", CY: "EU", CZ: "EU", DK: "EU",
-  EE: "EU", FI: "EU", FR: "EU", DE: "EU", GR: "EU", HU: "EU", IE: "EU",
-  IT: "EU", LV: "EU", LT: "EU", LU: "EU", MT: "EU", NL: "EU", PL: "EU",
-  PT: "EU", RO: "EU", SK: "EU", SI: "EU", ES: "EU", SE: "EU",
+  AT: "EU",
+  BE: "EU",
+  BG: "EU",
+  HR: "EU",
+  CY: "EU",
+  CZ: "EU",
+  DK: "EU",
+  EE: "EU",
+  FI: "EU",
+  FR: "EU",
+  DE: "EU",
+  GR: "EU",
+  HU: "EU",
+  IE: "EU",
+  IT: "EU",
+  LV: "EU",
+  LT: "EU",
+  LU: "EU",
+  MT: "EU",
+  NL: "EU",
+  PL: "EU",
+  PT: "EU",
+  RO: "EU",
+  SK: "EU",
+  SI: "EU",
+  ES: "EU",
+  SE: "EU",
 };
 
 /**
@@ -39,7 +62,7 @@ export async function detectRegion(): Promise<Region> {
     if (response.ok) {
       const data = await response.json();
       const countryCode = data.country_code;
-      
+
       if (countryCode && COUNTRY_TO_REGION[countryCode]) {
         const region = COUNTRY_TO_REGION[countryCode];
         // Store detected region in localStorage
@@ -78,4 +101,3 @@ export function getStoredRegion(): Region | null {
   }
   return null;
 }
-

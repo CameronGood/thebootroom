@@ -17,7 +17,7 @@ export default function AdminPage() {
   // Temporary: Allow specific emails for development
   // TODO: Remove this and use proper admin claims in production
   const DEV_ADMIN_EMAILS = ["19camerongood96@gmail.com"];
- 
+
   const isDevAdmin = user?.email && DEV_ADMIN_EMAILS.includes(user.email);
   const hasAdminAccess = isAdmin || isDevAdmin;
 
@@ -85,4 +85,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

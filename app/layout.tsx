@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "TheBootRoom - Find Your Perfect Ski Boots",
-  description: "Match with the best-fitting ski boots via our quick fitting form",
+  description:
+    "Match with the best-fitting ski boots via our quick fitting form",
 };
 
 export default function RootLayout({
@@ -32,7 +33,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <RegionProvider>
-        {children}
+            {children}
             <Toaster position="top-right" />
           </RegionProvider>
         </AuthProvider>

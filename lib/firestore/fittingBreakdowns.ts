@@ -13,9 +13,7 @@ export async function getFittingBreakdown(
   quizId: string
 ): Promise<FittingBreakdown | null> {
   const docId = `${userId}_${quizId}`;
-  const breakdownDoc = await getDoc(
-    doc(firestore, "fittingBreakdowns", docId)
-  );
+  const breakdownDoc = await getDoc(doc(firestore, "fittingBreakdowns", docId));
 
   if (!breakdownDoc.exists()) {
     return null;
@@ -57,9 +55,6 @@ export async function breakdownExists(
   quizId: string
 ): Promise<boolean> {
   const docId = `${userId}_${quizId}`;
-  const breakdownDoc = await getDoc(
-    doc(firestore, "fittingBreakdowns", docId)
-  );
+  const breakdownDoc = await getDoc(doc(firestore, "fittingBreakdowns", docId));
   return breakdownDoc.exists();
 }
-

@@ -83,7 +83,10 @@ export default function QuizStepFootLength({
         {inputType === "mm" ? (
           <div className="space-y-4">
             <div>
-              <label htmlFor="leftFootMM" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="leftFootMM"
+                className="block text-sm font-medium mb-2"
+              >
                 Left Foot (mm)
               </label>
               <input
@@ -99,7 +102,10 @@ export default function QuizStepFootLength({
               />
             </div>
             <div>
-              <label htmlFor="rightFootMM" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="rightFootMM"
+                className="block text-sm font-medium mb-2"
+              >
                 Right Foot (mm)
               </label>
               <input
@@ -118,7 +124,10 @@ export default function QuizStepFootLength({
         ) : (
           <div className="space-y-4">
             <div>
-              <label htmlFor="shoeSystem" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="shoeSystem"
+                className="block text-sm font-medium mb-2"
+              >
                 Shoe Size System
               </label>
               <select
@@ -136,7 +145,12 @@ export default function QuizStepFootLength({
               </select>
             </div>
             <div>
-              <label htmlFor="shoeSize" className="block text-sm font-medium mb-2">Size</label>
+              <label
+                htmlFor="shoeSize"
+                className="block text-sm font-medium mb-2"
+              >
+                Size
+              </label>
               <select
                 id="shoeSize"
                 name="shoeSize"
@@ -177,4 +191,3 @@ export default function QuizStepFootLength({
     </div>
   );
 }
-

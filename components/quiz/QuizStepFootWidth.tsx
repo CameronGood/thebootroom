@@ -15,7 +15,11 @@ export default function QuizStepFootWidth({
   onBack,
 }: Props) {
   const [inputType, setInputType] = useState<"mm" | "category">(
-    "left" in (footWidth || {}) ? "mm" : "category" in (footWidth || {}) ? "category" : "mm"
+    "left" in (footWidth || {})
+      ? "mm"
+      : "category" in (footWidth || {})
+        ? "category"
+        : "mm"
   );
   const [leftMM, setLeftMM] = useState(
     "left" in (footWidth || {}) ? footWidth?.left?.toString() || "" : ""
@@ -24,7 +28,9 @@ export default function QuizStepFootWidth({
     "left" in (footWidth || {}) ? footWidth?.right?.toString() || "" : ""
   );
   const [category, setCategory] = useState<"Narrow" | "Average" | "Wide">(
-    "category" in (footWidth || {}) ? footWidth?.category || "Average" : "Average"
+    "category" in (footWidth || {})
+      ? footWidth?.category || "Average"
+      : "Average"
   );
 
   const handleSubmit = () => {
@@ -41,7 +47,8 @@ export default function QuizStepFootWidth({
 
   const isValid =
     inputType === "mm"
-      ? (leftMM && parseFloat(leftMM) > 0) || (rightMM && parseFloat(rightMM) > 0)
+      ? (leftMM && parseFloat(leftMM) > 0) ||
+        (rightMM && parseFloat(rightMM) > 0)
       : true;
 
   return (
@@ -78,7 +85,10 @@ export default function QuizStepFootWidth({
         {inputType === "mm" ? (
           <div className="space-y-4">
             <div>
-              <label htmlFor="leftFootWidthMM" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="leftFootWidthMM"
+                className="block text-sm font-medium mb-2"
+              >
                 Left Foot Width (mm)
               </label>
               <input
@@ -94,7 +104,10 @@ export default function QuizStepFootWidth({
               />
             </div>
             <div>
-              <label htmlFor="rightFootWidthMM" className="block text-sm font-medium mb-2">
+              <label
+                htmlFor="rightFootWidthMM"
+                className="block text-sm font-medium mb-2"
+              >
                 Right Foot Width (mm)
               </label>
               <input
@@ -134,9 +147,7 @@ export default function QuizStepFootWidth({
               }`}
             >
               <span className="text-lg font-semibold">Average</span>
-              <p className="text-sm text-gray-600 mt-1">
-                Standard foot width
-              </p>
+              <p className="text-sm text-gray-600 mt-1">Standard foot width</p>
             </button>
             <button
               onClick={() => setCategory("Wide")}
@@ -173,4 +184,3 @@ export default function QuizStepFootWidth({
     </div>
   );
 }
-

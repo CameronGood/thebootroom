@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
     const region = searchParams.get("region") || undefined;
 
     if (!bootId) {
-      return NextResponse.json({ error: "bootId is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "bootId is required" },
+        { status: 400 }
+      );
     }
 
     // Fetch boot
@@ -23,29 +26,33 @@ export async function GET(request: NextRequest) {
 
     // Determine affiliate URL
     let affiliateUrl: string | undefined;
-    
+
     // If vendor and region are provided, use the new links structure
     if (vendor && region && boot.links?.[region as "UK" | "US" | "EU"]) {
       const regionLinks = boot.links[region as "UK" | "US" | "EU"];
-      const link = regionLinks?.find(l => l.store === vendor);
+      const link = regionLinks?.find((l) => l.store === vendor);
       if (link && link.available !== false) {
         affiliateUrl = link.url;
       }
     }
-    
+
     // Fallback to legacy affiliateUrl if new structure doesn't have a match
     if (!affiliateUrl) {
       affiliateUrl = boot.affiliateUrl;
     }
 
     if (!affiliateUrl) {
-      return NextResponse.json({ error: "No affiliate URL available for this boot" }, { status: 404 });
+      return NextResponse.json(
+        { error: "No affiliate URL available for this boot" },
+        { status: 404 }
+      );
     }
 
     // Get country and user agent from headers
-    const country = request.headers.get("cf-ipcountry") || 
-                    request.headers.get("x-vercel-ip-country") || 
-                    undefined;
+    const country =
+      request.headers.get("cf-ipcountry") ||
+      request.headers.get("x-vercel-ip-country") ||
+      undefined;
     const ua = request.headers.get("user-agent") || undefined;
 
     // Log click with vendor and region
@@ -72,4 +79,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

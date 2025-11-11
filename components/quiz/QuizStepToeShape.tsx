@@ -10,7 +10,12 @@ interface Props {
   onChange?: (value: ToeShape) => void;
 }
 
-export default function QuizStepToeShape({ value, onNext, onBack, onChange }: Props) {
+export default function QuizStepToeShape({
+  value,
+  onNext,
+  onBack,
+  onChange,
+}: Props) {
   const [selected, setSelected] = useState<ToeShape | undefined>(value);
 
   useEffect(() => {
@@ -108,4 +113,3 @@ export default function QuizStepToeShape({ value, onNext, onBack, onChange }: Pr
     </div>
   );
 }
-

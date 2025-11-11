@@ -12,7 +12,7 @@ function getOrCreateSessionId(sessionId?: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Debug: Log the raw body before validation
     console.log("\n=== API MATCH REQUEST DEBUG ===");
     console.log("Raw body received:", JSON.stringify(body, null, 2));
@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       console.log("footWidth.category:", body.answers.footWidth.category);
     }
     console.log("================================\n");
-    
+
     const validated = matchRequestSchema.parse(body);
-    
+
     // Debug: Log after validation
     console.log("\n=== AFTER VALIDATION ===");
     console.log("validated.answers.footWidth:", validated.answers.footWidth);
@@ -52,19 +52,24 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Match API error:", error);
     console.error("Error stack:", error.stack);
-    
+
     if (error.name === "ZodError") {
-      console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
+      console.error(
+        "Validation errors:",
+        JSON.stringify(error.errors, null, 2)
+      );
       return NextResponse.json(
-        { 
-          error: "Invalid request data", 
+        {
+          error: "Invalid request data",
           details: error.errors,
-          message: error.errors.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ")
+          message: error.errors
+            .map((e: any) => `${e.path.join(".")}: ${e.message}`)
+            .join(", "),
         },
         { status: 400 }
       );
     }
-    
+
     // More specific error messages
     const errorMessage = error.message || "Internal server error";
     return NextResponse.json(
@@ -73,4 +78,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

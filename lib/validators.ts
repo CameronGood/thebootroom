@@ -20,16 +20,20 @@ export const quizAnswersSchema = z.object({
     .union([
       // Option 1: Category selection (check first, more specific)
       // Using .strict() ensures only 'category' property is allowed
-      z.object({
-        category: z.enum(["Narrow", "Average", "Wide"]),
-      }).strict(),
+      z
+        .object({
+          category: z.enum(["Narrow", "Average", "Wide"]),
+        })
+        .strict(),
       // Option 2: MM measurements (must have at least one of left/right)
-      z.object({
-        left: z.number().positive().optional(),
-        right: z.number().positive().optional(),
-      }).refine((data) => data.left !== undefined || data.right !== undefined, {
-        message: "Must provide at least one width measurement",
-      }),
+      z
+        .object({
+          left: z.number().positive().optional(),
+          right: z.number().positive().optional(),
+        })
+        .refine((data) => data.left !== undefined || data.right !== undefined, {
+          message: "Must provide at least one width measurement",
+        }),
     ])
     .optional(),
   toeShape: z.enum(["Round", "Square", "Angled"]),
@@ -38,7 +42,9 @@ export const quizAnswersSchema = z.object({
   weightKG: z.number().positive(),
   ability: z.enum(["Beginner", "Intermediate", "Advanced"]),
   touring: z.enum(["Yes", "No"]),
-  features: z.array(z.enum(["Walk Mode", "Rear Entry", "Calf Adjustment"])).default([]),
+  features: z
+    .array(z.enum(["Walk Mode", "Rear Entry", "Calf Adjustment"]))
+    .default([]),
 });
 
 export const matchRequestSchema = z.object({
@@ -53,10 +59,9 @@ const affiliateLinkSchema = z.object({
   available: z.boolean().optional(),
 });
 
-const linksSchema = z.record(
-  z.enum(["UK", "US", "EU"]),
-  z.array(affiliateLinkSchema)
-).optional();
+const linksSchema = z
+  .record(z.enum(["UK", "US", "EU"]), z.array(affiliateLinkSchema))
+  .optional();
 
 export const bootSchema = z.object({
   year: z.string(),
@@ -78,4 +83,3 @@ export const bootSchema = z.object({
   imageUrl: z.string().url().optional(),
   tags: z.array(z.string()).optional(),
 });
-

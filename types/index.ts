@@ -12,7 +12,7 @@ export type Region = "UK" | "US" | "EU";
 
 export interface AffiliateLink {
   store: string; // e.g., "Ellis Brigham"
-  url: string;   // full affiliate URL
+  url: string; // full affiliate URL
   logo?: string; // optional image for UI
   available?: boolean; // optional, hide if out of stock
 }
@@ -125,4 +125,3 @@ export interface BillingMetrics {
   revenueGBP: number;
   month: string; // YYYY-MM format
 }
-

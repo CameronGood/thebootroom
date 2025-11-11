@@ -13,11 +13,11 @@ function removeUndefined(obj: any): any {
   if (obj === null || obj === undefined) {
     return null;
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(removeUndefined);
   }
-  
+
   if (typeof obj === "object" && obj.constructor === Object) {
     const cleaned: any = {};
     for (const [key, value] of Object.entries(obj)) {
@@ -27,7 +27,7 @@ function removeUndefined(obj: any): any {
     }
     return cleaned;
   }
-  
+
   return obj;
 }
 
@@ -79,7 +79,9 @@ export async function createOrUpdateSession(
   }
 }
 
-export async function getSession(sessionId: string): Promise<QuizSession | null> {
+export async function getSession(
+  sessionId: string
+): Promise<QuizSession | null> {
   const sessionDoc = await getDoc(doc(firestore, "quizSessions", sessionId));
   if (!sessionDoc.exists()) {
     return null;
@@ -96,4 +98,3 @@ export async function getSession(sessionId: string): Promise<QuizSession | null>
     recommendedMondo: data.recommendedMondo,
   } as QuizSession;
 }
-

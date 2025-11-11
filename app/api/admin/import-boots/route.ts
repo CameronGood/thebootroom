@@ -30,7 +30,7 @@ function parseCSVLine(line: string): string[] {
     const char = line[j];
     if (char === '"') {
       inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       values.push(current.trim());
       current = "";
     } else {
@@ -43,9 +43,12 @@ function parseCSVLine(line: string): string[] {
 
 function parseCSV(csvText: string): any[] {
   // Remove BOM if present and normalize line endings
-  let cleaned = csvText.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  const lines = cleaned.split("\n").filter(line => line.trim());
-  
+  let cleaned = csvText
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
+  const lines = cleaned.split("\n").filter((line) => line.trim());
+
   if (lines.length < 2) {
     console.log("Not enough lines in CSV. Lines:", lines.length);
     return [];
@@ -53,19 +56,24 @@ function parseCSV(csvText: string): any[] {
 
   // Parse header row
   const headerLine = lines[0];
-  const headers = parseCSVLine(headerLine).map((h) => h.replace(/^"|"$/g, "").trim());
-  
+  const headers = parseCSVLine(headerLine).map((h) =>
+    h.replace(/^"|"$/g, "").trim()
+  );
+
   console.log("Parsed headers:", headers);
   console.log("Header count:", headers.length);
-  
+
   // Verify we have the expected headers
   const expectedHeaders = ["year", "gender", "bootType", "brand", "model"];
-  const hasExpectedHeaders = expectedHeaders.every(h => 
-    headers.some(header => header.toLowerCase() === h.toLowerCase())
+  const hasExpectedHeaders = expectedHeaders.every((h) =>
+    headers.some((header) => header.toLowerCase() === h.toLowerCase())
   );
-  
+
   if (!hasExpectedHeaders) {
-    console.warn("Warning: CSV headers don't match expected format. Found:", headers);
+    console.warn(
+      "Warning: CSV headers don't match expected format. Found:",
+      headers
+    );
   }
 
   const rows: any[] = [];
@@ -73,11 +81,11 @@ function parseCSV(csvText: string): any[] {
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
     if (!line.trim()) continue; // Skip empty lines
-    
+
     const values = parseCSVLine(line);
-    
+
     // Remove quotes from values
-    const cleanValues = values.map(v => v.replace(/^"|"$/g, "").trim());
+    const cleanValues = values.map((v) => v.replace(/^"|"$/g, "").trim());
 
     const row: any = {};
     headers.forEach((header, index) => {
@@ -99,13 +107,21 @@ function convertYesNoToBoolean(value: string | undefined | null): boolean {
   if (!value) return false;
   const normalized = String(value).trim().toLowerCase();
   // Handle various true values
-  return normalized === "yes" || normalized === "true" || normalized === "1" || normalized === "y";
+  return (
+    normalized === "yes" ||
+    normalized === "true" ||
+    normalized === "1" ||
+    normalized === "y"
+  );
   // Anything else (including "false", "no", "0", etc.) returns false
 }
 
 function parseTags(tagsString: string): string[] {
   if (!tagsString) return [];
-  return tagsString.split(";").map((t) => t.trim()).filter(Boolean);
+  return tagsString
+    .split(";")
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 
 // Map different CSV column names to expected field names
@@ -114,20 +130,73 @@ function mapRowFields(row: any) {
   return {
     year: row.year || row.Year || row.size || row.Size || "",
     gender: row.gender || row.Gender || "",
-    bootType: row.bootType || row["Boot Type"] || row["boot type"] || row.boottype || "",
+    bootType:
+      row.bootType ||
+      row["Boot Type"] ||
+      row["boot type"] ||
+      row.boottype ||
+      "",
     brand: row.brand || row.Brand || "",
     model: row.model || row.Model || "",
-    lastWidthMM: row.lastWidthMM || row["lastWidthMM"] || row["Last Width MM"] || row.width || row.Width || "",
+    lastWidthMM:
+      row.lastWidthMM ||
+      row["lastWidthMM"] ||
+      row["Last Width MM"] ||
+      row.width ||
+      row.Width ||
+      "",
     flex: row.flex || row.Flex || "",
-    instepHeight: row.instepHeight || row["Instep Height"] || row["instep height"] || row.instep || "",
-    ankleVolume: row.ankleVolume || row["Ankle Volume"] || row["ankle volume"] || row.ankle || "",
-    calfVolume: row.calfVolume || row["Calf Volume"] || row["calf volume"] || row.calf || "",
-    toeBoxShape: row.toeBoxShape || row["Toe Box Shape"] || row["toe box shape"] || row.toe || "",
-    calfAdjustment: row.calfAdjustment || row["Calf Adjustment"] || row["calf adjustment"] || "",
-    walkMode: row.walkMode || row["Walk Mode"] || row["walk mode"] || row.walkmode || "",
-    rearEntry: row.rearEntry || row["Rear Entry"] || row["rear entry"] || row.rearentry || "",
-    affiliateUrl: row.affiliateUrl || row["Affiliate URL"] || row["affiliate url"] || row["Product URL"] || row["product url"] || row.url || "",
-    imageUrl: row.imageUrl || row["Image URL"] || row["image url"] || row.image || "",
+    instepHeight:
+      row.instepHeight ||
+      row["Instep Height"] ||
+      row["instep height"] ||
+      row.instep ||
+      "",
+    ankleVolume:
+      row.ankleVolume ||
+      row["Ankle Volume"] ||
+      row["ankle volume"] ||
+      row.ankle ||
+      "",
+    calfVolume:
+      row.calfVolume ||
+      row["Calf Volume"] ||
+      row["calf volume"] ||
+      row.calf ||
+      "",
+    toeBoxShape:
+      row.toeBoxShape ||
+      row["Toe Box Shape"] ||
+      row["toe box shape"] ||
+      row.toe ||
+      "",
+    calfAdjustment:
+      row.calfAdjustment ||
+      row["Calf Adjustment"] ||
+      row["calf adjustment"] ||
+      "",
+    walkMode:
+      row.walkMode ||
+      row["Walk Mode"] ||
+      row["walk mode"] ||
+      row.walkmode ||
+      "",
+    rearEntry:
+      row.rearEntry ||
+      row["Rear Entry"] ||
+      row["rear entry"] ||
+      row.rearentry ||
+      "",
+    affiliateUrl:
+      row.affiliateUrl ||
+      row["Affiliate URL"] ||
+      row["affiliate url"] ||
+      row["Product URL"] ||
+      row["product url"] ||
+      row.url ||
+      "",
+    imageUrl:
+      row.imageUrl || row["Image URL"] || row["image url"] || row.image || "",
     tags: row.tags || row.Tags || "",
   };
 }
@@ -168,38 +237,56 @@ export async function POST(request: NextRequest) {
       console.log("CSV Headers detected:", Object.keys(rows[0]));
       console.log("First row sample:", JSON.stringify(rows[0], null, 2));
       console.log("Total rows to process:", rows.length);
-      
+
       // Check if brand/model column headers exist (check column names, not data values)
       const headers = Object.keys(rows[0]);
-      const headerLower = headers.map(h => h.toLowerCase());
-      const hasBrandHeader = headerLower.some(h => h === "brand");
-      const hasModelHeader = headerLower.some(h => h === "model");
-      
-      console.log("Has brand header:", hasBrandHeader, "Has model header:", hasModelHeader);
-      
+      const headerLower = headers.map((h) => h.toLowerCase());
+      const hasBrandHeader = headerLower.some((h) => h === "brand");
+      const hasModelHeader = headerLower.some((h) => h === "model");
+
+      console.log(
+        "Has brand header:",
+        hasBrandHeader,
+        "Has model header:",
+        hasModelHeader
+      );
+
       // Only warn if headers are completely missing - but don't block import
       // The mapRowFields function handles various column name variations
       if (!hasBrandHeader && !hasModelHeader) {
-        console.warn("Warning: Brand or model column headers not found. Import will continue but may skip rows without brand/model data.");
+        console.warn(
+          "Warning: Brand or model column headers not found. Import will continue but may skip rows without brand/model data."
+        );
       }
     } else {
-      errors.push("No rows found in CSV. Make sure CSV has a header row and at least one data row.");
+      errors.push(
+        "No rows found in CSV. Make sure CSV has a header row and at least one data row."
+      );
     }
 
     for (let i = 0; i < rows.length; i++) {
       try {
         const rawRow = rows[i];
-        
+
         // Skip empty rows - check all possible column name variations
         // Check if brand/model exist and are not empty strings
-        const brandValue = (rawRow.brand || rawRow.Brand || rawRow.BRAND || "").toString().trim();
-        const modelValue = (rawRow.model || rawRow.Model || rawRow.MODEL || "").toString().trim();
-        
+        const brandValue = (rawRow.brand || rawRow.Brand || rawRow.BRAND || "")
+          .toString()
+          .trim();
+        const modelValue = (rawRow.model || rawRow.Model || rawRow.MODEL || "")
+          .toString()
+          .trim();
+
         if (!brandValue && !modelValue) {
           skipped++;
           if (i < 3) {
-            console.log(`Skipping row ${i + 2} - no brand/model found. Row keys:`, Object.keys(rawRow));
-            console.log(`Row ${i + 2} brand: "${brandValue}", model: "${modelValue}"`);
+            console.log(
+              `Skipping row ${i + 2} - no brand/model found. Row keys:`,
+              Object.keys(rawRow)
+            );
+            console.log(
+              `Row ${i + 2} brand: "${brandValue}", model: "${modelValue}"`
+            );
             console.log(`Row ${i + 2} full data:`, rawRow);
           }
           continue;
@@ -216,22 +303,29 @@ export async function POST(request: NextRequest) {
           const flexParts = flexValue.split(/\s+/);
           flexValue = flexParts[flexParts.length - 1];
         }
-        
+
         const lastWidthMM = parseFloat(row.lastWidthMM || "0");
         const flex = parseFloat(flexValue || "0");
-        
+
         if (isNaN(lastWidthMM) || lastWidthMM <= 0) {
-          errors.push(`Row ${i + 2}: Invalid lastWidthMM (must be a positive number). Got: "${row.lastWidthMM}"`);
+          errors.push(
+            `Row ${i + 2}: Invalid lastWidthMM (must be a positive number). Got: "${row.lastWidthMM}"`
+          );
           continue;
         }
-        
+
         if (isNaN(flex) || flex <= 0) {
-          errors.push(`Row ${i + 2}: Invalid flex (must be a positive number). Got: "${row.flex}"`);
+          errors.push(
+            `Row ${i + 2}: Invalid flex (must be a positive number). Got: "${row.flex}"`
+          );
           continue;
         }
 
         // Normalize enum values (capitalize first letter)
-        const normalizeEnum = (value: string, validValues: string[]): string | null => {
+        const normalizeEnum = (
+          value: string,
+          validValues: string[]
+        ): string | null => {
           if (!value) return null;
           // Trim and normalize
           const normalized = value.trim();
@@ -239,61 +333,92 @@ export async function POST(request: NextRequest) {
           if (validValues.includes(normalized)) return normalized;
           // Try case-insensitive match
           const lower = normalized.toLowerCase();
-          const found = validValues.find(v => v.toLowerCase() === lower);
+          const found = validValues.find((v) => v.toLowerCase() === lower);
           if (found) return found;
           // Try capitalizing first letter (handle trailing spaces)
           const trimmed = normalized.trim();
-          const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+          const capitalized =
+            trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
           if (validValues.includes(capitalized)) return capitalized;
           return null;
         };
 
         const gender = normalizeEnum(row.gender, ["Male", "Female"]);
-        const instepHeight = normalizeEnum(row.instepHeight, ["Low", "Medium", "High"]);
-        const ankleVolume = normalizeEnum(row.ankleVolume, ["Low", "Medium", "High"]);
-        const calfVolume = normalizeEnum(row.calfVolume, ["Low", "Medium", "High"]);
-        const toeBoxShape = normalizeEnum(row.toeBoxShape, ["Round", "Square", "Angled"]);
+        const instepHeight = normalizeEnum(row.instepHeight, [
+          "Low",
+          "Medium",
+          "High",
+        ]);
+        const ankleVolume = normalizeEnum(row.ankleVolume, [
+          "Low",
+          "Medium",
+          "High",
+        ]);
+        const calfVolume = normalizeEnum(row.calfVolume, [
+          "Low",
+          "Medium",
+          "High",
+        ]);
+        const toeBoxShape = normalizeEnum(row.toeBoxShape, [
+          "Round",
+          "Square",
+          "Angled",
+        ]);
 
         if (!gender) {
-          errors.push(`Row ${i + 2}: Invalid gender (must be "Male" or "Female")`);
+          errors.push(
+            `Row ${i + 2}: Invalid gender (must be "Male" or "Female")`
+          );
           continue;
         }
         if (!instepHeight) {
-          errors.push(`Row ${i + 2}: Invalid instepHeight (must be "Low", "Medium", or "High")`);
+          errors.push(
+            `Row ${i + 2}: Invalid instepHeight (must be "Low", "Medium", or "High")`
+          );
           continue;
         }
         if (!ankleVolume) {
-          errors.push(`Row ${i + 2}: Invalid ankleVolume (must be "Low", "Medium", or "High")`);
+          errors.push(
+            `Row ${i + 2}: Invalid ankleVolume (must be "Low", "Medium", or "High")`
+          );
           continue;
         }
         if (!calfVolume) {
-          errors.push(`Row ${i + 2}: Invalid calfVolume (must be "Low", "Medium", or "High")`);
+          errors.push(
+            `Row ${i + 2}: Invalid calfVolume (must be "Low", "Medium", or "High")`
+          );
           continue;
         }
         if (!toeBoxShape) {
-          errors.push(`Row ${i + 2}: Invalid toeBoxShape (must be "Round", "Square", or "Angled")`);
+          errors.push(
+            `Row ${i + 2}: Invalid toeBoxShape (must be "Round", "Square", or "Angled")`
+          );
           continue;
         }
 
         // Handle URLs - only validate if provided
         let affiliateUrl = (row.affiliateUrl || "").trim();
         let imageUrl = (row.imageUrl || "").trim();
-        
+
         // Add https:// if URL doesn't have protocol
         if (affiliateUrl && !affiliateUrl.startsWith("http")) {
           if (affiliateUrl.startsWith("www.")) {
             affiliateUrl = "https://" + affiliateUrl;
           } else if (affiliateUrl) {
-            errors.push(`Row ${i + 2}: Invalid affiliateUrl (must start with http://, https://, or www.)`);
+            errors.push(
+              `Row ${i + 2}: Invalid affiliateUrl (must start with http://, https://, or www.)`
+            );
             continue;
           }
         }
-        
+
         if (imageUrl && !imageUrl.startsWith("http")) {
           if (imageUrl.startsWith("www.")) {
             imageUrl = "https://" + imageUrl;
           } else if (imageUrl) {
-            errors.push(`Row ${i + 2}: Invalid imageUrl (must start with http://, https://, or www.)`);
+            errors.push(
+              `Row ${i + 2}: Invalid imageUrl (must start with http://, https://, or www.)`
+            );
             continue;
           }
         }
@@ -320,7 +445,7 @@ export async function POST(request: NextRequest) {
 
         // Validate with Zod (should pass now, but catch any remaining issues)
         const validated = bootSchema.parse(bootData);
-        
+
         // Check for duplicates before importing
         const exists = await bootExists(
           validated.brand,
@@ -328,22 +453,28 @@ export async function POST(request: NextRequest) {
           validated.year,
           validated.gender
         );
-        
+
         if (exists) {
           duplicates++;
-          console.log(`⏭️  Skipped duplicate: ${validated.brand} ${validated.model} ${validated.year} ${validated.gender}`);
+          console.log(
+            `⏭️  Skipped duplicate: ${validated.brand} ${validated.model} ${validated.year} ${validated.gender}`
+          );
           continue;
         }
-        
+
         const savedBootId = await upsertBoot(validated);
-        console.log(`✅ Imported boot: ${validated.brand} ${validated.model} (ID: ${savedBootId})`);
+        console.log(
+          `✅ Imported boot: ${validated.brand} ${validated.model} (ID: ${savedBootId})`
+        );
         imported++;
       } catch (error: any) {
         // Better error messages
         let errorMsg = "Invalid data";
         if (error.errors && Array.isArray(error.errors)) {
           // Zod validation errors
-          errorMsg = error.errors.map((e: any) => `${e.path.join(".")}: ${e.message}`).join(", ");
+          errorMsg = error.errors
+            .map((e: any) => `${e.path.join(".")}: ${e.message}`)
+            .join(", ");
         } else if (error.message) {
           errorMsg = error.message;
         }
@@ -351,7 +482,9 @@ export async function POST(request: NextRequest) {
         if (errors.length < 20) {
           errors.push(`Row ${i + 2}: ${errorMsg}`);
         } else if (errors.length === 20) {
-          errors.push(`... and ${rows.length - i - 1} more errors (showing first 20)`);
+          errors.push(
+            `... and ${rows.length - i - 1} more errors (showing first 20)`
+          );
         }
       }
     }
@@ -364,9 +497,9 @@ export async function POST(request: NextRequest) {
       duplicates,
       processed: imported + errors.length + skipped + duplicates,
     };
-    
+
     console.log("Import summary:", result);
-    
+
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Import boots error:", error);
@@ -376,4 +509,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

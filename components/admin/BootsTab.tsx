@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { listBoots, deleteBoot, upsertBoot, bootExists } from "@/lib/firestore/boots";
+import {
+  listBoots,
+  deleteBoot,
+  upsertBoot,
+  bootExists,
+} from "@/lib/firestore/boots";
 import { Boot } from "@/types";
 import Spinner from "@/components/Spinner";
 import BootFormModal from "./BootFormModal";
@@ -18,15 +23,19 @@ export default function BootsTab() {
     skipped?: number;
     total?: number;
   } | null>(null);
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [filterGender, setFilterGender] = useState<string>("all");
   const [filterBootType, setFilterBootType] = useState<string>("all");
   const [filterBrand, setFilterBrand] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"brand" | "model" | "flex" | "lastWidthMM">("brand");
+  const [sortBy, setSortBy] = useState<
+    "brand" | "model" | "flex" | "lastWidthMM"
+  >("brand");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [editingBoot, setEditingBoot] = useState<(Boot & { bootId: string }) | null>(null);
+  const [editingBoot, setEditingBoot] = useState<
+    (Boot & { bootId: string }) | null
+  >(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -47,12 +56,12 @@ export default function BootsTab() {
 
   // Get unique values for filter dropdowns
   const uniqueBrands = useMemo(() => {
-    const brands = [...new Set(boots.map(b => b.brand))].sort();
+    const brands = [...new Set(boots.map((b) => b.brand))].sort();
     return brands;
   }, [boots]);
 
   const uniqueBootTypes = useMemo(() => {
-    const types = [...new Set(boots.map(b => b.bootType))].sort();
+    const types = [...new Set(boots.map((b) => b.bootType))].sort();
     return types;
   }, [boots]);
 
@@ -62,7 +71,7 @@ export default function BootsTab() {
       // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           boot.brand.toLowerCase().includes(searchLower) ||
           boot.model.toLowerCase().includes(searchLower) ||
           boot.bootType.toLowerCase().includes(searchLower) ||
@@ -113,7 +122,7 @@ export default function BootsTab() {
       }
 
       if (typeof aVal === "string") {
-        return sortOrder === "asc" 
+        return sortOrder === "asc"
           ? aVal.localeCompare(bVal)
           : bVal.localeCompare(aVal);
       } else {
@@ -122,7 +131,15 @@ export default function BootsTab() {
     });
 
     return filtered;
-  }, [boots, searchTerm, filterGender, filterBootType, filterBrand, sortBy, sortOrder]);
+  }, [
+    boots,
+    searchTerm,
+    filterGender,
+    filterBootType,
+    filterBrand,
+    sortBy,
+    sortOrder,
+  ]);
 
   const handleImport = async () => {
     if (!csvText.trim()) {
@@ -178,7 +195,9 @@ export default function BootsTab() {
     setIsModalOpen(true);
   };
 
-  const handleSaveBoot = async (bootData: Omit<Boot, "createdAt" | "updatedAt"> & { bootId?: string }) => {
+  const handleSaveBoot = async (
+    bootData: Omit<Boot, "createdAt" | "updatedAt"> & { bootId?: string }
+  ) => {
     // Check for duplicates (only for new boots, not when editing the same boot)
     const isNewBoot = !bootData.bootId;
     if (isNewBoot) {
@@ -225,10 +244,17 @@ export default function BootsTab() {
         <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
           <p className="font-semibold mb-2">Expected CSV Format:</p>
           <p className="text-gray-700 mb-2">
-            Required columns: <code className="bg-white px-1 rounded">year,gender,bootType,brand,model,lastWidthMM,flex,instepHeight,ankleVolume,calfVolume,toeBoxShape,calfAdjustment,walkMode,rearEntry,affiliateUrl,imageUrl,tags</code>
+            Required columns:{" "}
+            <code className="bg-white px-1 rounded">
+              year,gender,bootType,brand,model,lastWidthMM,flex,instepHeight,ankleVolume,calfVolume,toeBoxShape,calfAdjustment,walkMode,rearEntry,affiliateUrl,imageUrl,tags
+            </code>
           </p>
           <p className="text-gray-600 text-xs">
-            Example: <code className="bg-white px-1 rounded">25/26,Male,All-Mountain,Salomon,Shift Alpha BOA 130,98,130,Low,Low,Low,Square,No,No,No,https://...,https://...,all-mountain;performance</code>
+            Example:{" "}
+            <code className="bg-white px-1 rounded">
+              25/26,Male,All-Mountain,Salomon,Shift Alpha BOA
+              130,98,130,Low,Low,Low,Square,No,No,No,https://...,https://...,all-mountain;performance
+            </code>
           </p>
         </div>
         <textarea
@@ -251,11 +277,11 @@ export default function BootsTab() {
                 Imported: {importResult.imported} boots
               </p>
               <p className="text-sm text-gray-600">
-                Total rows: {importResult.total || 0} | 
-                Imported: {importResult.imported} | 
-                Duplicates: {importResult.duplicates || 0} | 
-                Skipped: {importResult.skipped || 0} | 
-                Errors: {importResult.errors?.length || 0}
+                Total rows: {importResult.total || 0} | Imported:{" "}
+                {importResult.imported} | Duplicates:{" "}
+                {importResult.duplicates || 0} | Skipped:{" "}
+                {importResult.skipped || 0} | Errors:{" "}
+                {importResult.errors?.length || 0}
               </p>
             </div>
             {importResult.errors && importResult.errors.length > 0 && (
@@ -266,25 +292,28 @@ export default function BootsTab() {
                 <div className="max-h-60 overflow-y-auto bg-white p-3 rounded border">
                   <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
                     {importResult.errors.map((error, i) => (
-                      <li key={i} className="break-words">{error}</li>
+                      <li key={i} className="break-words">
+                        {error}
+                      </li>
                     ))}
                   </ul>
                 </div>
               </div>
             )}
-            {importResult.imported === 0 && (!importResult.errors || importResult.errors.length === 0) && (
-              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ No boots were imported and no errors were reported. 
-                  This might mean:
-                </p>
-                <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 ml-4">
-                  <li>All rows were skipped (empty brand/model)</li>
-                  <li>CSV format doesn't match expected columns</li>
-                  <li>Check browser console (F12) for detailed logs</li>
-                </ul>
-              </div>
-            )}
+            {importResult.imported === 0 &&
+              (!importResult.errors || importResult.errors.length === 0) && (
+                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ No boots were imported and no errors were reported. This
+                    might mean:
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 ml-4">
+                    <li>All rows were skipped (empty brand/model)</li>
+                    <li>CSV format doesn't match expected columns</li>
+                    <li>Check browser console (F12) for detailed logs</li>
+                  </ul>
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -382,7 +411,9 @@ export default function BootsTab() {
                   <option value="lastWidthMM">Width</option>
                 </select>
                 <button
-                  onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+                  }
                   className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50"
                   title={sortOrder === "asc" ? "Ascending" : "Descending"}
                 >
@@ -524,4 +555,3 @@ export default function BootsTab() {
     </div>
   );
 }
-

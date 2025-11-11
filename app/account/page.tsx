@@ -8,7 +8,11 @@ import Spinner from "@/components/Spinner";
 import ResultCard from "@/components/ResultCard";
 import LoginForm from "@/components/LoginForm";
 import { useAuth } from "@/lib/auth";
-import { getUserDoc, deleteSavedResult, upsertSavedResult } from "@/lib/firestore/users";
+import {
+  getUserDoc,
+  deleteSavedResult,
+  upsertSavedResult,
+} from "@/lib/firestore/users";
 import { User, SavedResult, QuizSession, FittingBreakdown } from "@/types";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -22,8 +26,12 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [savingResults, setSavingResults] = useState(false);
   const [sessions, setSessions] = useState<Map<string, QuizSession>>(new Map());
-  const [breakdowns, setBreakdowns] = useState<Map<string, FittingBreakdown>>(new Map());
-  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(null);
+  const [breakdowns, setBreakdowns] = useState<Map<string, FittingBreakdown>>(
+    new Map()
+  );
+  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(
+    null
+  );
   const hasAutoSavedRef = useRef(false);
   const showSaveMessage = searchParams.get("saveResults") === "true";
   const sessionId = searchParams.get("sessionId");
@@ -36,7 +44,7 @@ export default function AccountPage() {
       if (showSaveMessage && sessionId && !hasAutoSavedRef.current) {
         const handleAutoSaveResults = async () => {
           if (!user || !sessionId || hasAutoSavedRef.current) return;
-          
+
           hasAutoSavedRef.current = true;
           setSavingResults(true);
           try {
@@ -48,7 +56,7 @@ export default function AccountPage() {
               return;
             }
             const session: QuizSession = await sessionResponse.json();
-            
+
             if (!session || !session.recommendedBoots) {
               toast.error("Session not found or incomplete");
               router.replace("/account");
@@ -70,10 +78,10 @@ export default function AccountPage() {
             });
 
             toast.success("Results saved successfully!");
-            
+
             // Refresh user data to show the new saved result
             await fetchUserData();
-            
+
             // Clean up URL params after a brief delay to show success message
             setTimeout(() => {
               router.replace("/account");
@@ -86,7 +94,7 @@ export default function AccountPage() {
             setSavingResults(false);
           }
         };
-        
+
         handleAutoSaveResults();
       }
     } else if (!authLoading && !user) {
@@ -101,29 +109,34 @@ export default function AccountPage() {
     try {
       const data = await getUserDoc(user.uid);
       setUserData(data);
-      
+
       // Fetch quiz sessions and breakdowns for all saved results via API
       if (data?.savedResults) {
         const sessionsMap = new Map<string, QuizSession>();
         const breakdownsMap = new Map<string, FittingBreakdown>();
-        
+
         for (const result of data.savedResults) {
           try {
             // Fetch session
-            const sessionResponse = await fetch(`/api/sessions/${result.quizId}`);
+            const sessionResponse = await fetch(
+              `/api/sessions/${result.quizId}`
+            );
             if (sessionResponse.ok) {
               const session: QuizSession = await sessionResponse.json();
               if (session) {
                 sessionsMap.set(result.quizId, session);
               }
             }
-            
+
             // Fetch breakdown if user is logged in
             if (user) {
               try {
-                const breakdownResponse = await fetch(`/api/breakdowns/${user.uid}/${result.quizId}`);
+                const breakdownResponse = await fetch(
+                  `/api/breakdowns/${user.uid}/${result.quizId}`
+                );
                 if (breakdownResponse.ok) {
-                  const breakdown: FittingBreakdown = await breakdownResponse.json();
+                  const breakdown: FittingBreakdown =
+                    await breakdownResponse.json();
                   if (breakdown) {
                     breakdownsMap.set(result.quizId, breakdown);
                   }
@@ -148,7 +161,7 @@ export default function AccountPage() {
 
   const handleDeleteResult = async (quizId: string) => {
     if (!user) return;
-    
+
     if (!confirm("Are you sure you want to remove this saved result?")) {
       return;
     }
@@ -241,40 +254,43 @@ export default function AccountPage() {
               {savedResults.map((result, index) => {
                 const session = sessions.get(result.quizId);
                 const answers = session?.answers;
-                
+
                 // Format answer summary
                 const formatAnswerSummary = () => {
                   if (!answers) return "Quiz Result";
-                  
+
                   const parts: string[] = [];
-                  
+
                   // Gender
                   parts.push(answers.gender);
-                  
+
                   // Ability
                   parts.push(answers.ability);
-                  
+
                   // Weight
                   parts.push(`${answers.weightKG}kg`);
-                  
+
                   // Touring
                   if (answers.touring === "Yes") {
                     parts.push("Touring");
                   }
-                  
+
                   // Features
                   if (answers.features && answers.features.length > 0) {
                     parts.push(answers.features.join(", "));
                   }
-                  
+
                   return parts.join(" • ");
                 };
-                
+
                 // Create unique key using quizId and index, plus completedAt timestamp for extra uniqueness
                 const uniqueKey = `${result.quizId}-${index}-${result.completedAt.getTime()}`;
-                
+
                 return (
-                  <div key={uniqueKey} className="bg-white rounded-lg shadow-md p-6">
+                  <div
+                    key={uniqueKey}
+                    className="bg-white rounded-lg shadow-md p-6"
+                  >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <h2 className="text-xl font-semibold mb-1">
@@ -285,15 +301,18 @@ export default function AccountPage() {
                         </p>
                         {answers && (
                           <div className="mt-2 text-sm text-gray-500">
-                            {answers.toeShape} toe • {answers.instepHeight} instep • {answers.calfVolume} calf
+                            {answers.toeShape} toe • {answers.instepHeight}{" "}
+                            instep • {answers.calfVolume} calf
                             {answers.footWidth && (
                               <>
                                 {" • "}
-                                {("category" in answers.footWidth && answers.footWidth.category) 
+                                {"category" in answers.footWidth &&
+                                answers.footWidth.category
                                   ? answers.footWidth.category + " width"
-                                  : ("left" in answers.footWidth || "right" in answers.footWidth)
-                                  ? `${Math.max(answers.footWidth.left || 0, answers.footWidth.right || 0)}mm width`
-                                  : ""}
+                                  : "left" in answers.footWidth ||
+                                      "right" in answers.footWidth
+                                    ? `${Math.max(answers.footWidth.left || 0, answers.footWidth.right || 0)}mm width`
+                                    : ""}
                               </>
                             )}
                           </div>
@@ -311,7 +330,7 @@ export default function AccountPage() {
                         <ResultCard key={boot.bootId} boot={boot} />
                       ))}
                     </div>
-                    
+
                     {/* Breakdown Section */}
                     {breakdowns.has(result.quizId) && (
                       <div className="mt-6 border-t pt-6">
@@ -337,8 +356,9 @@ export default function AccountPage() {
                         </button>
                         {expandedBreakdown === result.quizId && (
                           <div className="mt-4 space-y-6">
-                            {breakdowns.get(result.quizId)?.sections.map(
-                              (section) => {
+                            {breakdowns
+                              .get(result.quizId)
+                              ?.sections.map((section) => {
                                 const boot = result.recommendedBoots.find(
                                   (b) => b.bootId === section.bootId
                                 );
@@ -352,8 +372,9 @@ export default function AccountPage() {
                                     </h3>
                                     {boot && (
                                       <p className="text-sm text-gray-600 mb-2">
-                                        {boot.brand} {boot.model} • Flex {boot.flex} • Match
-                                        Score: {boot.score.toFixed(1)}/100
+                                        {boot.brand} {boot.model} • Flex{" "}
+                                        {boot.flex} • Match Score:{" "}
+                                        {boot.score.toFixed(1)}/100
                                       </p>
                                     )}
                                     <p className="text-gray-700 whitespace-pre-line leading-relaxed">
@@ -361,8 +382,7 @@ export default function AccountPage() {
                                     </p>
                                   </div>
                                 );
-                              }
-                            )}
+                              })}
                           </div>
                         )}
                       </div>
@@ -378,4 +398,3 @@ export default function AccountPage() {
     </div>
   );
 }
-

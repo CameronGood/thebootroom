@@ -29,29 +29,49 @@ export default function Header() {
               </span>
             </Link>
           </motion.div>
-          
+
           <nav className="flex items-center gap-2 sm:gap-3">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button asChild variant="ghost" size="sm" className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
+              >
                 <Link href="/quiz" className="flex items-center gap-2">
                   <Play className="w-4 h-4" />
-                  <span className="hidden sm:inline font-medium">Start Fitting</span>
+                  <span className="hidden sm:inline font-medium">
+                    Start Fitting
+                  </span>
                   <span className="sm:hidden font-medium">Quiz</span>
                 </Link>
               </Button>
             </motion.div>
-            
+
             {user ? (
               <>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button asChild variant="ghost" size="sm" className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
+                  >
                     <Link href="/account" className="flex items-center gap-2">
                       <User className="w-4 h-4" />
-                      <span className="hidden sm:inline font-medium">Account</span>
+                      <span className="hidden sm:inline font-medium">
+                        Account
+                      </span>
                     </Link>
                   </Button>
                 </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   <Button
                     onClick={logout}
                     variant="ghost"
@@ -59,13 +79,23 @@ export default function Header() {
                     className="rounded-full text-gray-900 hover:text-red-600 hover:bg-gray-100"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline ml-2 font-medium">Logout</span>
+                    <span className="hidden sm:inline ml-2 font-medium">
+                      Logout
+                    </span>
                   </Button>
                 </motion.div>
               </>
             ) : (
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button asChild variant="ghost" size="sm" className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
+                >
                   <Link href="/account" className="flex items-center gap-2">
                     <LogIn className="w-4 h-4" />
                     <span className="hidden sm:inline font-medium">Login</span>
@@ -79,4 +109,3 @@ export default function Header() {
     </header>
   );
 }
-

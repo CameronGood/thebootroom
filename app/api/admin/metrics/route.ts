@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
     const affiliateClicks = clicks.length;
 
     // Calculate top boot clicks
-    const bootClickCounts: Record<string, { bootId: string; brand: string; model: string; clicks: number }> = {};
+    const bootClickCounts: Record<
+      string,
+      { bootId: string; brand: string; model: string; clicks: number }
+    > = {};
     clicks.forEach((click) => {
       const key = click.bootId;
       if (!bootClickCounts[key]) {
@@ -91,15 +94,18 @@ export async function GET(request: NextRequest) {
       .slice(0, 10); // Top 10 vendors
 
     // Calculate top clicked boots with vendor/region breakdown
-    const bootClickDetails: Record<string, {
-      bootId: string;
-      brand: string;
-      model: string;
-      clicks: number;
-      vendors: Record<string, number>;
-      regions: Record<string, number>;
-    }> = {};
-    
+    const bootClickDetails: Record<
+      string,
+      {
+        bootId: string;
+        brand: string;
+        model: string;
+        clicks: number;
+        vendors: Record<string, number>;
+        regions: Record<string, number>;
+      }
+    > = {};
+
     clicks.forEach((click) => {
       const key = click.bootId;
       if (!bootClickDetails[key]) {
@@ -113,45 +119,53 @@ export async function GET(request: NextRequest) {
         };
       }
       bootClickDetails[key].clicks++;
-      
+
       // Track vendor
       const vendor = click.vendor || "Unknown";
-      bootClickDetails[key].vendors[vendor] = (bootClickDetails[key].vendors[vendor] || 0) + 1;
-      
+      bootClickDetails[key].vendors[vendor] =
+        (bootClickDetails[key].vendors[vendor] || 0) + 1;
+
       // Track region
       const region = click.region || "Unknown";
-      bootClickDetails[key].regions[region] = (bootClickDetails[key].regions[region] || 0) + 1;
+      bootClickDetails[key].regions[region] =
+        (bootClickDetails[key].regions[region] || 0) + 1;
     });
 
-            const topBootClicksWithDetails = Object.values(bootClickDetails)
-              .sort((a, b) => b.clicks - a.clicks)
-              .slice(0, 10);
+    const topBootClicksWithDetails = Object.values(bootClickDetails)
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10);
 
-            // Get billing metrics for current month
-            const now = new Date();
-            const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-            const billingMetrics = await getBillingMetrics(currentMonth);
+    // Get billing metrics for current month
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const billingMetrics = await getBillingMetrics(currentMonth);
 
-            // Get all billing metrics for historical data
-            const billingMetricsSnapshot = await getDocs(collection(firestore, "billingMetrics"));
-            const allBillingMetrics = billingMetricsSnapshot.docs.map((doc) => ({
-              month: doc.id,
-              ...doc.data(),
-            }));
+    // Get all billing metrics for historical data
+    const billingMetricsSnapshot = await getDocs(
+      collection(firestore, "billingMetrics")
+    );
+    const allBillingMetrics = billingMetricsSnapshot.docs.map((doc) => ({
+      month: doc.id,
+      ...doc.data(),
+    }));
 
-            return NextResponse.json({
-              usersCount: usersCount,
-              quizStarts: quizStarts,
-              quizCompletions: quizCompletions,
-              affiliateClicks: affiliateClicks,
-              topBootClicks: topBootClicks,
-              usersByCountry: usersByCountry,
-              clicksByRegion: clicksByRegion,
-              clicksByVendor: clicksByVendor,
-              topBootClicksWithDetails: topBootClicksWithDetails,
-              billingMetrics: billingMetrics || { purchases: 0, revenueGBP: 0, month: currentMonth },
-              allBillingMetrics: allBillingMetrics,
-            });
+    return NextResponse.json({
+      usersCount: usersCount,
+      quizStarts: quizStarts,
+      quizCompletions: quizCompletions,
+      affiliateClicks: affiliateClicks,
+      topBootClicks: topBootClicks,
+      usersByCountry: usersByCountry,
+      clicksByRegion: clicksByRegion,
+      clicksByVendor: clicksByVendor,
+      topBootClicksWithDetails: topBootClicksWithDetails,
+      billingMetrics: billingMetrics || {
+        purchases: 0,
+        revenueGBP: 0,
+        month: currentMonth,
+      },
+      allBillingMetrics: allBillingMetrics,
+    });
   } catch (error) {
     console.error("Metrics API error:", error);
     return NextResponse.json(
@@ -160,4 +174,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

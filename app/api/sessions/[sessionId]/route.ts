@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, createOrUpdateSession } from "@/lib/firestore/quizSessions";
+import {
+  getSession,
+  createOrUpdateSession,
+} from "@/lib/firestore/quizSessions";
 
 export async function GET(
   request: NextRequest,
@@ -8,11 +11,11 @@ export async function GET(
   try {
     const { sessionId } = await params;
     const session = await getSession(sessionId);
-    
+
     if (!session) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
-    
+
     return NextResponse.json(session);
   } catch (error) {
     console.error("Get session API error:", error);
@@ -30,9 +33,9 @@ export async function PATCH(
   try {
     const { sessionId } = await params;
     const body = await request.json();
-    
+
     await createOrUpdateSession(sessionId, body);
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Update session API error:", error);
@@ -42,4 +45,3 @@ export async function PATCH(
     );
   }
 }
-

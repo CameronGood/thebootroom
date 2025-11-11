@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { getSession } from "@/lib/firestore/quizSessions";
 import { generateBreakdown } from "@/lib/aiProvider";
-import { saveFittingBreakdown, breakdownExists } from "@/lib/firestore/fittingBreakdowns";
+import {
+  saveFittingBreakdown,
+  breakdownExists,
+} from "@/lib/firestore/fittingBreakdowns";
 import { incrementBillingMetrics } from "@/lib/firestore/billingMetrics";
 import { BREAKDOWN_PRICE_GBP } from "@/lib/stripe";
 
@@ -118,4 +121,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
-

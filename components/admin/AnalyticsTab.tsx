@@ -21,7 +21,12 @@ interface Metrics {
   quizStarts: number;
   quizCompletions: number;
   affiliateClicks: number;
-  topBootClicks: Array<{ bootId: string; brand: string; model: string; clicks: number }>;
+  topBootClicks: Array<{
+    bootId: string;
+    brand: string;
+    model: string;
+    clicks: number;
+  }>;
   usersByCountry: Array<{ country: string; count: number }>;
   clicksByRegion: Array<{ region: string; count: number }>;
   clicksByVendor: Array<{ vendor: string; count: number }>;
@@ -143,10 +148,12 @@ export default function AnalyticsTab() {
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold mb-4">Quiz Funnel</h2>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={[
-            { name: "Quiz Starts", value: metrics.quizStarts },
-            { name: "Completions", value: metrics.quizCompletions },
-          ]}>
+          <BarChart
+            data={[
+              { name: "Quiz Starts", value: metrics.quizStarts },
+              { name: "Completions", value: metrics.quizCompletions },
+            ]}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
@@ -182,7 +189,9 @@ export default function AnalyticsTab() {
 
       {/* Affiliate Clicks by Region */}
       <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Affiliate Clicks by Region</h2>
+        <h2 className="text-xl font-semibold mb-4">
+          Affiliate Clicks by Region
+        </h2>
         {metrics.clicksByRegion && metrics.clicksByRegion.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={metrics.clicksByRegion}>
@@ -238,8 +247,19 @@ export default function AnalyticsTab() {
                 label={({ region, count }) => `${region}: ${count}`}
               >
                 {metrics.clicksByRegion.map((entry, index) => {
-                  const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
-                  return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  const colors = [
+                    "#3b82f6",
+                    "#10b981",
+                    "#f59e0b",
+                    "#ef4444",
+                    "#8b5cf6",
+                  ];
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={colors[index % colors.length]}
+                    />
+                  );
                 })}
               </Pie>
               <Tooltip />
@@ -250,77 +270,110 @@ export default function AnalyticsTab() {
       )}
 
       {/* Top Boots with Vendor/Region Breakdown */}
-      {metrics.topBootClicksWithDetails && metrics.topBootClicksWithDetails.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Top Boots - Vendor & Region Breakdown</h2>
-          <div className="space-y-4">
-            {metrics.topBootClicksWithDetails.map((boot) => (
-              <div key={boot.bootId} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">
-                      {boot.brand} {boot.model}
-                    </h3>
-                    <p className="text-sm text-gray-600">Total Clicks: {boot.clicks}</p>
+      {metrics.topBootClicksWithDetails &&
+        metrics.topBootClicksWithDetails.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">
+              Top Boots - Vendor & Region Breakdown
+            </h2>
+            <div className="space-y-4">
+              {metrics.topBootClicksWithDetails.map((boot) => (
+                <div key={boot.bootId} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">
+                        {boot.brand} {boot.model}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Total Clicks: {boot.clicks}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {/* Vendors */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Clicks by Vendor
+                      </h4>
+                      {Object.keys(boot.vendors).length > 0 ? (
+                        <div className="space-y-1">
+                          {Object.entries(boot.vendors)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([vendor, count]) => (
+                              <div
+                                key={vendor}
+                                className="flex justify-between text-sm"
+                              >
+                                <span className="text-gray-600">{vendor}</span>
+                                <span className="font-medium">{count}</span>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No vendor data</p>
+                      )}
+                    </div>
+                    {/* Regions */}
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">
+                        Clicks by Region
+                      </h4>
+                      {Object.keys(boot.regions).length > 0 ? (
+                        <div className="space-y-1">
+                          {Object.entries(boot.regions)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([region, count]) => (
+                              <div
+                                key={region}
+                                className="flex justify-between text-sm"
+                              >
+                                <span className="text-gray-600">{region}</span>
+                                <span className="font-medium">{count}</span>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No region data</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {/* Vendors */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Clicks by Vendor</h4>
-                    {Object.keys(boot.vendors).length > 0 ? (
-                      <div className="space-y-1">
-                        {Object.entries(boot.vendors)
-                          .sort((a, b) => b[1] - a[1])
-                          .map(([vendor, count]) => (
-                            <div key={vendor} className="flex justify-between text-sm">
-                              <span className="text-gray-600">{vendor}</span>
-                              <span className="font-medium">{count}</span>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No vendor data</p>
-                    )}
-                  </div>
-                  {/* Regions */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Clicks by Region</h4>
-                    {Object.keys(boot.regions).length > 0 ? (
-                      <div className="space-y-1">
-                        {Object.entries(boot.regions)
-                          .sort((a, b) => b[1] - a[1])
-                          .map(([region, count]) => (
-                            <div key={region} className="flex justify-between text-sm">
-                              <span className="text-gray-600">{region}</span>
-                              <span className="font-medium">{count}</span>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">No region data</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Revenue Over Time */}
       {metrics.allBillingMetrics && metrics.allBillingMetrics.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Breakdown Revenue Over Time</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            Breakdown Revenue Over Time
+          </h2>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={metrics.allBillingMetrics.sort((a, b) => a.month.localeCompare(b.month))}>
+            <LineChart
+              data={metrics.allBillingMetrics.sort((a, b) =>
+                a.month.localeCompare(b.month)
+              )}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip formatter={(value: number) => `£${value.toFixed(2)}`} />
               <Legend />
-              <Line type="monotone" dataKey="revenueGBP" stroke="#10b981" strokeWidth={2} name="Revenue (£)" />
-              <Line type="monotone" dataKey="purchases" stroke="#3b82f6" strokeWidth={2} name="Purchases" />
+              <Line
+                type="monotone"
+                dataKey="revenueGBP"
+                stroke="#10b981"
+                strokeWidth={2}
+                name="Revenue (£)"
+              />
+              <Line
+                type="monotone"
+                dataKey="purchases"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                name="Purchases"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -363,4 +416,3 @@ export default function AnalyticsTab() {
     </div>
   );
 }
-

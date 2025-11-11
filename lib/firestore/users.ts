@@ -101,7 +101,7 @@ export async function deleteSavedResult(
 
   const currentData = userDoc.data();
   const savedResults = currentData.savedResults || [];
-  
+
   // Remove the result with matching quizId
   const updatedResults = savedResults.filter(
     (result: any) => result.quizId !== quizId
@@ -115,4 +115,3 @@ export async function deleteSavedResult(
     { merge: true }
   );
 }
-

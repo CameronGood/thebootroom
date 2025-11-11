@@ -8,11 +8,14 @@ export async function GET(
   try {
     const { userId, quizId } = await params;
     const breakdown = await getFittingBreakdown(userId, quizId);
-    
+
     if (!breakdown) {
-      return NextResponse.json({ error: "Breakdown not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Breakdown not found" },
+        { status: 404 }
+      );
     }
-    
+
     return NextResponse.json(breakdown);
   } catch (error) {
     console.error("Get breakdown API error:", error);
@@ -22,4 +25,3 @@ export async function GET(
     );
   }
 }
-

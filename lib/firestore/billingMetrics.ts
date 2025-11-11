@@ -1,4 +1,10 @@
-import { doc, getDoc, setDoc, increment, serverTimestamp } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  increment,
+  serverTimestamp,
+} from "firebase/firestore";
 import { firestore } from "../firebase";
 import { BillingMetrics } from "@/types";
 
@@ -25,7 +31,7 @@ export async function getBillingMetrics(
   month: string
 ): Promise<BillingMetrics | null> {
   const metricsDoc = await getDoc(doc(firestore, "billingMetrics", month));
-  
+
   if (!metricsDoc.exists()) {
     return null;
   }
@@ -37,4 +43,3 @@ export async function getBillingMetrics(
     month: data.month || month,
   } as BillingMetrics;
 }
-

@@ -61,4 +61,3 @@ export default function QuizStepGender({ value, onNext, onChange }: Props) {
     </div>
   );
 }
-

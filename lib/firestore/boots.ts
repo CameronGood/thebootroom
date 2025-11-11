@@ -46,7 +46,9 @@ export async function listBoots(filters?: {
   });
 }
 
-export async function getBoot(bootId: string): Promise<(Boot & { bootId: string }) | null> {
+export async function getBoot(
+  bootId: string
+): Promise<(Boot & { bootId: string }) | null> {
   const bootDoc = await getDoc(doc(firestore, "boots", bootId));
   if (!bootDoc.exists()) {
     return null;
@@ -60,7 +62,9 @@ export async function getBoot(bootId: string): Promise<(Boot & { bootId: string 
   } as Boot & { bootId: string };
 }
 
-export async function upsertBoot(bootData: Omit<Boot, "createdAt" | "updatedAt"> & { bootId?: string }): Promise<string> {
+export async function upsertBoot(
+  bootData: Omit<Boot, "createdAt" | "updatedAt"> & { bootId?: string }
+): Promise<string> {
   const { bootId: providedBootId, ...bootDataWithoutId } = bootData;
   const bootId = providedBootId || doc(collection(firestore, "boots")).id;
   const bootRef = doc(firestore, "boots", bootId);
@@ -102,13 +106,12 @@ export async function bootExists(
   );
 
   const snapshot = await getDocs(q);
-  
+
   // If checking for a new boot (no excludeBootId), any match is a duplicate
   if (!excludeBootId) {
     return !snapshot.empty;
   }
-  
+
   // If editing, check if there's a match that's NOT the current boot
   return snapshot.docs.some((doc) => doc.id !== excludeBootId);
 }
-

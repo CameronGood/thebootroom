@@ -34,8 +34,8 @@ User Profile:
       "category" in (answers.footWidth || {})
         ? answers.footWidth.category
         : answers.footWidth?.left || answers.footWidth?.right
-        ? `${answers.footWidth.left || answers.footWidth.right}mm`
-        : "Not specified"
+          ? `${answers.footWidth.left || answers.footWidth.right}mm`
+          : "Not specified"
     }
 - Toe Shape: ${answers.toeShape}
 - Instep Height: ${answers.instepHeight}
@@ -111,7 +111,7 @@ Return ONLY a JSON object with this exact structure:
 
     // Parse JSON response - OpenAI with json_object format returns an object
     const parsed = JSON.parse(responseText);
-    
+
     // Handle both { sections: [...] } and direct array formats
     let sections = [];
     if (Array.isArray(parsed)) {
@@ -128,7 +128,7 @@ Return ONLY a JSON object with this exact structure:
         }
       }
     }
-    
+
     // Ensure bootIds match
     return sections.map((section: any, idx: number) => ({
       bootId: section.bootId || boots[idx]?.bootId || `boot-${idx}`,
@@ -140,4 +140,3 @@ Return ONLY a JSON object with this exact structure:
     return [];
   }
 }
-

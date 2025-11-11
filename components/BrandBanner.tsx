@@ -13,9 +13,9 @@ interface BrandBannerProps {
   autoRotateInterval?: number; // milliseconds
 }
 
-export default function BrandBanner({ 
-  brands, 
-  autoRotateInterval = 3000 
+export default function BrandBanner({
+  brands,
+  autoRotateInterval = 3000,
 }: BrandBannerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -34,7 +34,7 @@ export default function BrandBanner({
   // Show multiple brands at once (e.g., 5-6 visible)
   const visibleCount = 5;
   const visibleBrands = [];
-  
+
   for (let i = 0; i < visibleCount; i++) {
     const index = (currentIndex + i) % brands.length;
     visibleBrands.push({ ...brands[index], displayIndex: i });
@@ -57,7 +57,7 @@ export default function BrandBanner({
         </motion.div>
 
         {/* Brand Logos Container */}
-        <div 
+        <div
           className="relative overflow-hidden"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
@@ -68,10 +68,10 @@ export default function BrandBanner({
                 key={`${brand.name}-${currentIndex}-${index}`}
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ 
+                transition={{
                   duration: 0.5,
                   delay: index * 0.1,
-                  ease: "easeInOut"
+                  ease: "easeInOut",
                 }}
                 whileHover={{ scale: 1.1, y: -5 }}
                 className="flex-shrink-0"
@@ -85,11 +85,15 @@ export default function BrandBanner({
                       onError={(e) => {
                         // Fallback to text if image fails to load
                         const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
+                        target.style.display = "none";
                         const parent = target.parentElement;
-                        if (parent && !parent.querySelector('.brand-text-fallback')) {
-                          const fallback = document.createElement('div');
-                          fallback.className = 'brand-text-fallback text-gray-400 font-bold text-lg md:text-xl lg:text-2xl';
+                        if (
+                          parent &&
+                          !parent.querySelector(".brand-text-fallback")
+                        ) {
+                          const fallback = document.createElement("div");
+                          fallback.className =
+                            "brand-text-fallback text-gray-400 font-bold text-lg md:text-xl lg:text-2xl";
                           fallback.textContent = brand.name;
                           parent.appendChild(fallback);
                         }
@@ -109,4 +113,3 @@ export default function BrandBanner({
     </section>
   );
 }
-

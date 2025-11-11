@@ -24,4 +24,3 @@ if (getApps().length === 0) {
 export const auth: Auth = getAuth(app);
 export const firestore: Firestore = getFirestore(app);
 export default app;
-
