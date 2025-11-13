@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { QuizAnswers } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Props {
   footLengthMM?: { left: number; right: number };
@@ -28,18 +30,21 @@ export default function QuizStepFootLength({
     shoeSize?.system || "UK"
   );
   const [shoeValue, setShoeValue] = useState(shoeSize?.value?.toString() || "");
+  const [showCard, setShowCard] = useState(false);
 
   const handleSubmit = () => {
     if (inputType === "mm") {
       const left = parseFloat(leftMM);
       const right = parseFloat(rightMM);
       if (left > 0 && right > 0) {
-        onNext({ footLengthMM: { left, right } });
+        // Only send mm values, explicitly clear shoe size
+        onNext({ footLengthMM: { left, right }, shoeSize: undefined });
       }
     } else {
       const value = parseFloat(shoeValue);
       if (value > 0) {
-        onNext({ shoeSize: { system: shoeSystem, value } });
+        // Only send shoe size, explicitly clear mm values
+        onNext({ shoeSize: { system: shoeSystem, value }, footLengthMM: undefined });
       }
     }
   };
@@ -50,16 +55,29 @@ export default function QuizStepFootLength({
       : shoeValue && shoeValue !== "" && parseFloat(shoeValue) > 0;
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">What is your foot length?</h2>
-      <p className="text-gray-600 mb-6">
-        We'll use the larger foot to recommend your mondo size.
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-4">Foot Length</h2>
+        <p className="text-gray-600 mb-4">
+          Measure each foot from heel to longest toe.
+        </p>
+        <button
+          onClick={() => setShowCard(!showCard)}
+          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 mb-4 inline-flex items-center gap-2"
+        >
+          How to measure <span className="font-semibold">?</span>
+        </button>
+      </div>
 
       <div className="mb-6">
         <div className="flex gap-4 mb-4">
           <button
-            onClick={() => setInputType("mm")}
+            onClick={() => {
+              setInputType("mm");
+              // Clear shoe size values when switching to mm
+              setShoeSystem("UK");
+              setShoeValue("");
+            }}
             className={`px-4 py-2 rounded-lg ${
               inputType === "mm"
                 ? "bg-blue-600 text-white"
@@ -69,7 +87,12 @@ export default function QuizStepFootLength({
             Millimeters (mm)
           </button>
           <button
-            onClick={() => setInputType("shoe")}
+            onClick={() => {
+              setInputType("shoe");
+              // Clear mm values when switching to shoe size
+              setLeftMM("");
+              setRightMM("");
+            }}
             className={`px-4 py-2 rounded-lg ${
               inputType === "shoe"
                 ? "bg-blue-600 text-white"
@@ -176,18 +199,53 @@ export default function QuizStepFootLength({
       <div className="flex gap-4">
         <button
           onClick={onBack}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 flex-1"
         >
           Back
         </button>
         <button
           onClick={handleSubmit}
           disabled={!isValid}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex-1"
         >
           Next
         </button>
       </div>
+
+      {/* Card below */}
+      <AnimatePresence>
+        {showCard && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>How to Measure Foot Length</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ul className="space-y-2 text-sm text-gray-600 list-disc list-inside">
+                  <li>Stand on a flat surface with your weight evenly distributed</li>
+                  <li>Place a ruler or measuring tape against a wall</li>
+                  <li>Position your heel against the wall</li>
+                  <li>Measure from the wall to the tip of your longest toe</li>
+                  <li>Measure both feet and enter the measurements</li>
+                  <li>We'll use the smaller foot to recommend your mondo size</li>
+                </ul>
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Tip:</strong> It's easier to create space inside a
+                    ski boot than to make it smaller, so we use your smaller
+                    foot measurement.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

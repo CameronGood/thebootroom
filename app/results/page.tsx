@@ -61,11 +61,12 @@ export default function ResultsPage() {
         if (sessionData.recommendedMondo) {
           setRecommendedMondo(sessionData.recommendedMondo);
         } else if (sessionData.answers.footLengthMM) {
-          const largerFoot = Math.max(
+          // Use minimum foot length - easier to create space than make boot smaller
+          const smallerFoot = Math.min(
             sessionData.answers.footLengthMM.left,
             sessionData.answers.footLengthMM.right
           );
-          setRecommendedMondo(calculateRecommendedMondo(largerFoot));
+          setRecommendedMondo(calculateRecommendedMondo(smallerFoot));
         } else if (sessionData.answers.shoeSize) {
           const { system, value } = sessionData.answers.shoeSize;
           setRecommendedMondo(shoeSizeToMondo(system, value));

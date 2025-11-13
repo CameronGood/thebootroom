@@ -4,6 +4,9 @@ import { z } from "zod";
 
 export const quizAnswersSchema = z.object({
   gender: z.enum(["Male", "Female"]),
+  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Touring"]),
+  ability: z.enum(["Beginner", "Intermediate", "Advanced"]),
+  weightKG: z.number().positive(),
   footLengthMM: z
     .object({
       left: z.number().positive(),
@@ -38,10 +41,8 @@ export const quizAnswersSchema = z.object({
     .optional(),
   toeShape: z.enum(["Round", "Square", "Angled"]),
   instepHeight: z.enum(["Low", "Medium", "High"]),
+  ankleVolume: z.enum(["Low", "Medium", "High"]),
   calfVolume: z.enum(["Low", "Medium", "High"]),
-  weightKG: z.number().positive(),
-  ability: z.enum(["Beginner", "Intermediate", "Advanced"]),
-  touring: z.enum(["Yes", "No"]),
   features: z
     .array(z.enum(["Walk Mode", "Rear Entry", "Calf Adjustment"]))
     .default([]),
@@ -66,7 +67,7 @@ const linksSchema = z
 export const bootSchema = z.object({
   year: z.string(),
   gender: z.enum(["Male", "Female"]),
-  bootType: z.string(),
+  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Touring"]),
   brand: z.string(),
   model: z.string(),
   lastWidthMM: z.number().positive(),

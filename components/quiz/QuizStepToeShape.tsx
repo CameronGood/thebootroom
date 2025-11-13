@@ -29,9 +29,9 @@ export default function QuizStepToeShape({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">What shape are your toes?</h2>
+      <h2 className="text-2xl font-bold mb-4">Toe Box</h2>
       <p className="text-gray-600 mb-6">
-        Select the shape that best matches your toes.
+        Select the photo that best matches the shape of your toes.
       </p>
       <div className="space-y-4">
         <button

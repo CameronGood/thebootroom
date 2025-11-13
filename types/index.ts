@@ -4,11 +4,11 @@ export type Gender = "Male" | "Female";
 export type ToeShape = "Round" | "Square" | "Angled";
 export type Volume = "Low" | "Medium" | "High";
 export type Ability = "Beginner" | "Intermediate" | "Advanced";
-export type Touring = "Yes" | "No";
 export type Feature = "Walk Mode" | "Rear Entry" | "Calf Adjustment";
 export type ShoeSizeSystem = "UK" | "US" | "EU";
 export type WidthCategory = "Narrow" | "Average" | "Wide";
 export type Region = "UK" | "US" | "EU";
+export type BootType = "Standard" | "Freestyle" | "Hybrid" | "Touring";
 
 export interface AffiliateLink {
   store: string; // e.g., "Ellis Brigham"
@@ -19,15 +19,16 @@ export interface AffiliateLink {
 
 export interface QuizAnswers {
   gender: Gender;
+  bootType: BootType; // Single boot type selection
+  ability: Ability;
+  weightKG: number;
   footLengthMM?: { left: number; right: number };
   shoeSize?: { system: ShoeSizeSystem; value: number };
   footWidth?: { left?: number; right?: number } | { category?: WidthCategory };
   toeShape: ToeShape;
   instepHeight: Volume;
+  ankleVolume: Volume;
   calfVolume: Volume;
-  weightKG: number;
-  ability: Ability;
-  touring: Touring;
   features: Feature[];
 }
 
@@ -36,7 +37,7 @@ export interface BootSummary {
   brand: string;
   model: string;
   flex: number;
-  bootType?: string;
+  bootType?: BootType; // String: "Standard" | "Freestyle" | "Hybrid" | "Touring"
   lastWidthMM?: number;
   imageUrl?: string;
   affiliateUrl?: string; // Legacy single URL (for backwards compatibility)
@@ -60,7 +61,7 @@ export interface User {
 export interface Boot {
   year: string; // e.g., "25/26"
   gender: Gender;
-  bootType: string;
+  bootType: BootType; // String: "Standard" | "Freestyle" | "Hybrid" | "Touring"
   brand: string;
   model: string;
   lastWidthMM: number;

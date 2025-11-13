@@ -39,8 +39,9 @@ User Profile:
     }
 - Toe Shape: ${answers.toeShape}
 - Instep Height: ${answers.instepHeight}
+- Ankle Volume: ${answers.ankleVolume}
 - Calf Volume: ${answers.calfVolume}
-- Touring: ${answers.touring}
+- Boot Type: ${answers.bootType}
 - Features: ${answers.features.join(", ") || "None"}
 `;
 

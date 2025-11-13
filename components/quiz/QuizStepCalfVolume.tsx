@@ -29,10 +29,9 @@ export default function QuizStepCalfVolume({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">What is your calf volume?</h2>
+      <h2 className="text-2xl font-bold mb-4">Calf</h2>
       <p className="text-gray-600 mb-6">
-        The calf is the upper section of your leg that sits inside the top of
-        the boot.
+        Select the photo that best matches your calf / lower leg.
       </p>
       <div className="space-y-4">
         <button

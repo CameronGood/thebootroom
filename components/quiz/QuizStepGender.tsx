@@ -23,9 +23,9 @@ export default function QuizStepGender({ value, onNext, onChange }: Props) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Select Gender</h2>
+      <h2 className="text-2xl font-bold mb-4">Anatomy</h2>
       <p className="text-gray-600 mb-6">
-        This helps us filter boots that are designed for your anatomy.
+        Select the anatomy that best matches your lower leg and foot shape.
       </p>
       <div className="space-y-4">
         <button

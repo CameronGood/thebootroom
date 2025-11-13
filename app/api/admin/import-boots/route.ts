@@ -423,10 +423,51 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // Parse bootType as string
+        const bootTypeStr = (
+          row.bootType ||
+          row["Boot Type"] ||
+          row["boot type"] ||
+          row.boottype ||
+          ""
+        )
+          .toString()
+          .trim();
+
+        // Normalize bootType to match enum values
+        const normalizeBootType = (value: string): string | null => {
+          if (!value) return null;
+          const normalized = value.trim();
+          // Try exact match first
+          if (["Standard", "Freestyle", "Hybrid", "Touring"].includes(normalized)) {
+            return normalized;
+          }
+          // Try case-insensitive match
+          const lower = normalized.toLowerCase();
+          if (lower === "standard" || lower === "all-mountain") return "Standard";
+          if (lower === "freestyle") return "Freestyle";
+          if (lower === "hybrid") return "Hybrid";
+          if (lower === "touring") return "Touring";
+          // Try capitalizing first letter
+          const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+          if (["Standard", "Freestyle", "Hybrid", "Touring"].includes(capitalized)) {
+            return capitalized;
+          }
+          return null;
+        };
+
+        const bootType = normalizeBootType(bootTypeStr);
+        if (!bootType) {
+          errors.push(
+            `Row ${i + 2}: Invalid bootType (must be "Standard", "Freestyle", "Hybrid", or "Touring"). Got: "${bootTypeStr}"`
+          );
+          continue;
+        }
+
         const bootData = {
           year: (row.year || "").trim(),
           gender: gender as "Male" | "Female",
-          bootType: (row.bootType || "").trim(),
+          bootType: bootType as "Standard" | "Freestyle" | "Hybrid" | "Touring",
           brand: (row.brand || "").trim(),
           model: (row.model || "").trim(),
           lastWidthMM,

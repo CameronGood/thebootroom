@@ -16,6 +16,10 @@ export async function POST(request: NextRequest) {
     // Debug: Log the raw body before validation
     console.log("\n=== API MATCH REQUEST DEBUG ===");
     console.log("Raw body received:", JSON.stringify(body, null, 2));
+    console.log("body.answers.features:", body.answers?.features);
+    console.log("body.answers.features type:", typeof body.answers?.features);
+    console.log("body.answers.features is array?", Array.isArray(body.answers?.features));
+    console.log("body.answers.features includes 'Rear Entry'?", body.answers?.features?.includes("Rear Entry"));
     console.log("body.answers.footWidth:", body.answers?.footWidth);
     console.log("body.answers.footWidth type:", typeof body.answers?.footWidth);
     if (body.answers?.footWidth) {
@@ -28,6 +32,10 @@ export async function POST(request: NextRequest) {
 
     // Debug: Log after validation
     console.log("\n=== AFTER VALIDATION ===");
+    console.log("validated.answers.features:", validated.answers.features);
+    console.log("validated.answers.features type:", typeof validated.answers.features);
+    console.log("validated.answers.features is array?", Array.isArray(validated.answers.features));
+    console.log("validated.answers.features includes 'Rear Entry'?", validated.answers.features.includes("Rear Entry"));
     console.log("validated.answers.footWidth:", validated.answers.footWidth);
     console.log("========================\n");
 

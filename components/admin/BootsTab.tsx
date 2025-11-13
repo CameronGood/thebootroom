@@ -61,8 +61,22 @@ export default function BootsTab() {
   }, [boots]);
 
   const uniqueBootTypes = useMemo(() => {
-    const types = [...new Set(boots.map((b) => b.bootType))].sort();
-    return types;
+    const types = new Set<string>();
+    boots.forEach((boot) => {
+      if (boot.bootType) {
+        // Handle both string and object formats (for backwards compatibility)
+        if (typeof boot.bootType === "string") {
+          types.add(boot.bootType);
+        } else if (typeof boot.bootType === "object") {
+          // Legacy format: convert object to strings
+          if (boot.bootType.standard) types.add("Standard");
+          if (boot.bootType.freestyle) types.add("Freestyle");
+          if (boot.bootType.hybrid) types.add("Hybrid");
+          if (boot.bootType.touring) types.add("Touring");
+        }
+      }
+    });
+    return Array.from(types).sort();
   }, [boots]);
 
   // Filter and sort boots
@@ -71,10 +85,24 @@ export default function BootsTab() {
       // Search filter
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
+        // Convert bootType to string for searching
+        const bootTypeStr =
+          typeof boot.bootType === "string"
+            ? boot.bootType
+            : typeof boot.bootType === "object" && boot.bootType
+              ? [
+                  boot.bootType.standard ? "Standard" : "",
+                  boot.bootType.freestyle ? "Freestyle" : "",
+                  boot.bootType.hybrid ? "Hybrid" : "",
+                  boot.bootType.touring ? "Touring" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+              : "";
         const matchesSearch =
           boot.brand.toLowerCase().includes(searchLower) ||
           boot.model.toLowerCase().includes(searchLower) ||
-          boot.bootType.toLowerCase().includes(searchLower) ||
+          bootTypeStr.toLowerCase().includes(searchLower) ||
           boot.year.toLowerCase().includes(searchLower);
         if (!matchesSearch) return false;
       }
@@ -85,8 +113,17 @@ export default function BootsTab() {
       }
 
       // Boot type filter
-      if (filterBootType !== "all" && boot.bootType !== filterBootType) {
-        return false;
+      if (filterBootType !== "all") {
+        const bootTypeMatches =
+          typeof boot.bootType === "string"
+            ? boot.bootType === filterBootType
+            : typeof boot.bootType === "object" && boot.bootType
+              ? (filterBootType === "Standard" && boot.bootType.standard) ||
+                (filterBootType === "Freestyle" && boot.bootType.freestyle) ||
+                (filterBootType === "Hybrid" && boot.bootType.hybrid) ||
+                (filterBootType === "Touring" && boot.bootType.touring)
+              : false;
+        if (!bootTypeMatches) return false;
       }
 
       // Brand filter
@@ -252,9 +289,12 @@ export default function BootsTab() {
           <p className="text-gray-600 text-xs">
             Example:{" "}
             <code className="bg-white px-1 rounded">
-              25/26,Male,All-Mountain,Salomon,Shift Alpha BOA
+              25/26,Male,Standard,Salomon,Shift Alpha BOA
               130,98,130,Low,Low,Low,Square,No,No,No,https://...,https://...,all-mountain;performance
             </code>
+          </p>
+          <p className="text-gray-600 text-xs mt-1">
+            Note: bootType accepts: Standard, Freestyle, Hybrid, or Touring
           </p>
         </div>
         <textarea
@@ -481,7 +521,18 @@ export default function BootsTab() {
                     {boot.gender}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {boot.bootType}
+                    {typeof boot.bootType === "string"
+                      ? boot.bootType
+                      : typeof boot.bootType === "object" && boot.bootType
+                        ? [
+                            boot.bootType.standard ? "Standard" : "",
+                            boot.bootType.freestyle ? "Freestyle" : "",
+                            boot.bootType.hybrid ? "Hybrid" : "",
+                            boot.bootType.touring ? "Touring" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(", ") || "—"
+                        : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
                     {boot.flex}

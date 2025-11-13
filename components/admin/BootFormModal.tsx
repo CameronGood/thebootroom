@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Boot, Region, AffiliateLink } from "@/types";
+import { Boot, Region, AffiliateLink, BootType } from "@/types";
 
 interface Props {
   boot: (Boot & { bootId: string }) | null;
@@ -21,7 +21,7 @@ export default function BootFormModal({
   const [formData, setFormData] = useState({
     year: "",
     gender: "Male" as "Male" | "Female",
-    bootType: "",
+    bootType: "Standard" as BootType,
     brand: "",
     model: "",
     lastWidthMM: "",
@@ -49,7 +49,7 @@ export default function BootFormModal({
       setFormData({
         year: boot.year || "",
         gender: boot.gender,
-        bootType: boot.bootType || "",
+        bootType: boot.bootType || "Standard",
         brand: boot.brand || "",
         model: boot.model || "",
         lastWidthMM: boot.lastWidthMM?.toString() || "",
@@ -71,7 +71,7 @@ export default function BootFormModal({
       setFormData({
         year: "",
         gender: "Male",
-        bootType: "",
+        bootType: "Standard",
         brand: "",
         model: "",
         lastWidthMM: "",
@@ -226,19 +226,27 @@ export default function BootFormModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label htmlFor="bootType" className="block text-sm font-medium mb-1 text-black">
                 Boot Type
               </label>
-              <input
-                type="text"
+              <select
+                id="bootType"
+                name="bootType"
                 value={formData.bootType}
                 onChange={(e) =>
-                  setFormData({ ...formData, bootType: e.target.value })
+                  setFormData({
+                    ...formData,
+                    bootType: e.target.value as BootType,
+                  })
                 }
-                className="w-full p-2 border rounded-lg"
-                placeholder="All-Mountain"
+                className="w-full p-2 border border-black rounded-lg text-black"
                 required
-              />
+              >
+                <option value="Standard">Standard</option>
+                <option value="Freestyle">Freestyle</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Touring">Touring</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Brand</label>

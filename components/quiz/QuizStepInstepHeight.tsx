@@ -29,9 +29,9 @@ export default function QuizStepInstepHeight({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">What is your instep height?</h2>
+      <h2 className="text-2xl font-bold mb-4">Instep</h2>
       <p className="text-gray-600 mb-6">
-        The instep is the top part of your foot, between your toes and ankle.
+        Select the photo that best matches your instep.
       </p>
       <div className="space-y-4">
         <button

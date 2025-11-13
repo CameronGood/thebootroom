@@ -20,10 +20,8 @@ export default function QuizStepWeight({ value, onNext, onBack }: Props) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">What is your weight?</h2>
-      <p className="text-gray-600 mb-6">
-        Your weight helps us determine the appropriate boot flex for you.
-      </p>
+      <h2 className="text-2xl font-bold mb-4">Weight</h2>
+      <p className="text-gray-600 mb-6">Please input your weight.</p>
       <div className="mb-6">
         <label htmlFor="weightKG" className="block text-sm font-medium mb-2">
           Weight (kg)

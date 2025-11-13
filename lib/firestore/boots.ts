@@ -13,12 +13,35 @@ import {
 import { firestore } from "../firebase";
 import { Boot, Gender } from "../../types";
 
+// Helper function to remove undefined values from objects (Firestore doesn't accept undefined)
+function removeUndefined(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
+  }
+  
+  if (typeof obj === "object" && obj.constructor === Object) {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = removeUndefined(value);
+      }
+    }
+    return cleaned;
+  }
+  
+  return obj;
+}
+
 export async function listBoots(filters?: {
   gender?: Gender;
   walkMode?: boolean;
   rearEntry?: boolean;
   calfAdjustment?: boolean;
-}): Promise<Boot[]> {
+}): Promise<(Boot & { bootId: string })[]> {
   let q = query(collection(firestore, "boots"));
 
   if (filters?.gender) {
@@ -72,15 +95,14 @@ export async function upsertBoot(
   const existingDoc = await getDoc(bootRef);
   const now = serverTimestamp();
 
-  await setDoc(
-    bootRef,
-    {
-      ...bootDataWithoutId,
-      createdAt: existingDoc.exists() ? existingDoc.data().createdAt : now,
-      updatedAt: now,
-    },
-    { merge: true }
-  );
+  // Clean the boot data to remove undefined values before saving
+  const cleanedBootData = removeUndefined({
+    ...bootDataWithoutId,
+    createdAt: existingDoc.exists() ? existingDoc.data().createdAt : now,
+    updatedAt: now,
+  });
+
+  await setDoc(bootRef, cleanedBootData, { merge: true });
 
   return bootId;
 }

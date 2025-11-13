@@ -25,10 +25,11 @@ import QuizStepInstepHeight from "@/components/quiz/QuizStepInstepHeight";
 import QuizStepCalfVolume from "@/components/quiz/QuizStepCalfVolume";
 import QuizStepWeight from "@/components/quiz/QuizStepWeight";
 import QuizStepAbility from "@/components/quiz/QuizStepAbility";
-import QuizStepTouring from "@/components/quiz/QuizStepTouring";
+import QuizStepBootType from "@/components/quiz/QuizStepBootType";
+import QuizStepAnkleVolume from "@/components/quiz/QuizStepAnkleVolume";
 import QuizStepFeatures from "@/components/quiz/QuizStepFeatures";
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 export default function QuizPage() {
   const router = useRouter();
@@ -144,14 +145,39 @@ export default function QuizPage() {
   }, [user, searchParams]);
 
   const updateAnswers = (stepAnswers: Partial<QuizAnswers>) => {
-    const newAnswers = { ...answers, ...stepAnswers };
+    const newAnswers = { ...answers };
+    
+    // Update with new values, and delete keys that are explicitly set to undefined
+    Object.keys(stepAnswers).forEach((key) => {
+      const value = stepAnswers[key as keyof QuizAnswers];
+      if (value === undefined) {
+        delete newAnswers[key as keyof QuizAnswers];
+      } else {
+        (newAnswers as any)[key] = value;
+      }
+    });
+    
+    // Log features specifically when they're updated
+    if (stepAnswers.features !== undefined) {
+      console.log(`[QuizPage] updateAnswers - Features updated:`, stepAnswers.features);
+      console.log(`[QuizPage] updateAnswers - Full answers after update:`, { ...newAnswers, features: stepAnswers.features });
+    }
+    
     setAnswers(newAnswers);
 
     // Autosave to Firestore
     if (sessionId) {
+      // Ensure features is always an array when saving
+      const answersToSave = {
+        ...newAnswers,
+        features: (newAnswers as any).features || [],
+      } as QuizAnswers;
+      
+      console.log(`[QuizPage] updateAnswers - Saving to Firestore with features:`, answersToSave.features);
+      
       createOrUpdateSession(sessionId, {
         userId: user?.uid,
-        answers: newAnswers as QuizAnswers,
+        answers: answersToSave,
       });
     }
   };
@@ -168,24 +194,29 @@ export default function QuizPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmitWithAnswers = async (answersToSubmit: Partial<QuizAnswers> = answers) => {
     if (!sessionId) return;
 
     // Ensure features is always an array
     const completeAnswers: QuizAnswers = {
-      ...answers,
-      features: answers.features || [],
+      ...answersToSubmit,
+      features: answersToSubmit.features || [],
     } as QuizAnswers;
+
+    console.log(`[QuizPage] handleSubmitWithAnswers - Complete answers being sent:`, completeAnswers);
+    console.log(`[QuizPage] handleSubmitWithAnswers - Features array:`, completeAnswers.features);
+    console.log(`[QuizPage] handleSubmitWithAnswers - Features includes 'Rear Entry'?`, completeAnswers.features.includes("Rear Entry"));
 
     // Validate required fields before submitting
     if (
       !completeAnswers.gender ||
       !completeAnswers.toeShape ||
       !completeAnswers.instepHeight ||
+      !completeAnswers.ankleVolume ||
       !completeAnswers.calfVolume ||
       !completeAnswers.weightKG ||
       !completeAnswers.ability ||
-      !completeAnswers.touring
+      !completeAnswers.bootType
     ) {
       toast.error("Please complete all required fields");
       return;
@@ -193,7 +224,8 @@ export default function QuizPage() {
 
     setLoading(true);
     try {
-      console.log("Submitting quiz with answers:", completeAnswers);
+      console.log("[QuizPage] Submitting quiz with answers:", completeAnswers);
+      console.log("[QuizPage] Features in request body:", completeAnswers.features);
       const response = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -238,6 +270,7 @@ export default function QuizPage() {
   const renderStep = () => {
     switch (currentStep) {
       case 1:
+        // Anatomy (Gender)
         return (
           <QuizStepGender
             value={answers.gender}
@@ -249,76 +282,20 @@ export default function QuizPage() {
           />
         );
       case 2:
+        // Ski Boot Type
         return (
-          <QuizStepFootLength
-            footLengthMM={answers.footLengthMM}
-            shoeSize={answers.shoeSize}
+          <QuizStepBootType
+            value={answers.bootType}
+            onChange={(value) => updateAnswers({ bootType: value })}
             onNext={(value) => {
-              updateAnswers(value);
+              updateAnswers({ bootType: value });
               handleNext();
             }}
             onBack={handleBack}
           />
         );
       case 3:
-        return (
-          <QuizStepFootWidth
-            footWidth={answers.footWidth}
-            onNext={(value) => {
-              updateAnswers({ footWidth: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 4:
-        return (
-          <QuizStepToeShape
-            value={answers.toeShape}
-            onChange={(value) => updateAnswers({ toeShape: value })}
-            onNext={(value) => {
-              updateAnswers({ toeShape: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 5:
-        return (
-          <QuizStepInstepHeight
-            value={answers.instepHeight}
-            onChange={(value) => updateAnswers({ instepHeight: value })}
-            onNext={(value) => {
-              updateAnswers({ instepHeight: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 6:
-        return (
-          <QuizStepCalfVolume
-            value={answers.calfVolume}
-            onChange={(value) => updateAnswers({ calfVolume: value })}
-            onNext={(value) => {
-              updateAnswers({ calfVolume: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 7:
-        return (
-          <QuizStepWeight
-            value={answers.weightKG}
-            onNext={(value) => {
-              updateAnswers({ weightKG: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 8:
+        // Skiing Ability
         return (
           <QuizStepAbility
             value={answers.ability}
@@ -330,25 +307,121 @@ export default function QuizPage() {
             onBack={handleBack}
           />
         );
-      case 9:
+      case 4:
+        // Weight
         return (
-          <QuizStepTouring
-            value={answers.touring}
-            onChange={(value) => updateAnswers({ touring: value })}
+          <QuizStepWeight
+            value={answers.weightKG}
             onNext={(value) => {
-              updateAnswers({ touring: value });
+              updateAnswers({ weightKG: value });
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 5:
+        // Foot Length
+        return (
+          <QuizStepFootLength
+            footLengthMM={answers.footLengthMM}
+            shoeSize={answers.shoeSize}
+            onNext={(value) => {
+              updateAnswers(value);
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 6:
+        // Foot Width
+        return (
+          <QuizStepFootWidth
+            footWidth={answers.footWidth}
+            onNext={(value) => {
+              updateAnswers({ footWidth: value });
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 7:
+        // Toe Box
+        return (
+          <QuizStepToeShape
+            value={answers.toeShape}
+            onChange={(value) => updateAnswers({ toeShape: value })}
+            onNext={(value) => {
+              updateAnswers({ toeShape: value });
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 8:
+        // Instep
+        return (
+          <QuizStepInstepHeight
+            value={answers.instepHeight}
+            onChange={(value) => updateAnswers({ instepHeight: value })}
+            onNext={(value) => {
+              updateAnswers({ instepHeight: value });
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 9:
+        // Ankle
+        return (
+          <QuizStepAnkleVolume
+            value={answers.ankleVolume}
+            onChange={(value) => updateAnswers({ ankleVolume: value })}
+            onNext={(value) => {
+              updateAnswers({ ankleVolume: value });
               handleNext();
             }}
             onBack={handleBack}
           />
         );
       case 10:
+        // Calf
+        return (
+          <QuizStepCalfVolume
+            value={answers.calfVolume}
+            onChange={(value) => updateAnswers({ calfVolume: value })}
+            onNext={(value) => {
+              updateAnswers({ calfVolume: value });
+              handleNext();
+            }}
+            onBack={handleBack}
+          />
+        );
+      case 11:
+        // Additional Features
         return (
           <QuizStepFeatures
             value={answers.features || []}
             onNext={(value) => {
-              updateAnswers({ features: value });
-              handleSubmit();
+              console.log(`[QuizPage] Features received from QuizStepFeatures:`, value);
+              // Update answers first, then submit with the features value directly
+              const updatedAnswers = { ...answers, features: value };
+              setAnswers(updatedAnswers);
+              
+              // Autosave to Firestore immediately
+              if (sessionId) {
+                const answersToSave = {
+                  ...updatedAnswers,
+                  features: value || [],
+                } as QuizAnswers;
+                console.log(`[QuizPage] onNext - Saving to Firestore with features:`, answersToSave.features);
+                createOrUpdateSession(sessionId, {
+                  userId: user?.uid,
+                  answers: answersToSave,
+                });
+              }
+              
+              // Submit with the updated answers including features
+              handleSubmitWithAnswers(updatedAnswers);
             }}
             onBack={handleBack}
             loading={loading}

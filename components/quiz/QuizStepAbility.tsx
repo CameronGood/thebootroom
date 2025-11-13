@@ -29,9 +29,9 @@ export default function QuizStepAbility({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">What is your skiing ability?</h2>
+      <h2 className="text-2xl font-bold mb-4">Skiing Ability</h2>
       <p className="text-gray-600 mb-6">
-        This helps us recommend the right boot flex for your skill level.
+        Select an option that best matches your ability.
       </p>
       <div className="space-y-4">
         <button

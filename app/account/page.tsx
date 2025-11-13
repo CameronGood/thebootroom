@@ -270,9 +270,9 @@ export default function AccountPage() {
                   // Weight
                   parts.push(`${answers.weightKG}kg`);
 
-                  // Touring
-                  if (answers.touring === "Yes") {
-                    parts.push("Touring");
+                  // Boot Type
+                  if (answers.bootType) {
+                    parts.push(answers.bootType);
                   }
 
                   // Features
@@ -311,7 +311,13 @@ export default function AccountPage() {
                                   ? answers.footWidth.category + " width"
                                   : "left" in answers.footWidth ||
                                       "right" in answers.footWidth
-                                    ? `${Math.max(answers.footWidth.left || 0, answers.footWidth.right || 0)}mm width`
+                                    ? (() => {
+                                        const left = answers.footWidth.left || 0;
+                                        const right = answers.footWidth.right || 0;
+                                        const validWidths = [left, right].filter((w) => w > 0);
+                                        const minWidth = validWidths.length > 0 ? Math.min(...validWidths) : 0;
+                                        return minWidth > 0 ? `${minWidth}mm width` : "";
+                                      })()
                                     : ""}
                               </>
                             )}

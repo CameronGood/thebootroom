@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Feature } from "@/types";
 import Spinner from "@/components/Spinner";
 
@@ -19,15 +19,25 @@ export default function QuizStepFeatures({
 }: Props) {
   const [features, setFeatures] = useState<Feature[]>(value || []);
 
-  const toggleFeature = (feature: Feature) => {
-    if (features.includes(feature)) {
-      setFeatures(features.filter((f) => f !== feature));
-    } else {
-      setFeatures([...features, feature]);
+  // Sync state with prop value when it changes (e.g., when editing a session)
+  useEffect(() => {
+    console.log(`[QuizStepFeatures] useEffect - value prop changed:`, value);
+    if (value && Array.isArray(value)) {
+      setFeatures(value);
+      console.log(`[QuizStepFeatures] useEffect - Updated features state to:`, value);
     }
+  }, [value]);
+
+  const toggleFeature = (feature: Feature) => {
+    const newFeatures = features.includes(feature)
+      ? features.filter((f) => f !== feature)
+      : [...features, feature];
+    setFeatures(newFeatures);
+    console.log(`[QuizStepFeatures] Feature toggled: ${feature}, Selected features:`, newFeatures);
   };
 
   const handleSubmit = () => {
+    console.log(`[QuizStepFeatures] Submitting with features:`, features);
     onNext(features);
   };
 
