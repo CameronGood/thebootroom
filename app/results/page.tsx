@@ -417,7 +417,7 @@ export default function ResultsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-xl">
-                    Get Detailed AI Fitting Breakdown
+                    Get Detailed Fitting Breakdown
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -426,17 +426,98 @@ export default function ResultsPage() {
                     matches your profile. Includes detailed fit characteristics,
                     feature alignment, and practical fitting advice.
                   </p>
-                  <Button
-                    onClick={handleGetBreakdown}
-                    size="lg"
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Get Breakdown – £2.99
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={handleGetBreakdown}
+                      size="lg"
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Get Breakdown
+                    </Button>
+                    <span className="text-lg font-semibold text-gray-700">
+                      £2.99
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             )}
+          </motion.div>
+
+          {/* Custom Fitting Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Custom Fitting</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-700 text-lg">
+                  Fine-tune your boots for the perfect fit.
+                </p>
+                <p className="text-gray-600">
+                  Once you've picked your boots, a quick visit to a local ski
+                  shop can make a big difference. A boot fitter can:
+                </p>
+                <ul className="space-y-3 text-gray-700">
+                  <li className="flex items-start gap-3">
+                    <span className="text-xl">🔥</span>
+                    <span>
+                      <strong>Heat-mould the liners</strong> for a glove-like
+                      feel.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-xl">🛠</span>
+                    <span>
+                      <strong>Adjust or stretch the shell</strong> to relieve
+                      pressure points.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-xl">🎯</span>
+                    <span>
+                      <strong>Add custom footbeds</strong> to improve comfort,
+                      balance, and control.
+                    </span>
+                  </li>
+                </ul>
+                <p className="text-gray-600 italic">
+                  Even the right boot straight out of the box can feel better
+                  after a little personal tuning.
+                </p>
+                <p className="text-gray-700 font-medium">
+                  A custom fit = better performance, less fatigue, and happier
+                  feet.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Affiliate Disclosure Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-8"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Affiliate Disclosure</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700">
+                  Some links on this site are affiliate links, meaning The Boot
+                  Room may earn a small commission if you purchase through them
+                  — at no extra cost to you. We only recommend products we
+                  genuinely believe in.
+                </p>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </main>

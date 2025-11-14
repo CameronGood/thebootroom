@@ -61,12 +61,14 @@ export default function QuizStepFootLength({
         <p className="text-gray-600 mb-4">
           Measure each foot from heel to longest toe.
         </p>
-        <button
-          onClick={() => setShowCard(!showCard)}
-          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 mb-4 inline-flex items-center gap-2"
-        >
-          How to measure <span className="font-semibold">?</span>
-        </button>
+        <div className="flex gap-3 mb-4 items-center">
+          <button
+            onClick={() => setShowCard(!showCard)}
+            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
+          >
+            How to measure <span className="font-semibold">?</span>
+          </button>
+        </div>
       </div>
 
       <div className="mb-6">

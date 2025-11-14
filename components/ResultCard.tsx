@@ -176,41 +176,50 @@ export default function ResultCard({
               {availableLinks
                 .filter((link) => link.available !== false)
                 .map((link, i) => (
-                  <motion.a
-                    key={i}
-                    href={`/api/redirect?bootId=${boot.bootId}&region=${currentRegion}&vendor=${encodeURIComponent(link.store)}${sessionId ? `&sessionId=${sessionId}` : ""}${user ? `&userId=${user.uid}` : ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleBuy(link.store);
-                    }}
-                    whileHover={{ scale: 1.02 }}
-                    className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors w-full"
-                  >
-                    {link.logo && (
-                      <img
-                        src={link.logo}
-                        alt={link.store}
-                        className="w-5 h-5 object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    )}
-                    <span className="font-medium">Buy from {link.store}</span>
-                  </motion.a>
+                  <div key={i} className="w-full">
+                    <motion.a
+                      href={`/api/redirect?bootId=${boot.bootId}&region=${currentRegion}&vendor=${encodeURIComponent(link.store)}${sessionId ? `&sessionId=${sessionId}` : ""}${user ? `&userId=${user.uid}` : ""}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleBuy(link.store);
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      className="flex items-center justify-center gap-2 p-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors w-full"
+                    >
+                      {link.logo && (
+                        <img
+                          src={link.logo}
+                          alt={link.store}
+                          className="w-5 h-5 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                      <span className="font-medium">Buy from {link.store}</span>
+                    </motion.a>
+                    <p className="text-xs text-gray-500 text-center mt-1">
+                      Affiliate Link. Help support TBR 🤙
+                    </p>
+                  </div>
                 ))}
             </div>
           ) : hasLegacyUrl ? (
             // Legacy single affiliate URL
-            <Button
-              onClick={() => handleBuy(undefined, boot.affiliateUrl)}
-              className="w-full"
-              size="lg"
-            >
-              Buy Now
-            </Button>
+            <div className="w-full">
+              <Button
+                onClick={() => handleBuy(undefined, boot.affiliateUrl)}
+                className="w-full"
+                size="lg"
+              >
+                Buy Now
+              </Button>
+              <p className="text-xs text-gray-500 text-center mt-1">
+                Affiliate Link. Help support TBR 🤙
+              </p>
+            </div>
           ) : (
             // No affiliate links available
             <Button disabled className="w-full" size="lg">
