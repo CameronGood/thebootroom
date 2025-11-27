@@ -4,49 +4,32 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Home, User, LogOut, LogIn, Play } from "lucide-react";
+import { User, LogOut, LogIn } from "lucide-react";
 
 export default function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="w-full px-4 sm:px-6 lg:px-8">
+    <header className="w-full px-[50px]">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="max-w-7xl mx-auto"
+        className="w-full"
       >
-        <div className="bg-white/90 backdrop-blur-md shadow-lg border border-gray-200 rounded-full px-4 sm:px-6 py-3 flex justify-between items-center">
+        <div className="bg-[#2B2D30]/60 backdrop-blur-md shadow-lg border border-[#F5E4D0]/20 rounded-md px-4 sm:px-6 py-3 flex justify-between items-center">
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Link href="/" className="flex items-center gap-2">
-              <Home className="w-5 h-5 text-blue-600" />
-              <span className="text-xl font-bold text-blue-600 hidden sm:inline">
+              <span className="text-xl font-bold text-[#F5E4D0] hidden sm:inline">
                 TheBootRoom
               </span>
-              <span className="text-xl font-bold text-blue-600 sm:hidden">
+              <span className="text-xl font-bold text-[#F5E4D0] sm:hidden">
                 TBR
               </span>
             </Link>
           </motion.div>
 
           <nav className="flex items-center gap-2 sm:gap-3">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
-              >
-                <Link href="/quiz" className="flex items-center gap-2">
-                  <Play className="w-4 h-4" />
-                  <span className="hidden sm:inline font-medium">
-                    Start Fitting
-                  </span>
-                  <span className="sm:hidden font-medium">Quiz</span>
-                </Link>
-              </Button>
-            </motion.div>
 
             {user ? (
               <>
@@ -58,12 +41,12 @@ export default function Header() {
                     asChild
                     variant="ghost"
                     size="sm"
-                    className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
+                    className="rounded-full text-[#F4F4F4] hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10"
                   >
                     <Link href="/account" className="flex items-center gap-2">
                       <User className="w-4 h-4" />
                       <span className="hidden sm:inline font-medium">
-                        Account
+                        ACCOUNT
                       </span>
                     </Link>
                   </Button>
@@ -76,11 +59,11 @@ export default function Header() {
                     onClick={logout}
                     variant="ghost"
                     size="sm"
-                    className="rounded-full text-gray-900 hover:text-red-600 hover:bg-gray-100"
+                    className="rounded-full text-[#F4F4F4] hover:text-red-400 hover:bg-red-400/10"
                   >
                     <LogOut className="w-4 h-4" />
                     <span className="hidden sm:inline ml-2 font-medium">
-                      Logout
+                      LOGOUT
                     </span>
                   </Button>
                 </motion.div>
@@ -94,7 +77,7 @@ export default function Header() {
                   asChild
                   variant="ghost"
                   size="sm"
-                  className="rounded-full text-gray-900 hover:text-blue-600 hover:bg-gray-100"
+                  className="rounded-full text-[#F4F4F4] hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10"
                 >
                   <Link href="/account" className="flex items-center gap-2">
                     <LogIn className="w-4 h-4" />

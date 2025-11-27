@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
   // Handle the event
   if (event.type === "payment_intent.succeeded") {
     const paymentIntent = event.data.object as any;
-    const { userId, quizId } = paymentIntent.metadata;
+    const { userId, quizId, selectedModels: selectedModelsStr } = paymentIntent.metadata;
 
     if (!userId || !quizId) {
       console.error("Missing userId or quizId in payment intent metadata");
@@ -73,10 +73,39 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Parse selected models if provided
+      let selectedModels: Record<string, number[]> | undefined;
+      if (selectedModelsStr) {
+        try {
+          selectedModels = JSON.parse(selectedModelsStr);
+        } catch (e) {
+          console.error("Failed to parse selectedModels:", e);
+        }
+      }
+
+      // Filter boots to only include selected models if provided
+      let bootsToInclude = session.recommendedBoots;
+      if (selectedModels && Object.keys(selectedModels).length > 0) {
+        bootsToInclude = session.recommendedBoots.map(boot => {
+          const selectedIndices = selectedModels[boot.bootId];
+          if (selectedIndices && boot.models && boot.models.length > 0) {
+            // Filter models to only include selected ones
+            const filteredModels = boot.models.filter((_, index) => 
+              selectedIndices.includes(index)
+            );
+            return {
+              ...boot,
+              models: filteredModels,
+            };
+          }
+          return boot;
+        });
+      }
+
       // Generate breakdown using GPT-4o
       const sections = await generateBreakdown({
         answers: session.answers,
-        boots: session.recommendedBoots,
+        boots: bootsToInclude,
         language: "en-GB",
       });
 

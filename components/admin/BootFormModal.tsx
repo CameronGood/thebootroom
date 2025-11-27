@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Boot, Region, AffiliateLink, BootType } from "@/types";
+import { Boot, Region, AffiliateLink, BootType, Volume, WidthCategory } from "@/types";
 
 interface Props {
   boot: (Boot & { bootId: string }) | null;
@@ -24,11 +24,11 @@ export default function BootFormModal({
     bootType: "Standard" as BootType,
     brand: "",
     model: "",
-    lastWidthMM: "",
+    bootWidth: "Average" as WidthCategory,
     flex: "",
-    instepHeight: "Low" as "Low" | "Medium" | "High",
-    ankleVolume: "Low" as "Low" | "Medium" | "High",
-    calfVolume: "Low" as "Low" | "Medium" | "High",
+    instepHeight: ["Low"] as Volume[],
+    ankleVolume: ["Low"] as Volume[],
+    calfVolume: ["Low"] as Volume[],
     toeBoxShape: "Round" as "Round" | "Square" | "Angled",
     calfAdjustment: false,
     walkMode: false,
@@ -52,11 +52,11 @@ export default function BootFormModal({
         bootType: boot.bootType || "Standard",
         brand: boot.brand || "",
         model: boot.model || "",
-        lastWidthMM: boot.lastWidthMM?.toString() || "",
+        bootWidth: boot.bootWidth || "Average",
         flex: boot.flex?.toString() || "",
-        instepHeight: boot.instepHeight,
-        ankleVolume: boot.ankleVolume,
-        calfVolume: boot.calfVolume,
+        instepHeight: Array.isArray(boot.instepHeight) ? boot.instepHeight : [boot.instepHeight],
+        ankleVolume: Array.isArray(boot.ankleVolume) ? boot.ankleVolume : [boot.ankleVolume],
+        calfVolume: Array.isArray(boot.calfVolume) ? boot.calfVolume : [boot.calfVolume],
         toeBoxShape: boot.toeBoxShape,
         calfAdjustment: boot.calfAdjustment || false,
         walkMode: boot.walkMode || false,
@@ -75,10 +75,11 @@ export default function BootFormModal({
         brand: "",
         model: "",
         lastWidthMM: "",
+        bootWidth: "Average",
         flex: "",
-        instepHeight: "Low",
-        ankleVolume: "Low",
-        calfVolume: "Low",
+        instepHeight: ["Low"],
+        ankleVolume: ["Low"],
+        calfVolume: ["Low"],
         toeBoxShape: "Round",
         calfAdjustment: false,
         walkMode: false,
@@ -123,6 +124,26 @@ export default function BootFormModal({
     }
   };
 
+  // Toggle multi-select for LAV fields
+  const toggleLAV = (field: "instepHeight" | "ankleVolume" | "calfVolume", value: Volume) => {
+    setFormData((prev) => {
+      const currentArray = prev[field] as Volume[];
+      const newArray = currentArray.includes(value)
+        ? currentArray.filter((v) => v !== value)
+        : [...currentArray, value];
+      // Ensure at least one value is selected
+      if (newArray.length === 0) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [field]: newArray,
+      };
+    });
+  };
+
+  const lavOptions: Volume[] = ["Low", "Average", "High"];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -136,9 +157,9 @@ export default function BootFormModal({
         bootType: formData.bootType,
         brand: formData.brand,
         model: formData.model,
-        lastWidthMM: parseFloat(formData.lastWidthMM),
-        flex: parseFloat(formData.flex),
-        instepHeight: formData.instepHeight,
+        bootWidth: formData.bootWidth,
+          flex: parseFloat(formData.flex),
+          instepHeight: formData.instepHeight,
         ankleVolume: formData.ankleVolume,
         calfVolume: formData.calfVolume,
         toeBoxShape: formData.toeBoxShape,
@@ -245,7 +266,7 @@ export default function BootFormModal({
                 <option value="Standard">Standard</option>
                 <option value="Freestyle">Freestyle</option>
                 <option value="Hybrid">Hybrid</option>
-                <option value="Touring">Touring</option>
+                <option value="Freeride">Freeride</option>
               </select>
             </div>
             <div>
@@ -274,20 +295,23 @@ export default function BootFormModal({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">
-                Last Width (mm)
+                Boot Width Category
               </label>
-              <input
-                type="number"
-                value={formData.lastWidthMM}
+              <select
+                value={formData.bootWidth}
                 onChange={(e) =>
-                  setFormData({ ...formData, lastWidthMM: e.target.value })
+                  setFormData({
+                    ...formData,
+                    bootWidth: e.target.value as WidthCategory,
+                  })
                 }
                 className="w-full p-2 border rounded-lg"
-                min="50"
-                max="150"
-                step="0.1"
                 required
-              />
+              >
+                <option value="Narrow">Narrow</option>
+                <option value="Average">Average</option>
+                <option value="Wide">Wide</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Flex</label>
@@ -304,66 +328,69 @@ export default function BootFormModal({
               />
             </div>
 
-            {/* Volume/Shape */}
+            {/* Volume/Shape - Multi-select */}
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Instep Height
+              <label className="block text-sm font-medium mb-2">
+                Instep Height (select all that apply)
               </label>
-              <select
-                value={formData.instepHeight}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    instepHeight: e.target.value as "Low" | "Medium" | "High",
-                  })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+              <div className="flex gap-2 flex-wrap">
+                {lavOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => toggleLAV("instepHeight", opt)}
+                    className={`px-4 py-2 rounded-lg border transition ${
+                      formData.instepHeight.includes(opt)
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Ankle Volume
+              <label className="block text-sm font-medium mb-2">
+                Ankle Volume (select all that apply)
               </label>
-              <select
-                value={formData.ankleVolume}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    ankleVolume: e.target.value as "Low" | "Medium" | "High",
-                  })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+              <div className="flex gap-2 flex-wrap">
+                {lavOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => toggleLAV("ankleVolume", opt)}
+                    className={`px-4 py-2 rounded-lg border transition ${
+                      formData.ankleVolume.includes(opt)
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Calf Volume
+              <label className="block text-sm font-medium mb-2">
+                Calf Volume (select all that apply)
               </label>
-              <select
-                value={formData.calfVolume}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    calfVolume: e.target.value as "Low" | "Medium" | "High",
-                  })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+              <div className="flex gap-2 flex-wrap">
+                {lavOptions.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => toggleLAV("calfVolume", opt)}
+                    className={`px-4 py-2 rounded-lg border transition ${
+                      formData.calfVolume.includes(opt)
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">

@@ -27,9 +27,7 @@ import QuizStepWeight from "@/components/quiz/QuizStepWeight";
 import QuizStepAbility from "@/components/quiz/QuizStepAbility";
 import QuizStepBootType from "@/components/quiz/QuizStepBootType";
 import QuizStepAnkleVolume from "@/components/quiz/QuizStepAnkleVolume";
-import QuizStepFeatures from "@/components/quiz/QuizStepFeatures";
-
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 10;
 
 export default function QuizPage() {
   const router = useRouter();
@@ -279,6 +277,8 @@ export default function QuizPage() {
               updateAnswers({ gender: value });
               handleNext();
             }}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 2:
@@ -292,6 +292,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 3:
@@ -305,6 +307,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 4:
@@ -317,6 +321,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 5:
@@ -330,6 +336,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 6:
@@ -342,6 +350,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 7:
@@ -355,6 +365,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 8:
@@ -390,41 +402,14 @@ export default function QuizPage() {
             value={answers.calfVolume}
             onChange={(value) => updateAnswers({ calfVolume: value })}
             onNext={(value) => {
-              updateAnswers({ calfVolume: value });
-              handleNext();
-            }}
-            onBack={handleBack}
-          />
-        );
-      case 11:
-        // Additional Features
-        return (
-          <QuizStepFeatures
-            value={answers.features || []}
-            onNext={(value) => {
-              console.log(`[QuizPage] Features received from QuizStepFeatures:`, value);
-              // Update answers first, then submit with the features value directly
-              const updatedAnswers = { ...answers, features: value };
-              setAnswers(updatedAnswers);
+              // Update answers with calf volume and ensure features is empty array
+              const updatedAnswers = { ...answers, calfVolume: value, features: [] };
+              updateAnswers({ calfVolume: value, features: [] });
               
-              // Autosave to Firestore immediately
-              if (sessionId) {
-                const answersToSave = {
-                  ...updatedAnswers,
-                  features: value || [],
-                } as QuizAnswers;
-                console.log(`[QuizPage] onNext - Saving to Firestore with features:`, answersToSave.features);
-                createOrUpdateSession(sessionId, {
-                  userId: user?.uid,
-                  answers: answersToSave,
-                });
-              }
-              
-              // Submit with the updated answers including features
+              // Submit directly after calf step
               handleSubmitWithAnswers(updatedAnswers);
             }}
             onBack={handleBack}
-            loading={loading}
           />
         );
       default:
@@ -438,18 +423,15 @@ export default function QuizPage() {
   if (loadingAnswers) {
     return (
       <div
-        className="min-h-screen flex flex-col bg-gray-50"
-        style={{ backgroundColor: "#f9fafb" }}
+        className="min-h-screen flex flex-col bg-[#040404]"
       >
         <div
-          className="sticky top-0 z-50 bg-gray-50 pt-4"
-          style={{ backgroundColor: "#f9fafb" }}
+          className="sticky top-0 z-50 bg-[#040404] pt-4"
         >
           <Header />
         </div>
         <main
-          className="flex-grow flex items-center justify-center bg-gray-50"
-          style={{ backgroundColor: "#f9fafb" }}
+          className="flex-grow flex items-center justify-center bg-[#040404]"
         >
           <Spinner size="lg" />
         </main>
@@ -460,37 +442,43 @@ export default function QuizPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col bg-gray-50"
-      style={{ backgroundColor: "#f9fafb" }}
+      className="min-h-screen flex flex-col bg-[#040404]"
     >
       <div
-        className="sticky top-0 z-50 bg-gray-50 pt-4"
-        style={{ backgroundColor: "#f9fafb" }}
+        className="sticky top-0 z-50 bg-[#040404] pt-4"
       >
         <Header />
       </div>
       <main
-        className="flex-grow bg-gray-50 pb-8"
-        style={{ backgroundColor: "#f9fafb" }}
+          className="flex-grow bg-[#040404] pb-8"
       >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-4">
+          {/* Progress Bar Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4"
+          >
+            <div className="py-3 px-6">
+              <div className="mt-[5px]">
+                <Progress 
+                  value={progress} 
+                  currentStep={currentStep}
+                  totalSteps={TOTAL_STEPS}
+                  className="h-12"
+                />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Quiz Questions Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="p-6 md:p-8">
-              <div className="mb-6">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-gray-700">
-                    Step {currentStep} of {TOTAL_STEPS}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {Math.round(progress)}%
-                  </span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
+            <div className="p-6 md:p-8">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentStep}
@@ -502,7 +490,7 @@ export default function QuizPage() {
                   {renderStep()}
                 </motion.div>
               </AnimatePresence>
-            </Card>
+            </div>
           </motion.div>
         </div>
       </main>

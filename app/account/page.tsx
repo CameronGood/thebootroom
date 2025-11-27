@@ -179,13 +179,15 @@ export default function AccountPage() {
 
   if (authLoading || (user && (loading || savingResults))) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#040404]">
+        <div className="sticky top-0 z-50 bg-[#040404] pt-4">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
+        </div>
+        <main className="flex-grow flex items-center justify-center bg-[#040404]">
           <div className="text-center">
             <Spinner size="lg" />
             {savingResults && (
-              <p className="mt-4 text-gray-600">Saving your results...</p>
+              <p className="mt-4 text-[#F4F4F4]/80">Saving your results...</p>
             )}
           </div>
         </main>
@@ -196,14 +198,16 @@ export default function AccountPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#040404]">
+        <div className="sticky top-0 z-50 bg-[#040404] pt-4">
         <Header />
-        <main className="flex-grow bg-gray-50 py-8">
+        </div>
+        <main className="flex-grow bg-[#040404] py-8">
           <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
             {showSaveMessage && (
-              <Card className="bg-blue-50 border-blue-200 mb-6">
+              <Card className="bg-[#F5E4D0]/20 border-[#F5E4D0]/40 mb-6">
                 <CardContent className="p-4 sm:p-6">
-                  <h2 className="text-base sm:text-lg md:text-xl font-semibold text-blue-900 text-center leading-tight">
+                  <h2 className="text-base sm:text-lg md:text-xl font-semibold text-[#F4F4F4] text-center leading-tight">
                     Create an Account to Save Results
                   </h2>
                 </CardContent>
@@ -220,31 +224,33 @@ export default function AccountPage() {
   const savedResults = userData?.savedResults || [];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#040404]">
+      <div className="sticky top-0 z-50 bg-[#040404] pt-4">
       <Header />
-      <main className="flex-grow bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      </div>
+      <main className="flex-grow bg-[#040404] pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">My Account</h1>
+            <h1 className="text-3xl font-bold text-[#F4F4F4]">My Account</h1>
             <Link
               href="/quiz"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8]"
             >
               Re-run Quiz
             </Link>
           </div>
 
           {savedResults.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <h2 className="text-xl font-semibold mb-4">
+            <div className="bg-[#2B2D30] rounded-lg shadow-md p-12 text-center border border-[#F5E4D0]/20">
+              <h2 className="text-xl font-semibold mb-4 text-[#F4F4F4]">
                 No saved results yet
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-[#F4F4F4]/80 mb-6">
                 Complete a quiz and save your results to see them here.
               </p>
               <Link
                 href="/quiz"
-                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="inline-block px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8]"
               >
                 Take Quiz
               </Link>
@@ -289,18 +295,18 @@ export default function AccountPage() {
                 return (
                   <div
                     key={uniqueKey}
-                    className="bg-white rounded-lg shadow-md p-6"
+                    className="bg-[#2B2D30] rounded-lg shadow-md p-6 border border-[#F5E4D0]/20"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h2 className="text-xl font-semibold mb-1">
+                        <h2 className="text-xl font-semibold mb-1 text-[#F4F4F4]">
                           {formatAnswerSummary()}
                         </h2>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-[#F4F4F4]/80">
                           Completed: {result.completedAt.toLocaleDateString()}
                         </p>
                         {answers && (
-                          <div className="mt-2 text-sm text-gray-500">
+                          <div className="mt-2 text-sm text-[#F4F4F4]/60">
                             {answers.toeShape} toe • {answers.instepHeight}{" "}
                             instep • {answers.calfVolume} calf
                             {answers.footWidth && (
@@ -326,7 +332,7 @@ export default function AccountPage() {
                       </div>
                       <button
                         onClick={() => handleDeleteResult(result.quizId)}
-                        className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition ml-4"
+                        className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition ml-4"
                       >
                         Delete
                       </button>
@@ -348,7 +354,7 @@ export default function AccountPage() {
                                 : result.quizId
                             )
                           }
-                          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
+                          className="flex items-center gap-2 text-[#F5E4D0] hover:text-[#E8D4B8] font-medium"
                         >
                           <span>
                             {expandedBreakdown === result.quizId
@@ -371,19 +377,19 @@ export default function AccountPage() {
                                 return (
                                   <div
                                     key={section.bootId}
-                                    className="border-b border-gray-200 pb-4 last:border-b-0"
+                                    className="border-b border-[#F5E4D0]/20 pb-4 last:border-b-0"
                                   >
-                                    <h3 className="text-lg font-semibold mb-2">
+                                    <h3 className="text-lg font-semibold mb-2 text-[#F4F4F4]">
                                       {section.heading}
                                     </h3>
                                     {boot && (
-                                      <p className="text-sm text-gray-600 mb-2">
+                                      <p className="text-sm text-[#F4F4F4]/80 mb-2">
                                         {boot.brand} {boot.model} • Flex{" "}
                                         {boot.flex} • Match Score:{" "}
                                         {boot.score.toFixed(1)}/100
                                       </p>
                                     )}
-                                    <p className="text-gray-700 whitespace-pre-line leading-relaxed">
+                                    <p className="text-[#F4F4F4] whitespace-pre-line leading-relaxed">
                                       {section.body}
                                     </p>
                                   </div>

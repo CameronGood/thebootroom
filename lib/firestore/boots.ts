@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { firestore } from "../firebase";
 import { Boot, Gender } from "../../types";
+import { toLAVArray } from "../utils/parseMulti";
 
 // Helper function to remove undefined values from objects (Firestore doesn't accept undefined)
 function removeUndefined(obj: any): any {
@@ -60,9 +61,22 @@ export async function listBoots(filters?: {
   const snapshot = await getDocs(q);
   return snapshot.docs.map((docSnapshot) => {
     const data = docSnapshot.data();
+    // Derive bootWidth from lastWidthMM for backward compatibility if missing
+    let bootWidth: "Narrow" | "Average" | "Wide" = data.bootWidth || "Average";
+    if (!data.bootWidth && data.lastWidthMM) {
+      const width = data.lastWidthMM;
+      if (width <= 98) bootWidth = "Narrow";
+      else if (width <= 102) bootWidth = "Average";
+      else bootWidth = "Wide";
+    }
     return {
       ...data,
       bootId: docSnapshot.id,
+      bootWidth,
+      // Normalize LAV arrays (handle legacy single values or arrays)
+      instepHeight: toLAVArray(data.instepHeight),
+      ankleVolume: toLAVArray(data.ankleVolume),
+      calfVolume: toLAVArray(data.calfVolume),
       createdAt: (data.createdAt as Timestamp).toDate(),
       updatedAt: (data.updatedAt as Timestamp).toDate(),
     } as Boot & { bootId: string };
@@ -77,9 +91,22 @@ export async function getBoot(
     return null;
   }
   const data = bootDoc.data();
+  // Derive bootWidth from lastWidthMM for backward compatibility if missing
+  let bootWidth: "Narrow" | "Average" | "Wide" = data.bootWidth || "Average";
+  if (!data.bootWidth && data.lastWidthMM) {
+    const width = data.lastWidthMM;
+    if (width <= 98) bootWidth = "Narrow";
+    else if (width <= 102) bootWidth = "Average";
+    else bootWidth = "Wide";
+  }
   return {
     ...data,
     bootId: bootDoc.id,
+    bootWidth,
+    // Normalize LAV arrays (handle legacy single values or arrays)
+    instepHeight: toLAVArray(data.instepHeight),
+    ankleVolume: toLAVArray(data.ankleVolume),
+    calfVolume: toLAVArray(data.calfVolume),
     createdAt: (data.createdAt as Timestamp).toDate(),
     updatedAt: (data.updatedAt as Timestamp).toDate(),
   } as Boot & { bootId: string };

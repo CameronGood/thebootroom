@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { quizId, userId } = body;
+    const { quizId, userId, selectedModels } = body;
 
     if (!quizId) {
       return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         userId,
         quizId,
+        selectedModels: selectedModels ? JSON.stringify(selectedModels) : "",
       },
       automatic_payment_methods: {
         enabled: true,

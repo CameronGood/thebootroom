@@ -43,8 +43,8 @@ export default function QuizStepFeatures({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Additional Features</h2>
-      <p className="text-gray-600 mb-6">
+      <h2 className="text-4xl font-bold mb-12 text-center"><span className="text-5xl">[</span> Additional Features <span className="text-5xl">]</span></h2>
+      <p className="text-[#F4F4F4] mb-12 text-lg text-center">
         Select any additional features you need (optional).
       </p>
       <div className="space-y-4 mb-6">
@@ -52,12 +52,12 @@ export default function QuizStepFeatures({
           onClick={() => toggleFeature("Walk Mode")}
           className={`w-full p-4 text-left border-2 rounded-lg transition ${
             features.includes("Walk Mode")
-              ? "border-blue-600 bg-blue-50"
+              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
           <span className="text-lg font-semibold">Walk Mode</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-[#F4F4F4] mt-1">
             Allows easier walking when not skiing
           </p>
         </button>
@@ -65,12 +65,12 @@ export default function QuizStepFeatures({
           onClick={() => toggleFeature("Rear Entry")}
           className={`w-full p-4 text-left border-2 rounded-lg transition ${
             features.includes("Rear Entry")
-              ? "border-blue-600 bg-blue-50"
+              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
           <span className="text-lg font-semibold">Rear Entry</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-[#F4F4F4] mt-1">
             Boot opens from the back for easier entry
           </p>
         </button>
@@ -78,17 +78,17 @@ export default function QuizStepFeatures({
           onClick={() => toggleFeature("Calf Adjustment")}
           className={`w-full p-4 text-left border-2 rounded-lg transition ${
             features.includes("Calf Adjustment")
-              ? "border-blue-600 bg-blue-50"
+              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
           <span className="text-lg font-semibold">Calf Adjustment</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-[#F4F4F4] mt-1">
             Adjustable calf volume for better fit
           </p>
         </button>
       </div>
-      <div className="flex gap-4">
+      <div className="mt-12 flex gap-4 justify-end">
         <button
           onClick={onBack}
           disabled={loading}
@@ -99,7 +99,7 @@ export default function QuizStepFeatures({
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {loading && <Spinner size="sm" />}
           {loading ? "Finding your boots..." : "Get Results"}

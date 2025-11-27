@@ -7,8 +7,9 @@ import Footer from "@/components/Footer";
 import ResultCard from "@/components/ResultCard";
 import Spinner from "@/components/Spinner";
 import PaymentForm from "@/components/PaymentForm";
-import { QuizSession, BootSummary, FittingBreakdown } from "@/types";
+import { QuizSession, BootSummary, FittingBreakdown, Region } from "@/types";
 import { useAuth } from "@/lib/auth";
+import { useRegion } from "@/lib/region";
 import { upsertSavedResult } from "@/lib/firestore/users";
 import {
   calculateRecommendedMondo,
@@ -16,10 +17,173 @@ import {
 } from "@/lib/mondo-conversions";
 import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Globe } from "lucide-react";
+import { User } from "firebase/auth";
+
+interface PriceComparisonContentProps {
+  boot: BootSummary;
+  sessionId?: string;
+  user: User | null;
+  region: Region;
+}
+
+function PriceComparisonContent({
+  boot,
+  sessionId,
+  user,
+  region,
+}: PriceComparisonContentProps) {
+  const currentRegion: Region = region || "US";
+  const availableLinks = boot.links?.[currentRegion] || boot.links?.US || [];
+  const hasLegacyUrl = !availableLinks.length && boot.affiliateUrl;
+
+  const handleBuy = (bootId: string, vendor?: string, linkUrl?: string) => {
+    const params = new URLSearchParams({ bootId });
+    if (sessionId) params.append("sessionId", sessionId);
+    if (user) params.append("userId", user.uid);
+
+    // If using new links structure
+    if (vendor && region) {
+      params.append("vendor", vendor);
+      params.append("region", region);
+    }
+
+    // If direct URL provided (for legacy or single vendor)
+    if (linkUrl) {
+      window.open(linkUrl, "_blank");
+      return;
+    }
+
+    window.open(`/api/redirect?${params.toString()}`, "_blank");
+  };
+
+  // Collect all models to display - only show actual boot models, not family name
+  const allModels: Array<{
+    model: string;
+    flex: number;
+    bootId: string;
+    links?: typeof availableLinks;
+    affiliateUrl?: string;
+  }> = [];
+
+  // If this is a family (has models array), only show the actual models
+  if (boot.models && boot.models.length > 0) {
+    boot.models.forEach((m) => {
+      // For family models, use their own affiliateUrl if available,
+      // otherwise use the main boot's links structure
+      const modelLinks = m.affiliateUrl ? [] : availableLinks;
+      allModels.push({
+        model: m.model,
+        flex: m.flex,
+        bootId: boot.bootId, // Using main bootId for tracking
+        links: modelLinks,
+        affiliateUrl: m.affiliateUrl || boot.affiliateUrl,
+      });
+    });
+  } else {
+    // If no family models, show the main boot (it's an actual model, not a family)
+    allModels.push({
+      model: boot.model,
+      flex: boot.flex,
+      bootId: boot.bootId,
+      links: availableLinks,
+      affiliateUrl: boot.affiliateUrl,
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {allModels.map((model, modelIndex) => {
+        const modelLinks = model.links || [];
+        const modelHasLinks = modelLinks.length > 0 || model.affiliateUrl;
+
+        return (
+          <div key={modelIndex} className="border-b border-[#F5E4D0]/20 pb-6 last:border-b-0 last:pb-0">
+            <div className="flex items-center justify-between gap-4">
+              <h4 className="font-semibold text-lg text-[#F4F4F4]">
+                {model.model} {model.flex && `• Flex ${model.flex}`}
+              </h4>
+
+              {modelHasLinks ? (
+                <div className="flex flex-col items-end gap-1">
+                  {/* Multiple Vendor Links */}
+                  {modelLinks.length > 0 ? (
+                    modelLinks
+                      .filter((link) => link.available !== false)
+                      .map((link, i) => {
+                        const affiliateText = "Affiliate Link. Help support TBR 🤙";
+                        return (
+                          <div key={i} className="flex flex-col items-end">
+                            {/* Wrapper div - text determines width, button fills it */}
+                            <div className="inline-flex flex-col items-end">
+                              <motion.a
+                                href={`/api/redirect?bootId=${model.bootId}&region=${currentRegion}&vendor=${encodeURIComponent(link.store)}${sessionId ? `&sessionId=${sessionId}` : ""}${user ? `&userId=${user.uid}` : ""}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleBuy(model.bootId, link.store);
+                                }}
+                                whileHover={{ scale: 1.02 }}
+                                className="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] transition-colors text-sm w-full"
+                              >
+                                {link.logo && (
+                                  <img
+                                    src={link.logo}
+                                    alt={link.store}
+                                    className="w-4 h-4 object-contain"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display =
+                                        "none";
+                                    }}
+                                  />
+                                )}
+                                <span className="font-medium">
+                                  Buy from {link.store}
+                                </span>
+                              </motion.a>
+                              <p className="text-xs text-[#F4F4F4]/60 whitespace-nowrap mt-1 w-full text-right">
+                                {affiliateText}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                  ) : (
+                    // Legacy single affiliate URL
+                    <div className="flex flex-col items-end">
+                      <div className="inline-flex flex-col items-end">
+                        <Button
+                          onClick={() =>
+                            handleBuy(model.bootId, undefined, model.affiliateUrl)
+                          }
+                          className="text-sm w-full"
+                          size="sm"
+                        >
+                          Buy Now
+                        </Button>
+                        <p className="text-xs text-[#F4F4F4]/60 whitespace-nowrap mt-1 w-full text-right">
+                          Affiliate Link. Help support TBR 🤙
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-[#F4F4F4]/60 italic">
+                  No retailers available
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
@@ -36,6 +200,13 @@ export default function ResultsPage() {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [generatingBreakdown, setGeneratingBreakdown] = useState(false);
+  const [selectedPriceTab, setSelectedPriceTab] = useState<number>(0);
+  const [showRegionSelector, setShowRegionSelector] = useState(false);
+  const [isCompareMode, setIsCompareMode] = useState(false);
+  const [modelsVisible, setModelsVisible] = useState(false);
+  // Track selected models for each boot (bootId -> Set of model indices)
+  const [selectedModels, setSelectedModels] = useState<Record<string, Set<number>>>({});
+  const { region, setRegion } = useRegion();
 
   useEffect(() => {
     if (!sessionId) {
@@ -136,7 +307,7 @@ export default function ResultsPage() {
     }
   };
 
-  const handleGetBreakdown = async () => {
+  const handleGetBreakdown = async (selectedModelsForBreakdown?: Record<string, Set<number>>) => {
     if (!user) {
       toast.error("Please log in to purchase a breakdown");
       router.push(`/account?saveResults=true&sessionId=${sessionId}`);
@@ -150,12 +321,23 @@ export default function ResultsPage() {
 
     setShowPaymentForm(true);
     try {
+      // Convert selected models to a serializable format
+      const modelsToInclude: Record<string, number[]> = {};
+      const modelsToUse = selectedModelsForBreakdown || selectedModels;
+      
+      Object.entries(modelsToUse).forEach(([bootId, modelIndices]) => {
+        if (modelIndices.size > 0) {
+          modelsToInclude[bootId] = Array.from(modelIndices);
+        }
+      });
+
       const response = await fetch("/api/payments/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quizId: sessionId,
           userId: user.uid,
+          selectedModels: modelsToInclude,
         }),
       });
 
@@ -256,10 +438,10 @@ export default function ResultsPage() {
         <Header />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold mb-4">No results found</h2>
+            <h2 className="text-2xl font-bold mb-4 text-[#F4F4F4]">No results found</h2>
             <button
               onClick={() => router.push("/quiz")}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8]"
             >
               Take Quiz Again
             </button>
@@ -272,31 +454,44 @@ export default function ResultsPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col bg-gray-50"
-      style={{ backgroundColor: "#f9fafb" }}
+      className="min-h-screen flex flex-col bg-[#040404]"
     >
       <div
-        className="sticky top-0 z-50 bg-gray-50 pt-4"
-        style={{ backgroundColor: "#f9fafb" }}
+        className="sticky top-0 z-50 bg-[#040404] pt-4 pb-0"
       >
         <Header />
       </div>
-      <main
-        className="flex-grow bg-gray-50 pb-8"
-        style={{ backgroundColor: "#f9fafb" }}
+        <main
+        className="flex-grow bg-[#040404] pb-8"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           {/* Header with Save/Login Button */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-12 gap-4"
+            className="mb-6 flex justify-between items-center"
           >
-            <h1 className="text-3xl font-bold text-gray-900">
-              Your Best Boot Matches
-            </h1>
-            <div className="flex-shrink-0 flex gap-3">
+            <Button
+              onClick={() => {
+                const breakdownSection = document.getElementById('fitting-breakdown');
+                if (breakdownSection) {
+                  const headerHeight = 120;
+                  const elementPosition = breakdownSection.getBoundingClientRect().top;
+                  const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+                  window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
+              variant="outline"
+              size="lg"
+              className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10"
+            >
+              COMPARE RESULTS
+            </Button>
+            <div className="flex gap-3">
               <Button
                 onClick={() => {
                   if (sessionId && session?.answers) {
@@ -312,18 +507,18 @@ export default function ResultsPage() {
                 }}
                 variant="outline"
                 size="lg"
-                className="border-blue-600 text-blue-600 bg-white hover:bg-blue-50"
+                className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10"
               >
-                Edit Answers
+                EDIT ANSWERS
               </Button>
               <Button
                 onClick={handleSaveResult}
                 disabled={saving}
                 variant="outline"
                 size="lg"
-                className="bg-green-600 text-white hover:bg-green-700 border-green-600"
+                className="bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[#F5E4D0]"
               >
-                {saving ? "Saving..." : "Save Results"}
+                {saving ? "SAVING..." : "SAVE RESULTS"}
               </Button>
             </div>
           </motion.div>
@@ -339,110 +534,28 @@ export default function ResultsPage() {
                 recommendedSize={recommendedMondo}
                 footLength={session.answers?.footLengthMM}
                 shoeSize={session.answers?.shoeSize}
+                isCompareMode={isCompareMode}
+                onToggleCompareMode={() => {
+                  const newCompareMode = !isCompareMode;
+                  setIsCompareMode(newCompareMode);
+                  // If entering compare mode, open models dropdown in all cards
+                  if (newCompareMode) {
+                    setModelsVisible(true);
+                  }
+                }}
+                modelsVisible={modelsVisible}
+                onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
+                selectedModels={selectedModels[boot.bootId] || new Set()}
+                onUpdateSelectedModels={(bootId, modelIndices) => {
+                  setSelectedModels(prev => ({
+                    ...prev,
+                    [bootId]: modelIndices,
+                  }));
+                }}
+                onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
               />
             ))}
           </div>
-
-          {/* Fitting Breakdown Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-8"
-          >
-            {showPaymentForm && clientSecret ? (
-              <PaymentForm
-                clientSecret={clientSecret}
-                quizId={sessionId || ""}
-                onSuccess={handlePaymentSuccess}
-                onCancel={() => {
-                  setShowPaymentForm(false);
-                  setClientSecret(null);
-                }}
-              />
-            ) : generatingBreakdown ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col items-center justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-4" />
-                    <p className="text-lg font-medium text-gray-700">
-                      Generating your AI fitting breakdown...
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                      This usually takes 3-6 seconds
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : breakdown ? (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-blue-600" />
-                    <CardTitle className="text-2xl">
-                      Detailed Fitting Breakdown
-                    </CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {breakdown.sections.map((section) => {
-                    const boot = session.recommendedBoots.find(
-                      (b) => b.bootId === section.bootId
-                    );
-                    return (
-                      <motion.div
-                        key={section.bootId}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0"
-                      >
-                        <h3 className="text-xl font-semibold mb-3 text-gray-900">
-                          {section.heading}
-                        </h3>
-                        {boot && (
-                          <p className="text-sm text-gray-600 mb-3">
-                            {boot.brand} {boot.model} • Flex {boot.flex} • Match
-                            Score: {boot.score.toFixed(1)}/100
-                          </p>
-                        )}
-                        <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                          {section.body}
-                        </p>
-                      </motion.div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">
-                    Get Detailed Fitting Breakdown
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">
-                    Get a professional, AI-generated analysis of why each boot
-                    matches your profile. Includes detailed fit characteristics,
-                    feature alignment, and practical fitting advice.
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      onClick={handleGetBreakdown}
-                      size="lg"
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Get Breakdown
-                    </Button>
-                    <span className="text-lg font-semibold text-gray-700">
-                      £2.99
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </motion.div>
 
           {/* Custom Fitting Card */}
           <motion.div
@@ -456,14 +569,14 @@ export default function ResultsPage() {
                 <CardTitle className="text-2xl">Custom Fitting</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-gray-700 text-lg">
+                <p className="text-[#F4F4F4] text-lg">
                   Fine-tune your boots for the perfect fit.
                 </p>
-                <p className="text-gray-600">
+                <p className="text-[#F4F4F4]/80">
                   Once you've picked your boots, a quick visit to a local ski
                   shop can make a big difference. A boot fitter can:
                 </p>
-                <ul className="space-y-3 text-gray-700">
+                <ul className="space-y-3 text-[#F4F4F4]">
                   <li className="flex items-start gap-3">
                     <span className="text-xl">🔥</span>
                     <span>
@@ -486,11 +599,11 @@ export default function ResultsPage() {
                     </span>
                   </li>
                 </ul>
-                <p className="text-gray-600 italic">
+                <p className="text-[#F4F4F4]/70 italic">
                   Even the right boot straight out of the box can feel better
                   after a little personal tuning.
                 </p>
-                <p className="text-gray-700 font-medium">
+                <p className="text-[#F4F4F4] font-medium">
                   A custom fit = better performance, less fatigue, and happier
                   feet.
                 </p>
@@ -510,7 +623,7 @@ export default function ResultsPage() {
                 <CardTitle className="text-2xl">Affiliate Disclosure</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-700">
+                <p className="text-[#F4F4F4]">
                   Some links on this site are affiliate links, meaning The Boot
                   Room may earn a small commission if you purchase through them
                   — at no extra cost to you. We only recommend products we

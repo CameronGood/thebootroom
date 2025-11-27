@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const quizAnswersSchema = z.object({
   gender: z.enum(["Male", "Female"]),
-  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Touring"]),
+  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Freeride"]),
   ability: z.enum(["Beginner", "Intermediate", "Advanced"]),
   weightKG: z.number().positive(),
   footLengthMM: z
@@ -40,9 +40,9 @@ export const quizAnswersSchema = z.object({
     ])
     .optional(),
   toeShape: z.enum(["Round", "Square", "Angled"]),
-  instepHeight: z.enum(["Low", "Medium", "High"]),
-  ankleVolume: z.enum(["Low", "Medium", "High"]),
-  calfVolume: z.enum(["Low", "Medium", "High"]),
+  instepHeight: z.enum(["Low", "Average", "High"]),
+  ankleVolume: z.enum(["Low", "Average", "High"]),
+  calfVolume: z.enum(["Low", "Average", "High"]),
   features: z
     .array(z.enum(["Walk Mode", "Rear Entry", "Calf Adjustment"]))
     .default([]),
@@ -67,14 +67,15 @@ const linksSchema = z
 export const bootSchema = z.object({
   year: z.string(),
   gender: z.enum(["Male", "Female"]),
-  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Touring"]),
+  bootType: z.enum(["Standard", "Freestyle", "Hybrid", "Freeride"]),
   brand: z.string(),
   model: z.string(),
-  lastWidthMM: z.number().positive(),
+  lastWidthMM: z.number().positive().optional(),
+  bootWidth: z.enum(["Narrow", "Average", "Wide"]),
   flex: z.number().positive(),
-  instepHeight: z.enum(["Low", "Medium", "High"]),
-  ankleVolume: z.enum(["Low", "Medium", "High"]),
-  calfVolume: z.enum(["Low", "Medium", "High"]),
+  instepHeight: z.array(z.enum(["Low", "Average", "High"])).min(1),
+  ankleVolume: z.array(z.enum(["Low", "Average", "High"])).min(1),
+  calfVolume: z.array(z.enum(["Low", "Average", "High"])).min(1),
   toeBoxShape: z.enum(["Round", "Square", "Angled"]),
   calfAdjustment: z.boolean(),
   walkMode: z.boolean(),

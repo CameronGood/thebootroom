@@ -41,7 +41,7 @@ export default function BrandBanner({
   }
 
   return (
-    <section className="py-12 bg-gray-50 border-y border-gray-200">
+    <section className="py-12 bg-[#2B2D30] border-y border-[#F5E4D0]/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Heading */}
         <motion.div
@@ -51,7 +51,7 @@ export default function BrandBanner({
           transition={{ duration: 0.6 }}
           className="text-center mb-8"
         >
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h2 className="text-xl md:text-2xl font-bold text-[#F4F4F4]">
             Compare 100's of Boots from Major Brands
           </h2>
         </motion.div>
@@ -93,14 +93,14 @@ export default function BrandBanner({
                         ) {
                           const fallback = document.createElement("div");
                           fallback.className =
-                            "brand-text-fallback text-gray-400 font-bold text-lg md:text-xl lg:text-2xl";
+                            "brand-text-fallback text-[#F4F4F4]/60 font-bold text-lg md:text-xl lg:text-2xl";
                           fallback.textContent = brand.name;
                           parent.appendChild(fallback);
                         }
                       }}
                     />
                   ) : (
-                    <div className="text-gray-400 font-bold text-lg md:text-xl lg:text-2xl">
+                    <div className="text-[#F4F4F4]/60 font-bold text-lg md:text-xl lg:text-2xl">
                       {brand.name}
                     </div>
                   )}

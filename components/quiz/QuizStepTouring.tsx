@@ -29,10 +29,10 @@ export default function QuizStepTouring({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">
-        Do you need touring capability?
+      <h2 className="text-4xl font-bold mb-12 text-center">
+        <span className="text-5xl">[</span> Do you need touring capability? <span className="text-5xl">]</span>
       </h2>
-      <p className="text-gray-600 mb-6">
+      <p className="text-[#F4F4F4] mb-12 text-lg text-center">
         Touring boots have walk mode for hiking uphill.
       </p>
       <div className="space-y-4">
@@ -40,12 +40,12 @@ export default function QuizStepTouring({
           onClick={() => handleSelect("Yes")}
           className={`w-full p-4 text-left border-2 rounded-lg transition ${
             selected === "Yes"
-              ? "border-blue-600 bg-blue-50"
+              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
           <span className="text-lg font-semibold">Yes</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-[#F4F4F4] mt-1">
             I need boots with walk mode for touring
           </p>
         </button>
@@ -53,17 +53,17 @@ export default function QuizStepTouring({
           onClick={() => handleSelect("No")}
           className={`w-full p-4 text-left border-2 rounded-lg transition ${
             selected === "No"
-              ? "border-blue-600 bg-blue-50"
+              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
               : "border-gray-200 hover:border-gray-300"
           }`}
         >
           <span className="text-lg font-semibold">No</span>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-[#F4F4F4] mt-1">
             I only ski at resorts, no touring needed
           </p>
         </button>
       </div>
-      <div className="mt-6 flex gap-4">
+      <div className="mt-12 flex gap-4 justify-end">
         <button
           onClick={onBack}
           className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -73,7 +73,7 @@ export default function QuizStepTouring({
         <button
           onClick={() => selected && onNext(selected)}
           disabled={!selected}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Next
         </button>

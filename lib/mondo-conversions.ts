@@ -150,3 +150,59 @@ export function shoeSizeToMondo(
   const baseMondo = Math.floor(mondo);
   return `${baseMondo} - ${baseMondo + 0.5}`;
 }
+// Convert shoe size to estimated foot length in mm
+// Uses mondo conversion and reverse calculates foot length
+// Formula: footLengthMM ≈ 220 + (mondo - 22) * 10 + 5 (midpoint of range)
+export function shoeSizeToFootLengthMM(
+  system: "UK" | "US" | "EU",
+  value: number
+): number | null {
+  let mondo: number | undefined;
+
+  if (system === "EU") {
+    mondo = EU_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(EU_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = EU_TO_MONDO[closest];
+    }
+  } else if (system === "UK") {
+    mondo = UK_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(UK_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = UK_TO_MONDO[closest];
+    }
+  } else {
+    // US
+    mondo = US_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(US_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = US_TO_MONDO[closest];
+    }
+  }
+
+  if (mondo === undefined) {
+    return null;
+  }
+
+  // Reverse calculate foot length from mondo
+  // mondo 22.0 → 220-229mm (use 225mm midpoint)
+  // mondo 22.5 → 225-234mm (use 230mm midpoint)
+  // Formula: footLengthMM = 220 + (mondo - 22) * 10 + 5
+  const estimatedFootLength = 220 + (mondo - 22) * 10 + 5;
+  return Math.round(estimatedFootLength);
+}

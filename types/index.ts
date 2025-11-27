@@ -2,13 +2,15 @@
 
 export type Gender = "Male" | "Female";
 export type ToeShape = "Round" | "Square" | "Angled";
-export type Volume = "Low" | "Medium" | "High";
+export type Volume = "Low" | "Average" | "High";
+// LAV = Low/Average/High (alias for Volume)
+export type LAV = Volume;
 export type Ability = "Beginner" | "Intermediate" | "Advanced";
 export type Feature = "Walk Mode" | "Rear Entry" | "Calf Adjustment";
 export type ShoeSizeSystem = "UK" | "US" | "EU";
 export type WidthCategory = "Narrow" | "Average" | "Wide";
 export type Region = "UK" | "US" | "EU";
-export type BootType = "Standard" | "Freestyle" | "Hybrid" | "Touring";
+export type BootType = "Standard" | "Freestyle" | "Hybrid" | "Freeride";
 
 export interface AffiliateLink {
   store: string; // e.g., "Ellis Brigham"
@@ -35,7 +37,7 @@ export interface QuizAnswers {
 export interface BootSummary {
   bootId: string;
   brand: string;
-  model: string;
+  model: string; // family name when grouped
   flex: number;
   bootType?: BootType; // String: "Standard" | "Freestyle" | "Hybrid" | "Touring"
   lastWidthMM?: number;
@@ -43,6 +45,16 @@ export interface BootSummary {
   affiliateUrl?: string; // Legacy single URL (for backwards compatibility)
   links?: { [region in Region]?: AffiliateLink[] }; // New multi-vendor links
   score: number;
+  // Features preserved for comparison purposes
+  walkMode?: boolean;
+  rearEntry?: boolean;
+  calfAdjustment?: boolean;
+  models?: {
+    model: string;
+    flex: number;
+    affiliateUrl?: string;
+    imageUrl?: string;
+  }[];
 }
 
 export interface SavedResult {
@@ -64,11 +76,12 @@ export interface Boot {
   bootType: BootType; // String: "Standard" | "Freestyle" | "Hybrid" | "Touring"
   brand: string;
   model: string;
-  lastWidthMM: number;
+  lastWidthMM?: number; // Optional - can be derived from bootWidth if needed
+  bootWidth: WidthCategory; // Categorical width: "Narrow" | "Average" | "Wide"
   flex: number;
-  instepHeight: Volume;
-  ankleVolume: Volume;
-  calfVolume: Volume;
+  instepHeight: Volume[]; // Array to support multiple values (e.g., "Low;Average")
+  ankleVolume: Volume[]; // Array to support multiple values (e.g., "Low;Average")
+  calfVolume: Volume[]; // Array to support multiple values (e.g., "Low;Average")
   toeBoxShape: ToeShape;
   calfAdjustment: boolean;
   walkMode: boolean;

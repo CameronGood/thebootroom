@@ -28,9 +28,11 @@ export default function BootsTab() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterGender, setFilterGender] = useState<string>("all");
   const [filterBootType, setFilterBootType] = useState<string>("all");
-  const [filterBrand, setFilterBrand] = useState<string>("all");
+  const [filterWidth, setFilterWidth] = useState<string>("all");
+  const [filterInstepHeight, setFilterInstepHeight] = useState<string>("all");
+  const [filterAnkleVolume, setFilterAnkleVolume] = useState<string>("all");
   const [sortBy, setSortBy] = useState<
-    "brand" | "model" | "flex" | "lastWidthMM"
+    "brand" | "model" | "flex"
   >("brand");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [editingBoot, setEditingBoot] = useState<
@@ -55,9 +57,9 @@ export default function BootsTab() {
   };
 
   // Get unique values for filter dropdowns
-  const uniqueBrands = useMemo(() => {
-    const brands = [...new Set(boots.map((b) => b.brand))].sort();
-    return brands;
+  const uniqueWidths = useMemo(() => {
+    const widths = [...new Set(boots.map((b) => b.bootWidth).filter(Boolean))].sort();
+    return widths;
   }, [boots]);
 
   const uniqueBootTypes = useMemo(() => {
@@ -72,11 +74,33 @@ export default function BootsTab() {
           if (boot.bootType.standard) types.add("Standard");
           if (boot.bootType.freestyle) types.add("Freestyle");
           if (boot.bootType.hybrid) types.add("Hybrid");
-          if (boot.bootType.touring) types.add("Touring");
+          if (boot.bootType.freeride) types.add("Freeride");
         }
       }
     });
     return Array.from(types).sort();
+  }, [boots]);
+
+  const uniqueInstepHeights = useMemo(() => {
+    const heights = new Set<string>();
+    boots.forEach((boot) => {
+      const instepArray = Array.isArray(boot.instepHeight) 
+        ? boot.instepHeight 
+        : boot.instepHeight ? [boot.instepHeight] : [];
+      instepArray.forEach((h) => heights.add(h));
+    });
+    return Array.from(heights).sort();
+  }, [boots]);
+
+  const uniqueAnkleVolumes = useMemo(() => {
+    const volumes = new Set<string>();
+    boots.forEach((boot) => {
+      const ankleArray = Array.isArray(boot.ankleVolume) 
+        ? boot.ankleVolume 
+        : boot.ankleVolume ? [boot.ankleVolume] : [];
+      ankleArray.forEach((v) => volumes.add(v));
+    });
+    return Array.from(volumes).sort();
   }, [boots]);
 
   // Filter and sort boots
@@ -94,7 +118,7 @@ export default function BootsTab() {
                   boot.bootType.standard ? "Standard" : "",
                   boot.bootType.freestyle ? "Freestyle" : "",
                   boot.bootType.hybrid ? "Hybrid" : "",
-                  boot.bootType.touring ? "Touring" : "",
+                  boot.bootType.freeride ? "Freeride" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")
@@ -121,14 +145,34 @@ export default function BootsTab() {
               ? (filterBootType === "Standard" && boot.bootType.standard) ||
                 (filterBootType === "Freestyle" && boot.bootType.freestyle) ||
                 (filterBootType === "Hybrid" && boot.bootType.hybrid) ||
-                (filterBootType === "Touring" && boot.bootType.touring)
+                (filterBootType === "Freeride" && boot.bootType.freeride)
               : false;
         if (!bootTypeMatches) return false;
       }
 
-      // Brand filter
-      if (filterBrand !== "all" && boot.brand !== filterBrand) {
+      // Width filter
+      if (filterWidth !== "all" && boot.bootWidth !== filterWidth) {
         return false;
+      }
+
+      // Instep Height filter
+      if (filterInstepHeight !== "all") {
+        const instepArray = Array.isArray(boot.instepHeight) 
+          ? boot.instepHeight 
+          : boot.instepHeight ? [boot.instepHeight] : [];
+        if (!instepArray.includes(filterInstepHeight as any)) {
+          return false;
+        }
+      }
+
+      // Ankle Volume filter
+      if (filterAnkleVolume !== "all") {
+        const ankleArray = Array.isArray(boot.ankleVolume) 
+          ? boot.ankleVolume 
+          : boot.ankleVolume ? [boot.ankleVolume] : [];
+        if (!ankleArray.includes(filterAnkleVolume as any)) {
+          return false;
+        }
       }
 
       return true;
@@ -150,10 +194,6 @@ export default function BootsTab() {
           aVal = a.flex;
           bVal = b.flex;
           break;
-        case "lastWidthMM":
-          aVal = a.lastWidthMM;
-          bVal = b.lastWidthMM;
-          break;
         default:
           return 0;
       }
@@ -173,7 +213,9 @@ export default function BootsTab() {
     searchTerm,
     filterGender,
     filterBootType,
-    filterBrand,
+    filterWidth,
+    filterInstepHeight,
+    filterAnkleVolume,
     sortBy,
     sortOrder,
   ]);
@@ -276,47 +318,28 @@ export default function BootsTab() {
   return (
     <div className="space-y-6">
       {/* Import Section */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Import Boots (CSV)</h2>
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-          <p className="font-semibold mb-2">Expected CSV Format:</p>
-          <p className="text-gray-700 mb-2">
-            Required columns:{" "}
-            <code className="bg-white px-1 rounded">
-              year,gender,bootType,brand,model,lastWidthMM,flex,instepHeight,ankleVolume,calfVolume,toeBoxShape,calfAdjustment,walkMode,rearEntry,affiliateUrl,imageUrl,tags
-            </code>
-          </p>
-          <p className="text-gray-600 text-xs">
-            Example:{" "}
-            <code className="bg-white px-1 rounded">
-              25/26,Male,Standard,Salomon,Shift Alpha BOA
-              130,98,130,Low,Low,Low,Square,No,No,No,https://...,https://...,all-mountain;performance
-            </code>
-          </p>
-          <p className="text-gray-600 text-xs mt-1">
-            Note: bootType accepts: Standard, Freestyle, Hybrid, or Touring
-          </p>
-        </div>
+      <div className="bg-[#2B2D30] rounded-lg shadow-md p-6 border border-[#F5E4D0]/20">
+        <h2 className="text-xl font-semibold mb-4 text-[#F4F4F4]">Import Boots (CSV)</h2>
         <textarea
           value={csvText}
           onChange={(e) => setCsvText(e.target.value)}
-          className="w-full h-32 p-3 border rounded-lg font-mono text-sm"
+          className="w-full h-32 p-3 border border-gray-600 rounded-lg font-mono text-sm bg-[#1a1a1a] text-[#F4F4F4] placeholder:text-[#F4F4F4]/50"
           placeholder="Paste CSV content here..."
         />
         <button
           onClick={handleImport}
           disabled={importing || !csvText.trim()}
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300"
+          className="mt-4 px-6 py-2 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed"
         >
           {importing ? "Importing..." : "Import"}
         </button>
         {importResult && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-4 p-4 bg-[#1a1a1a] rounded-lg border border-[#F5E4D0]/20">
             <div className="mb-2">
-              <p className="font-semibold text-lg">
+              <p className="font-semibold text-lg text-[#F4F4F4]">
                 Imported: {importResult.imported} boots
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[#F4F4F4]/80">
                 Total rows: {importResult.total || 0} | Imported:{" "}
                 {importResult.imported} | Duplicates:{" "}
                 {importResult.duplicates || 0} | Skipped:{" "}
@@ -326,11 +349,11 @@ export default function BootsTab() {
             </div>
             {importResult.errors && importResult.errors.length > 0 && (
               <div className="mt-4">
-                <p className="font-semibold text-red-600 mb-2">
+                <p className="font-semibold text-red-400 mb-2">
                   Errors ({importResult.errors.length}):
                 </p>
-                <div className="max-h-60 overflow-y-auto bg-white p-3 rounded border">
-                  <ul className="list-disc list-inside text-sm text-red-600 space-y-1">
+                <div className="max-h-60 overflow-y-auto bg-[#2B2D30] p-3 rounded border border-red-400/30">
+                  <ul className="list-disc list-inside text-sm text-red-400 space-y-1">
                     {importResult.errors.map((error, i) => (
                       <li key={i} className="break-words">
                         {error}
@@ -342,12 +365,12 @@ export default function BootsTab() {
             )}
             {importResult.imported === 0 &&
               (!importResult.errors || importResult.errors.length === 0) && (
-                <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                  <p className="text-sm text-yellow-800">
+                <div className="mt-2 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded">
+                  <p className="text-sm text-yellow-300">
                     ⚠️ No boots were imported and no errors were reported. This
                     might mean:
                   </p>
-                  <ul className="list-disc list-inside text-sm text-yellow-700 mt-2 ml-4">
+                  <ul className="list-disc list-inside text-sm text-yellow-300/80 mt-2 ml-4">
                     <li>All rows were skipped (empty brand/model)</li>
                     <li>CSV format doesn't match expected columns</li>
                     <li>Check browser console (F12) for detailed logs</li>
@@ -359,24 +382,24 @@ export default function BootsTab() {
       </div>
 
       {/* Boots Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b">
+      <div className="bg-[#2B2D30] rounded-lg shadow-md overflow-hidden border border-[#F5E4D0]/20">
+        <div className="px-6 py-4 border-b border-[#F5E4D0]/20">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-xl font-semibold text-[#F4F4F4]">
               All Boots ({filteredAndSortedBoots.length} of {boots.length})
             </h2>
             <button
               onClick={handleAddNew}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+              className="px-4 py-2 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] text-sm font-medium"
             >
               + Add New Boot
             </button>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
                 Search
               </label>
               <input
@@ -384,17 +407,17 @@ export default function BootsTab() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Brand, model, type..."
-                className="w-full px-3 py-2 border rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4] placeholder:text-[#F4F4F4]/50"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
                 Gender
               </label>
               <select
                 value={filterGender}
                 onChange={(e) => setFilterGender(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
               >
                 <option value="all">All</option>
                 <option value="Male">Male</option>
@@ -402,13 +425,13 @@ export default function BootsTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
                 Boot Type
               </label>
               <select
                 value={filterBootType}
                 onChange={(e) => setFilterBootType(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
               >
                 <option value="all">All</option>
                 {uniqueBootTypes.map((type) => (
@@ -419,42 +442,75 @@ export default function BootsTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Brand
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
+                Width
               </label>
               <select
-                value={filterBrand}
-                onChange={(e) => setFilterBrand(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm"
+                value={filterWidth}
+                onChange={(e) => setFilterWidth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
               >
                 <option value="all">All</option>
-                {uniqueBrands.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}
+                {uniqueWidths.map((width) => (
+                  <option key={width} value={width}>
+                    {width}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
+                Instep Height
+              </label>
+              <select
+                value={filterInstepHeight}
+                onChange={(e) => setFilterInstepHeight(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
+              >
+                <option value="all">All</option>
+                {uniqueInstepHeights.map((height) => (
+                  <option key={height} value={height}>
+                    {height}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
+                Ankle Volume
+              </label>
+              <select
+                value={filterAnkleVolume}
+                onChange={(e) => setFilterAnkleVolume(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
+              >
+                <option value="all">All</option>
+                {uniqueAnkleVolumes.map((volume) => (
+                  <option key={volume} value={volume}>
+                    {volume}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#F4F4F4] mb-1">
                 Sort By
               </label>
               <div className="flex gap-2">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                  className="flex-1 px-3 py-2 border border-gray-600 rounded-lg text-sm bg-[#1a1a1a] text-[#F4F4F4]"
                 >
                   <option value="brand">Brand</option>
                   <option value="model">Model</option>
                   <option value="flex">Flex</option>
-                  <option value="lastWidthMM">Width</option>
                 </select>
                 <button
                   onClick={() =>
                     setSortOrder(sortOrder === "asc" ? "desc" : "asc")
                   }
-                  className="px-3 py-2 border rounded-lg text-sm hover:bg-gray-50"
+                  className="px-3 py-2 border border-gray-600 rounded-lg text-sm hover:bg-[#1a1a1a] text-[#F4F4F4] bg-[#2B2D30]"
                   title={sortOrder === "asc" ? "Ascending" : "Descending"}
                 >
                   {sortOrder === "asc" ? "↑" : "↓"}
@@ -464,63 +520,66 @@ export default function BootsTab() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+          <table className="w-full min-w-max">
+            <thead className="bg-[#1a1a1a]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Year
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Brand
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Model
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Gender
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Type
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
+                  Width
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Flex
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Width (mm)
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Instep
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
+                  Ankle Vol.
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Calf Vol.
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Toe Shape
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Features
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#F4F4F4]/80 uppercase whitespace-nowrap">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-[#F5E4D0]/10">
               {filteredAndSortedBoots.map((boot) => (
-                <tr key={boot.bootId} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                <tr key={boot.bootId} className="hover:bg-[#1a1a1a]">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4] whitespace-nowrap">
                     {boot.year}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 text-sm font-medium text-[#F4F4F4] whitespace-nowrap">
                     {boot.brand}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4] whitespace-nowrap">
                     {boot.model}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
                     {boot.gender}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
                     {typeof boot.bootType === "string"
                       ? boot.bootType
                       : typeof boot.bootType === "object" && boot.bootType
@@ -528,57 +587,66 @@ export default function BootsTab() {
                             boot.bootType.standard ? "Standard" : "",
                             boot.bootType.freestyle ? "Freestyle" : "",
                             boot.bootType.hybrid ? "Hybrid" : "",
-                            boot.bootType.touring ? "Touring" : "",
+                            boot.bootType.freeride ? "Freeride" : "",
                           ]
                             .filter(Boolean)
                             .join(", ") || "—"
                         : "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
+                    {boot.bootWidth || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
                     {boot.flex}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {boot.lastWidthMM}
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
+                    {Array.isArray(boot.instepHeight) 
+                      ? boot.instepHeight.join(", ") 
+                      : boot.instepHeight || "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {boot.instepHeight}
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
+                    {Array.isArray(boot.ankleVolume) 
+                      ? boot.ankleVolume.join(", ") 
+                      : boot.ankleVolume || "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {boot.calfVolume}
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
+                    {Array.isArray(boot.calfVolume) 
+                      ? boot.calfVolume.join(", ") 
+                      : boot.calfVolume || "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
                     {boot.toeBoxShape}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">
                       {boot.walkMode && (
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                        <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded border border-blue-700/50">
                           Walk
                         </span>
                       )}
                       {boot.rearEntry && (
-                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                        <span className="px-2 py-0.5 bg-green-900/50 text-green-300 text-xs rounded border border-green-700/50">
                           Rear
                         </span>
                       )}
                       {boot.calfAdjustment && (
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
+                        <span className="px-2 py-0.5 bg-purple-900/50 text-purple-300 text-xs rounded border border-purple-700/50">
                           Calf
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(boot)}
-                        className="text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-[#F5E4D0] hover:text-[#E8D4B8] font-medium"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(boot.bootId)}
-                        className="text-red-600 hover:text-red-800 font-medium"
+                        className="text-red-400 hover:text-red-300 font-medium"
                       >
                         Delete
                       </button>
@@ -589,7 +657,7 @@ export default function BootsTab() {
             </tbody>
           </table>
           {filteredAndSortedBoots.length === 0 && (
-            <div className="px-6 py-8 text-center text-gray-500">
+            <div className="px-6 py-8 text-center text-[#F4F4F4]/60">
               No boots found matching your filters.
             </div>
           )}

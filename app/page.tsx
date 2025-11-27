@@ -10,8 +10,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-grow">
+    <div className="min-h-screen flex flex-col bg-[#2B2D30]">
+      <main className="flex-grow bg-[#2B2D30]">
         {/* Hero Section */}
         <section
           className="relative pt-0 pb-20 min-h-screen flex items-center justify-center overflow-hidden bg-gray-900"
@@ -38,7 +38,7 @@ export default function Home() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-5xl font-bold text-white mb-6 drop-shadow-lg"
+              className="text-5xl font-bold text-[#F4F4F4] mb-6 drop-shadow-lg"
             >
               Find Your Perfect Ski Boots
             </motion.h1>
@@ -46,7 +46,7 @@ export default function Home() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-white/95 mb-8 max-w-2xl mx-auto drop-shadow-md"
+              className="text-xl text-[#F4F4F4]/95 mb-8 max-w-2xl mx-auto drop-shadow-md"
             >
               Take our quick 10-step fitting quiz to discover the best-fitting
               ski boots tailored to your feet, ability, and preferences.
@@ -59,7 +59,7 @@ export default function Home() {
               <Button
                 asChild
                 size="lg"
-                className="text-lg px-8 py-6 bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
+                className="text-lg px-8 py-6 bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] shadow-lg"
               >
                 <Link href="/quiz">Start Fitting</Link>
               </Button>
@@ -85,14 +85,14 @@ export default function Home() {
         />
 
         {/* 3-Step Explainer */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-[#2B2D30]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-center mb-12 text-gray-900"
+              className="text-3xl font-bold text-center mb-12 text-[#F4F4F4]"
             >
               How It Works
             </motion.h2>
@@ -128,18 +128,18 @@ export default function Home() {
                   <Card className="h-full">
                     <CardContent className="pt-6">
                       <motion.div
-                        className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                        className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
                         whileHover={{ scale: 1.1, rotate: 360 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <span className="text-2xl font-bold text-blue-600">
+                        <span className="text-2xl font-bold text-[#2B2D30]">
                           {step.number}
                         </span>
                       </motion.div>
-                      <h3 className="text-xl font-semibold mb-2">
+                      <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">
                         {step.title}
                       </h3>
-                      <p className="text-gray-600">{step.description}</p>
+                      <p className="text-[#F4F4F4]/80">{step.description}</p>
                     </CardContent>
                   </Card>
                 </motion.div>

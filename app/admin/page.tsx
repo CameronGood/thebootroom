@@ -29,9 +29,11 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#040404]">
+        <div className="sticky top-0 z-50 bg-[#040404] pt-4">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
+        </div>
+        <main className="flex-grow flex items-center justify-center bg-[#040404]">
           <Spinner size="lg" />
         </main>
         <Footer />
@@ -44,21 +46,23 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#040404]">
+      <div className="sticky top-0 z-50 bg-[#040404] pt-4">
       <Header />
-      <main className="flex-grow bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      </div>
+      <main className="flex-grow bg-[#040404] pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+          <h1 className="text-3xl font-bold mb-8 text-[#F4F4F4]">Admin Dashboard</h1>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200 mb-6">
+          <div className="border-b border-[#F5E4D0]/20 mb-6">
             <nav className="flex gap-4">
               <button
                 onClick={() => setActiveTab("boots")}
                 className={`px-4 py-2 font-medium border-b-2 transition ${
                   activeTab === "boots"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-[#F5E4D0] text-[#F5E4D0]"
+                    : "border-transparent text-[#F4F4F4]/60 hover:text-[#F4F4F4]"
                 }`}
               >
                 Boots
@@ -67,8 +71,8 @@ export default function AdminPage() {
                 onClick={() => setActiveTab("analytics")}
                 className={`px-4 py-2 font-medium border-b-2 transition ${
                   activeTab === "analytics"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-600 hover:text-gray-900"
+                    ? "border-[#F5E4D0] text-[#F5E4D0]"
+                    : "border-transparent text-[#F4F4F4]/60 hover:text-[#F4F4F4]"
                 }`}
               >
                 Analytics

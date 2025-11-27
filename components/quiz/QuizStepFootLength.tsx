@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { QuizAnswers } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion, AnimatePresence } from "framer-motion";
+import HelpModal from "./HelpModal";
+import QuizStepLayout from "./QuizStepLayout";
 
 interface Props {
   footLengthMM?: { left: number; right: number };
@@ -13,6 +13,8 @@ interface Props {
     shoeSize?: { system: "UK" | "US" | "EU"; value: number };
   }) => void;
   onBack: () => void;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
 export default function QuizStepFootLength({
@@ -20,6 +22,8 @@ export default function QuizStepFootLength({
   shoeSize,
   onNext,
   onBack,
+  currentStep,
+  totalSteps,
 }: Props) {
   const [inputType, setInputType] = useState<"mm" | "shoe">(
     footLengthMM ? "mm" : shoeSize ? "shoe" : "mm"
@@ -55,199 +59,172 @@ export default function QuizStepFootLength({
       : shoeValue && shoeValue !== "" && parseFloat(shoeValue) > 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Foot Length</h2>
-        <p className="text-gray-600 mb-4">
-          Measure each foot from heel to longest toe.
-        </p>
-        <div className="flex gap-3 mb-4 items-center">
+    <QuizStepLayout
+      title="Foot Length"
+      description="Measure each foot from heel to longest toe."
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      helpContent={
+        <>
           <button
             onClick={() => setShowCard(!showCard)}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
+            className="w-6 h-6 rounded-full border border-gray-300 hover:bg-gray-50 text-[#F4F4F4] inline-flex items-center justify-center font-semibold text-sm"
+            title="How to measure"
           >
-            How to measure <span className="font-semibold">?</span>
+            ?
           </button>
-        </div>
-      </div>
+          <HelpModal
+            isOpen={showCard}
+            onClose={() => setShowCard(false)}
+            title="How to Measure Foot Length"
+          >
+            <div className="space-y-4">
+              <div className="flex justify-center mb-4">
+                <img
+                  src="/quiz/Foot Length.svg"
+                  alt="How to measure foot length"
+                  className="max-w-xs h-auto max-h-48 object-contain rounded-lg border border-[#F5E4D0]/20"
+                />
+              </div>
+              
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-amber-400 text-lg">💡</span>
+                  <span className="font-semibold text-amber-400">Pro Tip</span>
+                </div>
+                <p className="text-sm text-[#F4F4F4]/90">For Performance fit measure without socks. For comfort fit measure with socks.</p>
+              </div>
 
-      <div className="mb-6">
-        <div className="flex gap-4 mb-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                  <p className="text-[#F4F4F4]/90">Place a sheet of paper on the floor so the edge is touching the book or cereal box.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                  <p className="text-[#F4F4F4]/90">Stand on the sheet of paper with your heel against the book or cereal box.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                  <p className="text-[#F4F4F4]/90">Use a pen to draw a line just in front of your longest toe. Repeat for both feet.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
+                  <p className="text-[#F4F4F4]/90">Using a ruler, measure the distance between the start of the paper and line.</p>
+        </div>
+              </div>
+            </div>
+          </HelpModal>
+        </>
+      }
+      onBack={onBack}
+      onNext={handleSubmit}
+      isValid={isValid}
+    >
+      <div className="flex flex-col items-center max-w-lg mx-auto space-y-2">
+        <div className="flex gap-3 sm:gap-4">
           <button
             onClick={() => {
               setInputType("mm");
-              // Clear shoe size values when switching to mm
               setShoeSystem("UK");
               setShoeValue("");
             }}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               inputType === "mm"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-[#F5E4D0] text-[#2B2D30]"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            Millimeters (mm)
+            My feet
           </button>
           <button
             onClick={() => {
               setInputType("shoe");
-              // Clear mm values when switching to shoe size
               setLeftMM("");
               setRightMM("");
             }}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               inputType === "shoe"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-[#F5E4D0] text-[#2B2D30]"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            Shoe Size
+            Quick
           </button>
         </div>
 
         {inputType === "mm" ? (
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="leftFootMM"
-                className="block text-sm font-medium mb-2"
-              >
-                Left Foot (mm)
-              </label>
+          <div className="flex flex-col gap-3 w-full max-w-sm">
+            <div className="relative">
               <input
                 id="leftFootMM"
                 name="leftFootMM"
                 type="number"
                 value={leftMM}
                 onChange={(e) => setLeftMM(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="e.g., 270"
+                className="w-full border-2 border-gray-300 rounded-lg bg-transparent text-[#F4F4F4] text-lg font-semibold focus:outline-none focus:border-[#F5E4D0] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] p-4 pr-12"
+                placeholder="Left 268"
                 min="100"
                 max="400"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#F4F4F4] pointer-events-none font-semibold">mm</span>
             </div>
-            <div>
-              <label
-                htmlFor="rightFootMM"
-                className="block text-sm font-medium mb-2"
-              >
-                Right Foot (mm)
-              </label>
+            <div className="relative">
               <input
                 id="rightFootMM"
                 name="rightFootMM"
                 type="number"
                 value={rightMM}
                 onChange={(e) => setRightMM(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="e.g., 270"
+                className="w-full border-2 border-gray-300 rounded-lg bg-transparent text-[#F4F4F4] text-lg font-semibold focus:outline-none focus:border-[#F5E4D0] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] p-4 pr-12"
+                placeholder="Right 265"
                 min="100"
                 max="400"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#F4F4F4] pointer-events-none font-semibold">mm</span>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="shoeSystem"
-                className="block text-sm font-medium mb-2"
-              >
-                Shoe Size System
-              </label>
+          <div className="flex flex-col gap-2 w-full max-w-sm">
               <select
                 id="shoeSystem"
                 name="shoeSystem"
                 value={shoeSystem}
-                onChange={(e) =>
-                  setShoeSystem(e.target.value as "UK" | "US" | "EU")
-                }
-                className="w-full p-3 border rounded-lg"
+              onChange={(e) => setShoeSystem(e.target.value as "UK" | "US" | "EU")}
+              className="w-full border-2 border-gray-300 rounded-lg appearance-none bg-transparent text-[#F4F4F4] text-lg font-semibold bg-no-repeat bg-right bg-[length:20px] focus:outline-none focus:border-[#F5E4D0] p-4 pr-12"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F4F4F4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 1.5rem center',
+                }}
               >
-                <option value="UK">UK</option>
-                <option value="US">US</option>
-                <option value="EU">EU</option>
+                <option value="UK" className="bg-[#2B2D30] text-[#F4F4F4]">UK</option>
+                <option value="US" className="bg-[#2B2D30] text-[#F4F4F4]">US</option>
+                <option value="EU" className="bg-[#2B2D30] text-[#F4F4F4]">EU</option>
               </select>
-            </div>
-            <div>
-              <label
-                htmlFor="shoeSize"
-                className="block text-sm font-medium mb-2"
-              >
-                Size
-              </label>
               <select
                 id="shoeSize"
                 name="shoeSize"
                 value={shoeValue}
                 onChange={(e) => setShoeValue(e.target.value)}
-                className="w-full p-3 border rounded-lg"
+              className="w-full border-2 border-gray-300 rounded-lg appearance-none bg-transparent text-[#F4F4F4] text-lg font-semibold bg-no-repeat bg-right bg-[length:20px] focus:outline-none focus:border-[#F5E4D0] p-4 pr-12"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23F4F4F4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 1.5rem center',
+                }}
               >
-                <option value="">Select size</option>
+                <option value="" className="bg-[#2B2D30] text-[#F4F4F4]">Select size</option>
                 {Array.from({ length: 17 }, (_, i) => {
                   const size = 4 + i * 0.5;
                   return (
-                    <option key={size} value={size}>
+                    <option key={size} value={size} className="bg-[#2B2D30] text-[#F4F4F4]">
                       {size}
                     </option>
                   );
                 })}
               </select>
-            </div>
           </div>
         )}
       </div>
-
-      <div className="flex gap-4">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 flex-1"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!isValid}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex-1"
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Card below */}
-      <AnimatePresence>
-        {showCard && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>How to Measure Foot Length</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm text-gray-600 list-disc list-inside">
-                  <li>Stand on a flat surface with your weight evenly distributed</li>
-                  <li>Place a ruler or measuring tape against a wall</li>
-                  <li>Position your heel against the wall</li>
-                  <li>Measure from the wall to the tip of your longest toe</li>
-                  <li>Measure both feet and enter the measurements</li>
-                  <li>We'll use the smaller foot to recommend your mondo size</li>
-                </ul>
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Tip:</strong> It's easier to create space inside a
-                    ski boot than to make it smaller, so we use your smaller
-                    foot measurement.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    </QuizStepLayout>
   );
 }

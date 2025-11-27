@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import { QuizAnswers } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion, AnimatePresence } from "framer-motion";
+import HelpModal from "./HelpModal";
+import QuizStepLayout from "./QuizStepLayout";
 
 interface Props {
   footWidth?: QuizAnswers["footWidth"];
   onNext: (value: QuizAnswers["footWidth"]) => void;
   onBack: () => void;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
-export default function QuizStepFootWidth({
+function QuizStepFootWidth({
   footWidth,
   onNext,
   onBack,
+  currentStep,
+  totalSteps,
 }: Props) {
   const [inputType, setInputType] = useState<"mm" | "category">(
     "left" in (footWidth || {})
@@ -57,188 +61,159 @@ export default function QuizStepFootWidth({
       : true;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Foot Width</h2>
-        <p className="text-gray-600 mb-4">
-          Measure across the widest part of each foot.
-        </p>
-        <div className="flex gap-3 mb-4 items-center">
+    <QuizStepLayout
+      title="Foot Width"
+      description="Measure across the widest part of each foot."
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      helpContent={
+        <>
           <button
             onClick={() => setShowCard(!showCard)}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 inline-flex items-center gap-2"
+            className="w-6 h-6 rounded-full border border-gray-300 hover:bg-gray-50 text-[#F4F4F4] inline-flex items-center justify-center font-semibold text-sm"
+            title="How to measure"
           >
-            How to measure <span className="font-semibold">?</span>
+            ?
           </button>
+          <HelpModal
+            isOpen={showCard}
+            onClose={() => setShowCard(false)}
+            title="How to Measure Foot Width"
+          >
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                  <p className="text-[#F4F4F4]/90">Stand on a flat surface with your weight evenly distributed</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                  <p className="text-[#F4F4F4]/90">Find the widest part of your foot (usually across the ball of your foot)</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                  <p className="text-[#F4F4F4]/90">Use a ruler or measuring tape to measure across this widest point</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
+                  <p className="text-[#F4F4F4]/90">Measure both feet and enter the measurements</p>
+                </div>
+              </div>
+              
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-blue-400 text-lg">ℹ️</span>
+                  <span className="font-semibold text-blue-400">Important</span>
         </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex gap-4 mb-4">
+                <p className="text-sm text-[#F4F4F4]/90">We use your smaller foot width measurement to ensure a proper fit, as it's easier to create space inside a ski boot than to make it smaller.</p>
+              </div>
+            </div>
+          </HelpModal>
+        </>
+      }
+      onBack={onBack}
+      onNext={handleSubmit}
+      isValid={isValid}
+    >
+      <div className="flex flex-col items-center max-w-lg mx-auto space-y-2">
+        <div className="flex gap-3 sm:gap-4">
           <button
             onClick={() => {
               setInputType("mm");
-              // Clear category value when switching to mm
               setCategory("Average");
             }}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               inputType === "mm"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-[#F5E4D0] text-[#2B2D30]"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            Millimeters (mm)
+            My Feet
           </button>
           <button
             onClick={() => {
               setInputType("category");
-              // Clear mm values when switching to category
               setLeftMM("");
               setRightMM("");
             }}
-            className={`px-4 py-2 rounded-lg ${
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               inputType === "category"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
+                ? "bg-[#F5E4D0] text-[#2B2D30]"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             }`}
           >
-            Category
+            Quick
           </button>
         </div>
 
         {inputType === "mm" ? (
-          <div className="space-y-4">
-            <div>
-              <label
-                htmlFor="leftFootWidthMM"
-                className="block text-sm font-medium mb-2"
-              >
-                Left Foot Width (mm)
-              </label>
+          <div className="flex flex-col gap-2 w-full max-w-sm">
+            <div className="relative">
               <input
                 id="leftFootWidthMM"
                 name="leftFootWidthMM"
                 type="number"
                 value={leftMM}
                 onChange={(e) => setLeftMM(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="e.g., 100"
+                className="w-full border-2 border-gray-300 rounded-lg bg-transparent text-[#F4F4F4] text-lg font-semibold focus:outline-none focus:border-[#F5E4D0] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] p-4 pr-12"
+                placeholder="Left 100"
                 min="50"
                 max="150"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#F4F4F4] pointer-events-none font-semibold">mm</span>
             </div>
-            <div>
-              <label
-                htmlFor="rightFootWidthMM"
-                className="block text-sm font-medium mb-2"
-              >
-                Right Foot Width (mm)
-              </label>
+            <div className="relative">
               <input
                 id="rightFootWidthMM"
                 name="rightFootWidthMM"
                 type="number"
                 value={rightMM}
                 onChange={(e) => setRightMM(e.target.value)}
-                className="w-full p-3 border rounded-lg"
-                placeholder="e.g., 100"
+                className="w-full border-2 border-gray-300 rounded-lg bg-transparent text-[#F4F4F4] text-lg font-semibold focus:outline-none focus:border-[#F5E4D0] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] p-4 pr-12"
+                placeholder="Right 98"
                 min="50"
                 max="150"
               />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#F4F4F4] pointer-events-none font-semibold">mm</span>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2 flex flex-col items-center w-full max-w-md">
             <button
               onClick={() => setCategory("Narrow")}
-              className={`w-full p-4 text-left border-2 rounded-lg transition ${
+              className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
                 category === "Narrow"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
                   : "border-gray-200 hover:border-gray-300"
               }`}
             >
               <span className="text-lg font-semibold">Narrow</span>
-              <p className="text-sm text-gray-600 mt-1">
-                Feet are narrower than average
-              </p>
             </button>
             <button
               onClick={() => setCategory("Average")}
-              className={`w-full p-4 text-left border-2 rounded-lg transition ${
+              className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
                 category === "Average"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
                   : "border-gray-200 hover:border-gray-300"
               }`}
             >
               <span className="text-lg font-semibold">Average</span>
-              <p className="text-sm text-gray-600 mt-1">Standard foot width</p>
             </button>
             <button
               onClick={() => setCategory("Wide")}
-              className={`w-full p-4 text-left border-2 rounded-lg transition ${
+              className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
                 category === "Wide"
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
                   : "border-gray-200 hover:border-gray-300"
               }`}
             >
               <span className="text-lg font-semibold">Wide</span>
-              <p className="text-sm text-gray-600 mt-1">
-                Feet are wider than average
-              </p>
             </button>
           </div>
         )}
       </div>
-
-      <div className="flex gap-4">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 flex-1"
-        >
-          Back
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!isValid}
-          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex-1"
-        >
-          Next
-        </button>
-      </div>
-
-      {/* Card below */}
-      <AnimatePresence>
-        {showCard && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>How to Measure Foot Width</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2 text-sm text-gray-600 list-disc list-inside">
-                  <li>Stand on a flat surface with your weight evenly distributed</li>
-                  <li>Find the widest part of your foot (usually across the ball of your foot)</li>
-                  <li>Use a ruler or measuring tape to measure across this widest point</li>
-                  <li>Measure both feet and enter the measurements</li>
-                  <li>We'll use the smaller width to ensure a proper fit</li>
-                </ul>
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Tip:</strong> It's easier to create space inside a
-                    ski boot than to make it smaller, so we use your smaller
-                    foot width measurement.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    </QuizStepLayout>
   );
 }
+
+export default QuizStepFootWidth;

@@ -3,6 +3,7 @@ import { auth } from "@/lib/firebase";
 import { getIdToken } from "firebase/auth";
 import { upsertBoot, bootExists } from "@/lib/firestore/boots";
 import { bootSchema } from "@/lib/validators";
+import { toLAVArray } from "@/lib/utils/parseMulti";
 
 // Check if user is admin
 async function isAdmin(request: NextRequest): Promise<boolean> {
@@ -64,7 +65,7 @@ function parseCSV(csvText: string): any[] {
   console.log("Header count:", headers.length);
 
   // Verify we have the expected headers
-  const expectedHeaders = ["year", "gender", "bootType", "brand", "model"];
+  const expectedHeaders = ["year", "gender", "bootType", "brand", "model", "bootWidth"];
   const hasExpectedHeaders = expectedHeaders.every((h) =>
     headers.some((header) => header.toLowerCase() === h.toLowerCase())
   );
@@ -138,12 +139,11 @@ function mapRowFields(row: any) {
       "",
     brand: row.brand || row.Brand || "",
     model: row.model || row.Model || "",
-    lastWidthMM:
-      row.lastWidthMM ||
-      row["lastWidthMM"] ||
-      row["Last Width MM"] ||
-      row.width ||
-      row.Width ||
+    bootWidth:
+      row.bootWidth ||
+      row["bootWidth"] ||
+      row["Boot Width"] ||
+      row["boot width"] ||
       "",
     flex: row.flex || row.Flex || "",
     instepHeight:
@@ -304,15 +304,7 @@ export async function POST(request: NextRequest) {
           flexValue = flexParts[flexParts.length - 1];
         }
 
-        const lastWidthMM = parseFloat(row.lastWidthMM || "0");
         const flex = parseFloat(flexValue || "0");
-
-        if (isNaN(lastWidthMM) || lastWidthMM <= 0) {
-          errors.push(
-            `Row ${i + 2}: Invalid lastWidthMM (must be a positive number). Got: "${row.lastWidthMM}"`
-          );
-          continue;
-        }
 
         if (isNaN(flex) || flex <= 0) {
           errors.push(
@@ -344,25 +336,19 @@ export async function POST(request: NextRequest) {
         };
 
         const gender = normalizeEnum(row.gender, ["Male", "Female"]);
-        const instepHeight = normalizeEnum(row.instepHeight, [
-          "Low",
-          "Medium",
-          "High",
-        ]);
-        const ankleVolume = normalizeEnum(row.ankleVolume, [
-          "Low",
-          "Medium",
-          "High",
-        ]);
-        const calfVolume = normalizeEnum(row.calfVolume, [
-          "Low",
-          "Medium",
-          "High",
-        ]);
+        // Parse multi-value LAV fields (semicolon-separated in CSV)
+        const instepHeight = toLAVArray(row.instepHeight);
+        const ankleVolume = toLAVArray(row.ankleVolume);
+        const calfVolume = toLAVArray(row.calfVolume);
         const toeBoxShape = normalizeEnum(row.toeBoxShape, [
           "Round",
           "Square",
           "Angled",
+        ]);
+        const bootWidth = normalizeEnum(row.bootWidth, [
+          "Narrow",
+          "Average",
+          "Wide",
         ]);
 
         if (!gender) {
@@ -371,27 +357,33 @@ export async function POST(request: NextRequest) {
           );
           continue;
         }
-        if (!instepHeight) {
+        if (instepHeight.length === 0) {
           errors.push(
-            `Row ${i + 2}: Invalid instepHeight (must be "Low", "Medium", or "High")`
+            `Row ${i + 2}: Invalid instepHeight (must be "Low", "Average", or "High", semicolon-separated for multiple values)`
           );
           continue;
         }
-        if (!ankleVolume) {
+        if (ankleVolume.length === 0) {
           errors.push(
-            `Row ${i + 2}: Invalid ankleVolume (must be "Low", "Medium", or "High")`
+            `Row ${i + 2}: Invalid ankleVolume (must be "Low", "Average", or "High", semicolon-separated for multiple values)`
           );
           continue;
         }
-        if (!calfVolume) {
+        if (calfVolume.length === 0) {
           errors.push(
-            `Row ${i + 2}: Invalid calfVolume (must be "Low", "Medium", or "High")`
+            `Row ${i + 2}: Invalid calfVolume (must be "Low", "Average", or "High", semicolon-separated for multiple values)`
           );
           continue;
         }
         if (!toeBoxShape) {
           errors.push(
             `Row ${i + 2}: Invalid toeBoxShape (must be "Round", "Square", or "Angled")`
+          );
+          continue;
+        }
+        if (!bootWidth) {
+          errors.push(
+            `Row ${i + 2}: Invalid bootWidth (must be "Narrow", "Average", or "Wide")`
           );
           continue;
         }
@@ -439,7 +431,7 @@ export async function POST(request: NextRequest) {
           if (!value) return null;
           const normalized = value.trim();
           // Try exact match first
-          if (["Standard", "Freestyle", "Hybrid", "Touring"].includes(normalized)) {
+          if (["Standard", "Freestyle", "Hybrid", "Freeride"].includes(normalized)) {
             return normalized;
           }
           // Try case-insensitive match
@@ -447,10 +439,10 @@ export async function POST(request: NextRequest) {
           if (lower === "standard" || lower === "all-mountain") return "Standard";
           if (lower === "freestyle") return "Freestyle";
           if (lower === "hybrid") return "Hybrid";
-          if (lower === "touring") return "Touring";
+          if (lower === "freeride") return "Freeride";
           // Try capitalizing first letter
           const capitalized = normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
-          if (["Standard", "Freestyle", "Hybrid", "Touring"].includes(capitalized)) {
+          if (["Standard", "Freestyle", "Hybrid", "Freeride"].includes(capitalized)) {
             return capitalized;
           }
           return null;
@@ -459,7 +451,7 @@ export async function POST(request: NextRequest) {
         const bootType = normalizeBootType(bootTypeStr);
         if (!bootType) {
           errors.push(
-            `Row ${i + 2}: Invalid bootType (must be "Standard", "Freestyle", "Hybrid", or "Touring"). Got: "${bootTypeStr}"`
+            `Row ${i + 2}: Invalid bootType (must be "Standard", "Freestyle", "Hybrid", or "Freeride"). Got: "${bootTypeStr}"`
           );
           continue;
         }
@@ -467,14 +459,14 @@ export async function POST(request: NextRequest) {
         const bootData = {
           year: (row.year || "").trim(),
           gender: gender as "Male" | "Female",
-          bootType: bootType as "Standard" | "Freestyle" | "Hybrid" | "Touring",
+          bootType: bootType as "Standard" | "Freestyle" | "Hybrid" | "Freeride",
           brand: (row.brand || "").trim(),
           model: (row.model || "").trim(),
-          lastWidthMM,
+          bootWidth: bootWidth as "Narrow" | "Average" | "Wide",
           flex,
-          instepHeight: instepHeight as "Low" | "Medium" | "High",
-          ankleVolume: ankleVolume as "Low" | "Medium" | "High",
-          calfVolume: calfVolume as "Low" | "Medium" | "High",
+          instepHeight: instepHeight,
+          ankleVolume: ankleVolume,
+          calfVolume: calfVolume,
           toeBoxShape: toeBoxShape as "Round" | "Square" | "Angled",
           calfAdjustment: convertYesNoToBoolean(row.calfAdjustment),
           walkMode: convertYesNoToBoolean(row.walkMode),
