@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Volume } from "@/types";
 import QuizStepLayout from "./QuizStepLayout";
+import HelpModal from "./HelpModal";
 
 interface Props {
   value?: Volume;
@@ -12,13 +13,6 @@ interface Props {
   currentStep?: number;
   totalSteps?: number;
 }
-
-// Helper function to get image path - supports SVG and other formats
-const getImagePath = (volume: string): string => {
-  const basePath = "/quiz/";
-  // Match the actual filenames: "Heel Low.svg", "Heel Average.svg", "Heel High.svg"
-  return `${basePath}Heel ${volume}.svg`;
-};
 
 function QuizStepAnkleVolume({
   value,
@@ -43,6 +37,7 @@ function QuizStepAnkleVolume({
 
   const [sliderValue, setSliderValue] = useState<number>(getInitialSliderValue());
   const [selected, setSelected] = useState<Volume | undefined>(value);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     if (value) {
@@ -61,8 +56,6 @@ function QuizStepAnkleVolume({
     onChange(selectedVolume.value);
   };
 
-  const currentVolume = volumes[sliderValue];
-
   const handleSubmit = () => {
     if (selected) {
       onNext(selected);
@@ -78,75 +71,74 @@ function QuizStepAnkleVolume({
       onBack={onBack}
       onNext={handleSubmit}
       isValid={!!selected}
+      brutalistMode={true}
       noContentSpacing={true}
+      helpContent={
+        <>
+          <button
+            onClick={() => setShowCard(!showCard)}
+            className="w-8 h-8 border-[3px] border-[#F5E4D0]/10 hover:bg-[#F5E4D0]/10 text-[#F4F4F4] inline-flex items-center justify-center font-bold text-lg"
+            title="Ankle information"
+          >
+            ?
+          </button>
+          <HelpModal
+            isOpen={showCard}
+            onClose={() => setShowCard(false)}
+            title="Ankle Volume Guide"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {volumes.map((volume) => (
+                <div key={volume.value} className="border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 p-6 flex flex-col">
+                  <img
+                    src={`/quiz/Heel ${volume.label}.svg`}
+                    alt={`${volume.label} ankle`}
+                    className="w-full max-w-[350px] h-auto max-h-72 object-contain mx-auto mb-0"
+                  />
+                  <div className="flex justify-center">
+                    <p className="text-base text-[#F4F4F4]/90 text-left max-w-[300px]">
+                      <span className="font-bold text-[#F5E4D0]">{volume.label}:</span>{" "}
+                      {volume.value === "Low" && "A smaller heel and ankle area, creating less volume around your heel."}
+                      {volume.value === "Average" && "A moderate heel and ankle area, typical for most people."}
+                      {volume.value === "High" && "A larger heel and ankle area, creating more volume around your heel."}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </HelpModal>
+        </>
+      }
     >
-      <div className="flex flex-col items-center space-y-3 lg:space-y-4 max-w-2xl mx-auto">
-        {/* Image display */}
-        <div className="w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 bg-transparent rounded-lg flex items-center justify-center overflow-hidden max-h-[45vh] md:-mt-[40px]">
-          <img
-            src={getImagePath(currentVolume.value)}
-            alt={currentVolume.label}
-            className="w-full h-full object-contain"
-            style={{ filter: 'saturate(0.75)' }}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              const parent = target.parentElement;
-              if (parent && !parent.querySelector(".emoji-fallback")) {
-                const emojiMap: Record<Volume, string> = {
-                  Low: "📏",
-                  Average: "📐",
-                  High: "📊",
-                };
-                const fallback = document.createElement("span");
-                fallback.className = "emoji-fallback text-4xl";
-                fallback.textContent = emojiMap[currentVolume.value];
-                parent.appendChild(fallback);
-              }
-            }}
-          />
-      </div>
-
-        {/* Slider */}
-        <div className="w-full max-w-md md:-mt-[40px]">
-          <style dangerouslySetInnerHTML={{__html: `
-            .ankle-slider::-webkit-slider-thumb {
-              appearance: none;
-              width: 20px;
-              height: 20px;
-              background: #F5E4D0;
-              border-radius: 4px;
-              cursor: pointer;
-            }
-            .ankle-slider::-moz-range-thumb {
-              width: 20px;
-              height: 20px;
-              background: #F5E4D0;
-              border-radius: 4px;
-              cursor: pointer;
-              border: none;
-            }
-          `}} />
-          <input
-            type="range"
-            min="0"
-            max={volumes.length - 1}
-            step="1"
-            value={sliderValue}
-            onChange={(e) => handleSliderChange(parseInt(e.target.value))}
-            className="ankle-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#F5E4D0]"
-            style={{
-              background: `linear-gradient(to right, #F5E4D0 0%, #F5E4D0 ${(sliderValue / (volumes.length - 1)) * 100}%, rgba(229, 231, 235, 0.7) ${(sliderValue / (volumes.length - 1)) * 100}%, rgba(229, 231, 235, 0.7) 100%)`
-            }}
-          />
-           <div className="flex justify-between mt-2 text-sm sm:text-base text-[#F4F4F4]">
-            {volumes.map((volume, index) => (
-              <span key={volume.value} className={index === sliderValue ? "font-semibold text-[#F5E4D0]" : ""}>
-                {volume.label}
-              </span>
-            ))}
+      <div className="flex flex-row items-center justify-start gap-6 max-w-2xl flex-wrap">
+        {volumes.map((volume) => (
+          <div key={volume.value} className="flex items-center gap-3 group">
+            <span
+              onClick={() => {
+                const index = volumes.findIndex((v) => v.value === volume.value);
+                if (index >= 0) {
+                  handleSliderChange(index);
+                }
+              }}
+              className={`text-lg font-medium cursor-pointer transition-colors ${
+                selected === volume.value ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
+              }`}
+            >
+              {volume.label}
+            </span>
+            <input
+              type="checkbox"
+              checked={selected === volume.value}
+              onChange={() => {
+                const index = volumes.findIndex((v) => v.value === volume.value);
+                if (index >= 0) {
+                  handleSliderChange(index);
+                }
+              }}
+              className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+            />
           </div>
-        </div>
+        ))}
       </div>
     </QuizStepLayout>
   );

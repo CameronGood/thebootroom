@@ -36,15 +36,16 @@ export default function QuizStepAbility({
 
   return (
     <QuizStepLayout
-      title="Skiing Ability"
+      title="Ability"
       description="Select an option that best matches your ability."
       currentStep={currentStep}
       totalSteps={totalSteps}
+      brutalistMode={true}
       helpContent={
         <>
         <button
           onClick={() => setShowCard(!showCard)}
-            className="w-6 h-6 rounded-full border border-gray-300 hover:bg-gray-50 text-[#F4F4F4] inline-flex items-center justify-center font-semibold text-sm"
+            className="w-8 h-8 border-[3px] border-[#F5E4D0]/10 hover:bg-[#F5E4D0]/10 text-[#F4F4F4] inline-flex items-center justify-center font-bold text-lg"
           title="Ability information"
         >
           ?
@@ -84,37 +85,55 @@ export default function QuizStepAbility({
       onNext={() => selected && onNext(selected)}
       isValid={!!selected}
     >
-      <div className="space-y-3 lg:space-y-4 flex flex-col items-center max-w-md mx-auto">
-        <button
-          onClick={() => handleSelect("Beginner")}
-          className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
-            selected === "Beginner"
-              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <span className="text-lg font-semibold">Beginner</span>
-        </button>
-        <button
-          onClick={() => handleSelect("Intermediate")}
-          className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
-            selected === "Intermediate"
-              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <span className="text-lg font-semibold">Intermediate</span>
-        </button>
-        <button
-          onClick={() => handleSelect("Advanced")}
-          className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
-            selected === "Advanced"
-              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <span className="text-lg font-semibold">Advanced</span>
-        </button>
+      <div className="flex flex-row items-center justify-start gap-4 max-w-2xl flex-wrap">
+        <div className="flex items-center gap-3 group border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-4 py-2">
+          <span
+            onClick={() => handleSelect("Beginner")}
+            className={`text-lg font-medium cursor-pointer transition-colors ${
+              selected === "Beginner" ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
+            }`}
+          >
+            Beginner
+          </span>
+          <input
+            type="checkbox"
+            checked={selected === "Beginner"}
+            onChange={() => handleSelect("Beginner")}
+            className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+          />
+        </div>
+        <div className="flex items-center gap-3 group border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-4 py-2">
+          <span
+            onClick={() => handleSelect("Intermediate")}
+            className={`text-lg font-medium cursor-pointer transition-colors ${
+              selected === "Intermediate" ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
+            }`}
+          >
+            Intermediate
+          </span>
+          <input
+            type="checkbox"
+            checked={selected === "Intermediate"}
+            onChange={() => handleSelect("Intermediate")}
+            className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+          />
+        </div>
+        <div className="flex items-center gap-3 group border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-4 py-2">
+          <span
+            onClick={() => handleSelect("Advanced")}
+            className={`text-lg font-medium cursor-pointer transition-colors ${
+              selected === "Advanced" ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
+            }`}
+          >
+            Advanced
+          </span>
+          <input
+            type="checkbox"
+            checked={selected === "Advanced"}
+            onChange={() => handleSelect("Advanced")}
+            className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+          />
+        </div>
       </div>
     </QuizStepLayout>
   );

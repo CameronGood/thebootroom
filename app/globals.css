@@ -17,7 +17,23 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-mono), monospace;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Apply mono font to all text elements except headings */
+p, span, div, a, li, td, th, label, input, textarea, select, button, small {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+/* Keep headings with default sans-serif */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+html {
+  overflow-y: auto;
 }
 
 /* Safe area utilities for mobile devices */
@@ -35,4 +51,163 @@ body {
 
 .safe-area-right {
   padding-right: env(safe-area-inset-right);
+}
+
+/* Hero door image - optimized sizing */
+.hero-door-image {
+  width: 60rem;
+  max-width: 95vw;
+  height: auto;
+  will-change: auto;
+}
+
+@media (min-width: 640px) {
+  .hero-door-image {
+    width: 55rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-door-image {
+    width: 75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-door-image {
+    width: 90rem;
+  }
+}
+
+.hero-background {
+  position: relative;
+  background-color: #0a0a0a;
+  overflow-x: hidden;
+  height: 100vh;
+  min-height: 100vh;
+}
+
+.hero-sign {
+  position: relative;
+  border-radius: 4px;
+  background: rgba(10, 10, 10, 0.97);
+  border: 2px solid rgba(245, 228, 208, 0.15);
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-sign-wrapper {
+  top: calc(20vh + 5.74vh);
+  left: calc(8% + 9.77vw);
+}
+
+@media (min-width: 640px) {
+  .hero-sign-wrapper {
+    top: calc(19vh + 5.74vh);
+    left: calc(7.5% + 9.77vw);
+  }
+}
+
+@media (min-width: 768px) {
+  .hero-sign-wrapper {
+    top: calc(18vh + 5.74vh);
+    left: calc(7% + 9.77vw);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-sign-wrapper {
+    top: calc(17vh + 5.74vh);
+    left: calc(6.5% + 9.77vw);
+  }
+}
+
+@media (min-width: 1280px) {
+  .hero-sign-wrapper {
+    top: calc(16vh + 5.74vh);
+    left: calc(6% + 9.77vw);
+  }
+}
+
+.hero-container-fade-in {
+    opacity: 0;
+  animation: heroFadeIn 0.01s ease-in 1.3s forwards;
+  }
+
+@keyframes heroFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Glow effects - optimized animations */
+.glow-container {
+  will-change: contents;
+  contain: layout style paint;
+}
+
+.glow-layer {
+  opacity: 0;
+  animation: glowFadeIn 1s ease-out 0.3s forwards;
+  will-change: opacity;
+}
+
+.glow-accent {
+  opacity: 0;
+  animation: glowFadeIn 0.8s ease-out 0.5s forwards;
+  will-change: opacity;
+}
+
+@keyframes glowFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Brutalist slider styling */
+.brutalist-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(245, 228, 208, 0.4);
+  background: #F5E4D0;
+  cursor: pointer;
+  border-radius: 0;
+  box-shadow: 0 0 0 2px #1a1a1a;
+}
+
+.brutalist-slider::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(245, 228, 208, 0.4);
+  background: #F5E4D0;
+  cursor: pointer;
+  border-radius: 0;
+  -moz-appearance: none;
+  box-shadow: 0 0 0 2px #1a1a1a;
+}
+
+.brutalist-slider::-webkit-slider-thumb:hover {
+  border-color: rgba(245, 228, 208, 0.6);
+  background: #F5E4D0;
+}
+
+.brutalist-slider::-moz-range-thumb:hover {
+  border-color: rgba(245, 228, 208, 0.6);
+  background: #F5E4D0;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .glow-layer,
+  .glow-accent,
+  .hero-background {
+    animation: none;
+    opacity: 1;
+  }
 }

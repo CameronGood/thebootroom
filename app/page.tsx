@@ -1,92 +1,151 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import BrandBanner from "@/components/BrandBanner";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import dynamic from "next/dynamic";
+
+const Snowfall = dynamic(() => import("@/components/ui/snowfall").then(mod => ({ default: mod.Snowfall })), {
+  ssr: false,
+  loading: () => null,
+});
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
+  const prefersReducedMotion = useReducedMotion();
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#2B2D30]">
-      <main className="flex-grow bg-[#2B2D30]">
-        {/* Hero Section */}
-        <section
-          className="relative pt-0 pb-20 min-h-screen flex items-center justify-center overflow-hidden bg-gray-900"
-          style={{
-            backgroundImage: "url(/hero-background.jpg)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            backgroundAttachment: "fixed",
-          }}
-        >
-          {/* Header positioned absolutely over hero at the very top */}
-          <div className="absolute top-0 left-0 right-0 z-50">
-            <div className="pt-4">
-              <Header />
+    <>
+      {/* Header floating at the top */}
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-[#040404] pt-4 pb-0">
+        <Header />
+      </div>
+      {/* Hero Section */}
+      <section className="relative hero-background flex items-center justify-center overflow-hidden" style={{ height: '100vh', width: '100vw', paddingTop: '100px' }}>
+        <Snowfall startDelay={2} flakeCount={150} />
+        
+        {/* Container for all hero content */}
+        <div className="relative w-full px-4 sm:px-6 lg:px-8 z-50">
+          <div className="relative flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 min-h-[400px]">
+            {/* Combined container: Image, Description, and CTA - starts from center */}
+            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+              {/* Ski Boot Image Container - left side */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  delay: 1.3,
+                  duration: 1.0,
+                  ease: "easeOut"
+                }}
+                className="flex-shrink-0 order-2 lg:order-1 w-full lg:w-auto flex justify-center lg:-ml-[250px]"
+              >
+                <Image 
+                  src="/images/Boots/Shift_supra_100.png" 
+                  alt="Salomon Shift Supra 100 Ski Boot" 
+                  width={450}
+                  height={600}
+                  className="w-[clamp(220px,28vw,450px)] h-auto object-contain"
+                  style={{
+                    mixBlendMode: 'screen',
+                    filter: 'contrast(1.1) brightness(1.1)'
+                  }}
+                  priority
+                  quality={90}
+                />
+              </motion.div>
+
+              {/* Description and CTA Container - starts from center */}
+              <motion.div 
+                className="flex flex-col items-center lg:items-start gap-8 w-full max-w-md order-1 lg:order-2 pl-0"
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: 1
+                }}
+                transition={{
+                  delay: 1.3,
+                  duration: 1.0,
+                  ease: "easeOut"
+                }}
+              >
+              {/* Description */}
+              <div className="text-center lg:text-left pl-0" style={{ maxWidth: 'calc(28rem - 30px)' }}>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl whitespace-nowrap font-bold block mb-6 leading-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif', color: '#F5E4D0' }}>
+                  Skip the guess work!
+                </h1>
+                <p className="text-lg sm:text-xl lg:text-2xl block mb-8 text-[#F4F4F4]/90 leading-relaxed">
+                  Get matched in minutes with data-driven fitting.
+                </p>
+              </div>
+
+              {/* CTA Button */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  delay: 1.3,
+                  duration: 1.0,
+                  ease: "easeOut"
+                }}
+                className="w-full sm:w-auto"
+              >
+                <Button
+                  asChild
+                  size="lg"
+                  className="bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[#F5E4D0] w-full sm:w-auto"
+                >
+                  <Link href="/quiz" prefetch={false}>START FITTING</Link>
+                </Button>
+              </motion.div>
+            </motion.div>
             </div>
           </div>
+        </div>
+      </section>
+      <main className="bg-[#040404]">
 
-          {/* Overlay for text readability - very subtle overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-black/10 to-black/25"></div>
-
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-20">
-            <motion.h1
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+        {/* Brand Section */}
+        <section className="py-16 bg-[#040404]">
+          <div className="w-full px-4 sm:px-8 md:px-[50px]">
+            <div className="w-[90%] mx-auto text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-5xl font-bold text-[#F4F4F4] mb-6 drop-shadow-lg"
+              className="text-2xl font-bold text-[#F4F4F4] mb-8"
             >
-              Find Your Perfect Ski Boots
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-[#F4F4F4]/95 mb-8 max-w-2xl mx-auto drop-shadow-md"
-            >
-              Take our quick 10-step fitting quiz to discover the best-fitting
-              ski boots tailored to your feet, ability, and preferences.
-            </motion.p>
+              Compare 100's of Boots from Major Brands
+            </motion.h2>
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-wrap justify-center gap-8 text-[#F4F4F4]/80"
             >
-              <Button
-                asChild
-                size="lg"
-                className="text-lg px-8 py-6 bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] shadow-lg"
-              >
-                <Link href="/quiz">Start Fitting</Link>
-              </Button>
+              <span>Salomon</span>
+              <span>Atomic</span>
+              <span>Rossignol</span>
+              <span>Nordica</span>
+              <span>Tecnica</span>
+              <span>Lange</span>
+              <span>Head</span>
+              <span>K2</span>
+              <span>Dalbello</span>
+              <span>Fischer</span>
             </motion.div>
+            </div>
           </div>
         </section>
 
-        {/* Brand Banner */}
-        <BrandBanner
-          brands={[
-            { name: "Salomon", logo: "/brands/salomon.svg" },
-            { name: "Atomic", logo: "/brands/atomic.svg" },
-            { name: "Rossignol", logo: "/brands/rossignol.svg" },
-            { name: "Nordica", logo: "/brands/nordica.svg" },
-            { name: "Tecnica", logo: "/brands/tecnica.svg" },
-            { name: "Lange", logo: "/brands/lange.svg" },
-            { name: "Head", logo: "/brands/head.svg" },
-            { name: "K2", logo: "/brands/k2.svg" },
-            { name: "Dalbello", logo: "/brands/dalbello.svg" },
-            { name: "Fischer", logo: "/brands/fischer.svg" },
-          ]}
-          autoRotateInterval={3000}
-        />
-
         {/* 3-Step Explainer */}
-        <section className="py-16 bg-[#2B2D30]">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 bg-[#040404]">
+          <div className="w-full px-4 sm:px-8 md:px-[50px]">
+            <div className="w-[90%] mx-auto">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -97,58 +156,60 @@ export default function Home() {
               How It Works
             </motion.h2>
             <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  number: 1,
-                  title: "Take the Quiz",
-                  description:
-                    "Answer 10 simple questions about your feet, skiing ability, and preferences.",
-                },
-                {
-                  number: 2,
-                  title: "Get Matched",
-                  description:
-                    "Our algorithm finds the top 3 boots that best fit your specific requirements.",
-                },
-                {
-                  number: 3,
-                  title: "Buy & Save",
-                  description:
-                    "Purchase through our affiliate links and save your results for later.",
-                },
-              ].map((step, index) => (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  className="text-center"
-                >
-                  <Card className="h-full">
-                    <CardContent className="pt-6">
-                      <motion.div
-                        className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                        whileHover={{ scale: 1.1, rotate: 360 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <span className="text-2xl font-bold text-[#2B2D30]">
-                          {step.number}
-                        </span>
-                      </motion.div>
-                      <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">
-                        {step.title}
-                      </h3>
-                      <p className="text-[#F4F4F4]/80">{step.description}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <Card className="text-center">
+                  <CardContent className="pt-6">
+                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-[#2B2D30]">1</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Take the Quiz</h3>
+                    <p className="text-[#F4F4F4]/80">Answer 10 simple questions about your feet, skiing ability, and preferences.</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card className="text-center">
+                  <CardContent className="pt-6">
+                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-[#2B2D30]">2</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Get Matched</h3>
+                    <p className="text-[#F4F4F4]/80">Our algorithm finds the top 3 boots that best fit your specific requirements.</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+              >
+                <Card className="text-center">
+                  <CardContent className="pt-6">
+                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-[#2B2D30]">3</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Buy & Save</h3>
+                    <p className="text-[#F4F4F4]/80">Purchase through our affiliate links and save your results for later.</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
             </div>
           </div>
         </section>
       </main>
       <Footer />
-    </div>
+    </>
   );
 }

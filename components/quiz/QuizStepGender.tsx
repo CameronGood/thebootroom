@@ -32,11 +32,12 @@ export default function QuizStepGender({ value, onNext, onChange, currentStep, t
       description="Select the anatomy that best matches your lower leg and foot shape."
       currentStep={currentStep}
       totalSteps={totalSteps}
+      brutalistMode={true}
       helpContent={
         <>
         <button
           onClick={() => setShowCard(!showCard)}
-            className="w-6 h-6 rounded-full border border-gray-300 hover:bg-gray-50 text-[#F4F4F4] inline-flex items-center justify-center font-semibold text-sm"
+            className="w-8 h-8 border-[3px] border-[#F5E4D0]/10 hover:bg-[#F5E4D0]/10 text-[#F4F4F4] inline-flex items-center justify-center font-bold text-lg"
           title="Anatomy information"
         >
           ?
@@ -63,27 +64,39 @@ export default function QuizStepGender({ value, onNext, onChange, currentStep, t
       isValid={!!selected}
       showBackButton={false}
     >
-      <div className="space-y-3 lg:space-y-4 flex flex-col items-center max-w-md mx-auto">
-        <button
+      <div className="flex flex-row items-center justify-start gap-4 max-w-2xl flex-wrap">
+        <div className="flex items-center gap-3 group border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-4 py-2">
+          <span
           onClick={() => handleSelect("Male")}
-          className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
-            selected === "Male"
-              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-        >
-          <span className="text-lg font-semibold">Male</span>
-        </button>
-        <button
+            className={`text-lg font-medium cursor-pointer transition-colors ${
+              selected === "Male" ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
+            }`}
+          >
+            Male
+          </span>
+          <input
+            type="checkbox"
+            checked={selected === "Male"}
+            onChange={() => handleSelect("Male")}
+            className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+          />
+        </div>
+        <div className="flex items-center gap-3 group border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-4 py-2">
+          <span
           onClick={() => handleSelect("Female")}
-          className={`w-full p-4 text-center border-2 rounded-lg transition min-h-[60px] ${
-            selected === "Female"
-              ? "border-[#F5E4D0] bg-[#F5E4D0]/20"
-              : "border-gray-200 hover:border-gray-300"
+            className={`text-lg font-medium cursor-pointer transition-colors ${
+              selected === "Female" ? "text-[#F5E4D0]" : "text-[#F4F4F4] hover:text-[#F5E4D0]/70"
           }`}
         >
-          <span className="text-lg font-semibold">Female</span>
-        </button>
+            Female
+          </span>
+          <input
+            type="checkbox"
+            checked={selected === "Female"}
+            onChange={() => handleSelect("Female")}
+            className="w-5 h-5 rounded border-2 border-[#F5E4D0]/50 bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer transition-all checked:bg-[#F5E4D0] checked:border-[#F5E4D0]"
+          />
+        </div>
       </div>
     </QuizStepLayout>
   );

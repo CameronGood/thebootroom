@@ -23,36 +23,40 @@ export default function HelpModal({
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+      <div className="absolute inset-0 bg-[#040404]" />
       
       {/* Modal Content */}
       <div
-        className="relative z-10 w-full max-w-lg mx-auto bg-gradient-to-br from-[#2B2D30] to-[#1a1a1a] border border-[#F5E4D0]/30 rounded-2xl shadow-2xl overflow-hidden"
+        className="relative z-10 w-[90%] max-w-6xl mx-auto bg-[#2B2D30] border-[3px] border-[#F5E4D0]/10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#F5E4D0]/10 to-[#F5E4D0]/5 px-6 py-4 border-b border-[#F5E4D0]/20">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#F5E4D0]/20 flex items-center justify-center">
-              <span className="text-[#F5E4D0] font-semibold text-sm">?</span>
-            </div>
-            <h3 className="font-bold text-xl text-[#F4F4F4]">{title}</h3>
+        <div className="px-6 py-4 border-b-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-2xl lg:text-3xl xl:text-4xl font-bold uppercase text-[#F4F4F4]">{title}</h3>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 border-[3px] border-[#F5E4D0]/10 hover:bg-[#F5E4D0]/10 text-[#F4F4F4] inline-flex items-center justify-center font-bold text-lg transition-colors"
+              title="Close"
+            >
+              ×
+            </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6">
-          <div className="text-base text-[#F4F4F4] leading-relaxed space-y-4">
+        <div className="px-6 py-6 bg-[#2B2D30]">
+          <div className="text-base lg:text-lg text-[#F4F4F4] leading-relaxed">
             {children}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-[#1a1a1a]/50 border-t border-[#F5E4D0]/10">
+        <div className="px-6 py-4 border-t-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]">
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] font-semibold transition-colors duration-200"
+              className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[3px] border-[#F5E4D0] font-bold uppercase transition-colors duration-200"
             >
               Got it
             </button>

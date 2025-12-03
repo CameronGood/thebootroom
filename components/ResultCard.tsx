@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { EncryptedText } from "@/components/ui/encrypted-text";
 import { useRegion } from "@/lib/region";
 import { useAuth } from "@/lib/auth";
 
@@ -247,10 +248,20 @@ export default function ResultCard({
           {/* Brand and Range - Primary hierarchy, grouped together */}
           <div className="mb-6">
             <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">
-              {boot.brand}
+              <EncryptedText 
+                text={boot.brand}
+                duration={800}
+                revealDelay={200}
+                className="text-4xl font-bold"
+              />
             </p>
             <p className="text-2xl font-bold text-[#F5E4D0]/80 leading-tight">
-              {boot.model}
+              <EncryptedText 
+                text={boot.model}
+                duration={1000}
+                revealDelay={600}
+                className="text-2xl font-bold"
+              />
             </p>
           </div>
 
@@ -261,7 +272,12 @@ export default function ResultCard({
                 Recommended Size:
               </span>
               <span className="text-base font-bold text-[#F5E4D0]">
-                {recommendedSize}
+                <EncryptedText 
+                  text={recommendedSize}
+                  duration={600}
+                  revealDelay={1200}
+                  className="text-base font-bold"
+                />
               </span>
             </div>
           )}

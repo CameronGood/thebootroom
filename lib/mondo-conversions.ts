@@ -206,3 +206,120 @@ export function shoeSizeToFootLengthMM(
   const estimatedFootLength = 220 + (mondo - 22) * 10 + 5;
   return Math.round(estimatedFootLength);
 }
+
+// Helper function to get mondo value from a shoe size (returns number, not string)
+function getMondoFromShoeSize(
+  system: "UK" | "US" | "EU",
+  value: number
+): number | undefined {
+  let mondo: number | undefined;
+
+  if (system === "EU") {
+    mondo = EU_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(EU_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = EU_TO_MONDO[closest];
+    }
+  } else if (system === "UK") {
+    mondo = UK_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(UK_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = UK_TO_MONDO[closest];
+    }
+  } else {
+    // US
+    mondo = US_TO_MONDO[value];
+    if (mondo === undefined) {
+      const sizes = Object.keys(US_TO_MONDO)
+        .map(Number)
+        .sort((a, b) => a - b);
+      const closest = sizes.reduce((prev, curr) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      );
+      mondo = US_TO_MONDO[closest];
+    }
+  }
+
+  return mondo;
+}
+
+// Helper function to find closest shoe size for a given mondo value
+function findClosestShoeSizeForMondo(
+  system: "UK" | "US" | "EU",
+  mondo: number
+): number | undefined {
+  let lookupTable: { [key: number]: number };
+  
+  if (system === "EU") {
+    lookupTable = EU_TO_MONDO;
+  } else if (system === "UK") {
+    lookupTable = UK_TO_MONDO;
+  } else {
+    lookupTable = US_TO_MONDO;
+  }
+
+  // Find the shoe size(s) that map to this mondo value
+  const matchingSizes: number[] = [];
+  for (const [size, sizeMondo] of Object.entries(lookupTable)) {
+    if (sizeMondo === mondo) {
+      matchingSizes.push(Number(size));
+    }
+  }
+
+  if (matchingSizes.length > 0) {
+    // If multiple sizes map to the same mondo, return the middle one
+    matchingSizes.sort((a, b) => a - b);
+    return matchingSizes[Math.floor(matchingSizes.length / 2)];
+  }
+
+  // If no exact match, find the closest mondo value
+  const mondoValues = Array.from(new Set(Object.values(lookupTable)));
+  const closestMondo = mondoValues.reduce((prev, curr) =>
+    Math.abs(curr - mondo) < Math.abs(prev - mondo) ? curr : prev
+  );
+
+  // Find all sizes that map to the closest mondo
+  for (const [size, sizeMondo] of Object.entries(lookupTable)) {
+    if (sizeMondo === closestMondo) {
+      matchingSizes.push(Number(size));
+    }
+  }
+
+  if (matchingSizes.length > 0) {
+    matchingSizes.sort((a, b) => a - b);
+    return matchingSizes[Math.floor(matchingSizes.length / 2)];
+  }
+
+  return undefined;
+}
+
+// Convert shoe size from one system to another using Mondo as intermediary
+export function convertShoeSize(
+  fromSystem: "UK" | "US" | "EU",
+  fromValue: number,
+  toSystem: "UK" | "US" | "EU"
+): number | undefined {
+  // If same system, return same value
+  if (fromSystem === toSystem) {
+    return fromValue;
+  }
+
+  // Convert from system → Mondo
+  const mondo = getMondoFromShoeSize(fromSystem, fromValue);
+  if (mondo === undefined) {
+    return undefined;
+  }
+
+  // Convert Mondo → to system
+  return findClosestShoeSizeForMondo(toSystem, mondo);
+}

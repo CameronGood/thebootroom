@@ -64,4 +64,4 @@ OPENAI_API_KEY=sk-... (get from https://platform.openai.com/api-keys)
 1. Create `.env.local` in the `thebootroom` directory
 2. Copy the template above
 3. Fill in your actual keys
-4. Restart your dev server: `npm run dev`
+4. Restart your dev server: `pnpm dev`

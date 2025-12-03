@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { QuizAnswers } from "@/types";
 import {
@@ -16,17 +15,20 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import QuizStepGender from "@/components/quiz/QuizStepGender";
-import QuizStepFootLength from "@/components/quiz/QuizStepFootLength";
-import QuizStepFootWidth from "@/components/quiz/QuizStepFootWidth";
-import QuizStepToeShape from "@/components/quiz/QuizStepToeShape";
-import QuizStepInstepHeight from "@/components/quiz/QuizStepInstepHeight";
-import QuizStepCalfVolume from "@/components/quiz/QuizStepCalfVolume";
-import QuizStepWeight from "@/components/quiz/QuizStepWeight";
-import QuizStepAbility from "@/components/quiz/QuizStepAbility";
-import QuizStepBootType from "@/components/quiz/QuizStepBootType";
-import QuizStepAnkleVolume from "@/components/quiz/QuizStepAnkleVolume";
+import dynamic from "next/dynamic";
+import BrutalistQuizForm from "@/components/quiz/BrutalistQuizForm";
+
+// Dynamically import quiz step components for better code splitting
+const QuizStepGender = dynamic(() => import("@/components/quiz/QuizStepGender"), { ssr: false });
+const QuizStepFootLength = dynamic(() => import("@/components/quiz/QuizStepFootLength"), { ssr: false });
+const QuizStepFootWidth = dynamic(() => import("@/components/quiz/QuizStepFootWidth"), { ssr: false });
+const QuizStepToeShape = dynamic(() => import("@/components/quiz/QuizStepToeShape"), { ssr: false });
+const QuizStepInstepHeight = dynamic(() => import("@/components/quiz/QuizStepInstepHeight"), { ssr: false });
+const QuizStepCalfVolume = dynamic(() => import("@/components/quiz/QuizStepCalfVolume"), { ssr: false });
+const QuizStepWeight = dynamic(() => import("@/components/quiz/QuizStepWeight"), { ssr: false });
+const QuizStepAbility = dynamic(() => import("@/components/quiz/QuizStepAbility"), { ssr: false });
+const QuizStepBootType = dynamic(() => import("@/components/quiz/QuizStepBootType"), { ssr: false });
+const QuizStepAnkleVolume = dynamic(() => import("@/components/quiz/QuizStepAnkleVolume"), { ssr: false });
 const TOTAL_STEPS = 10;
 
 export default function QuizPage() {
@@ -43,6 +45,7 @@ export default function QuizPage() {
     const loadExistingAnswers = async () => {
       // Check if we're editing an existing session
       const editSessionId = searchParams.get("editSessionId");
+      const stepParam = searchParams.get("step");
 
       if (editSessionId) {
         // Try to load answers from sessionStorage first (faster)
@@ -56,6 +59,14 @@ export default function QuizPage() {
             setSessionId(editSessionId);
             localStorage.setItem("quizSessionId", editSessionId); // Update localStorage
 
+            // Set step if provided
+            if (stepParam) {
+              const stepNum = parseInt(stepParam, 10);
+              if (stepNum >= 1 && stepNum <= TOTAL_STEPS) {
+                setCurrentStep(stepNum);
+              }
+            }
+
             // Initialize session
             if (editSessionId && user) {
               createOrUpdateSession(editSessionId, { userId: user.uid });
@@ -65,9 +76,7 @@ export default function QuizPage() {
 
             // Clear URL parameter after a brief delay to avoid re-render issues
             setTimeout(() => {
-              if (window.location.search.includes("editSessionId")) {
-                router.replace("/quiz");
-              }
+              router.replace("/quiz");
             }, 100);
             return;
           } catch (error) {
@@ -83,6 +92,14 @@ export default function QuizPage() {
             setAnswers(session.answers);
             setSessionId(editSessionId);
             localStorage.setItem("quizSessionId", editSessionId); // Update localStorage
+
+            // Set step if provided
+            if (stepParam) {
+              const stepNum = parseInt(stepParam, 10);
+              if (stepNum >= 1 && stepNum <= TOTAL_STEPS) {
+                setCurrentStep(stepNum);
+              }
+            }
 
             // Initialize session
             if (editSessionId && user) {
@@ -116,9 +133,7 @@ export default function QuizPage() {
           setLoadingAnswers(false);
           // Clear URL parameter after loading
           setTimeout(() => {
-            if (window.location.search.includes("editSessionId")) {
-              router.replace("/quiz");
-            }
+            router.replace("/quiz");
           }, 100);
         }
       } else {
@@ -265,8 +280,8 @@ export default function QuizPage() {
     }
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
+  const getStepComponent = (stepNum: number) => {
+    switch (stepNum) {
       case 1:
         // Anatomy (Gender)
         return (
@@ -316,6 +331,7 @@ export default function QuizPage() {
         return (
           <QuizStepWeight
             value={answers.weightKG}
+            gender={answers.gender}
             onNext={(value) => {
               updateAnswers({ weightKG: value });
               handleNext();
@@ -380,6 +396,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 9:
@@ -393,6 +411,8 @@ export default function QuizPage() {
               handleNext();
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       case 10:
@@ -410,6 +430,8 @@ export default function QuizPage() {
               handleSubmitWithAnswers(updatedAnswers);
             }}
             onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
           />
         );
       default:
@@ -417,7 +439,68 @@ export default function QuizPage() {
     }
   };
 
-  const progress = (currentStep / TOTAL_STEPS) * 100;
+  const getStepTitle = (stepNum: number): string => {
+    switch (stepNum) {
+      case 1:
+        return "Anatomy";
+      case 2:
+        return "Boot Type";
+      case 3:
+        return "Ability";
+      case 4:
+        return "Weight";
+      case 5:
+        return "Foot Length";
+      case 6:
+        return "Foot Width";
+      case 7:
+        return "Toe Shape";
+      case 8:
+        return "Instep Height";
+      case 9:
+        return "Ankle Volume";
+      case 10:
+        return "Calf Volume";
+      default:
+        return "";
+    }
+  };
+
+  const getStepDescription = (stepNum: number): string => {
+    switch (stepNum) {
+      case 1:
+        return "Select the anatomy that best matches your lower leg and foot shape.";
+      case 2:
+        return "Select the type of Ski Boot you are looking for.";
+      case 3:
+        return "Select an option that best matches your ability.";
+      case 4:
+        return "Please input your weight. This will be used to help select the boot flex.";
+      case 5:
+        return "Please input your foot length.";
+      case 6:
+        return "Please input your foot width.";
+      case 7:
+        return "Select the toe shape that best matches your foot.";
+      case 8:
+        return "Select the instep height that best matches your foot.";
+      case 9:
+        return "Select the ankle volume that best matches your foot.";
+      case 10:
+        return "Select the calf volume that best matches your leg.";
+      default:
+        return "";
+    }
+  };
+
+  const steps = Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((stepNum) => ({
+    stepNumber: stepNum,
+    title: getStepTitle(stepNum),
+    description: getStepDescription(stepNum),
+    component: getStepComponent(stepNum),
+    isCompleted: false, // Will be calculated in BrutalistQuizForm
+  }));
+
 
   // Show loading spinner while loading answers from session
   if (loadingAnswers) {
@@ -435,66 +518,56 @@ export default function QuizPage() {
         >
           <Spinner size="lg" />
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen flex flex-col bg-[#040404]"
-    >
+    <>
       <div
-        className="sticky top-0 z-50 bg-[#040404] pt-4"
+        className="sticky top-0 z-50 bg-[#040404] pt-4 pb-0"
       >
         <Header />
       </div>
-      <main
-          className="flex-grow bg-[#040404] pb-8"
-      >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-4">
-          {/* Progress Bar Section */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-4"
-          >
-            <div className="py-3 px-6">
-              <div className="mt-[5px]">
-                <Progress 
-                  value={progress} 
+      <BrutalistQuizForm
                   currentStep={currentStep}
                   totalSteps={TOTAL_STEPS}
-                  className="h-12"
-                />
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Quiz Questions Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="p-6 md:p-8">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {renderStep()}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-      <Footer />
-    </div>
+        answers={answers}
+        steps={steps}
+        onStepClick={(stepNum) => {
+          // Allow navigating to any completed step
+          const isStepCompleted = (stepNum: number): boolean => {
+            switch (stepNum) {
+              case 1:
+                return !!answers.gender;
+              case 2:
+                return !!answers.bootType;
+              case 3:
+                return !!answers.ability;
+              case 4:
+                return !!answers.weightKG;
+              case 5:
+                return !!(answers.footLengthMM || answers.shoeSize);
+              case 6:
+                return !!answers.footWidth;
+              case 7:
+                return !!answers.toeShape;
+              case 8:
+                return !!answers.instepHeight;
+              case 9:
+                return !!answers.ankleVolume;
+              case 10:
+                return !!answers.calfVolume;
+              default:
+                return false;
+            }
+          };
+          
+          if (isStepCompleted(stepNum) || stepNum <= currentStep) {
+            setCurrentStep(stepNum);
+          }
+        }}
+      />
+    </>
   );
 }

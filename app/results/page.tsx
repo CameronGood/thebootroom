@@ -464,7 +464,42 @@ export default function ResultsPage() {
         <main
         className="flex-grow bg-[#040404] pb-8"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="w-full px-[50px] pt-24 sm:pt-28 md:pt-32">
+          <div className="w-[90%] mx-auto">
+          {/* Results Grid */}
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            {session.recommendedBoots.map((boot, index) => (
+              <ResultCard
+                key={boot.bootId}
+                boot={boot}
+                sessionId={sessionId || undefined}
+                index={index}
+                recommendedSize={recommendedMondo}
+                footLength={session.answers?.footLengthMM}
+                shoeSize={session.answers?.shoeSize}
+                isCompareMode={isCompareMode}
+                onToggleCompareMode={() => {
+                  const newCompareMode = !isCompareMode;
+                  setIsCompareMode(newCompareMode);
+                  // If entering compare mode, open models dropdown in all cards
+                  if (newCompareMode) {
+                    setModelsVisible(true);
+                  }
+                }}
+                modelsVisible={modelsVisible}
+                onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
+                selectedModels={selectedModels[boot.bootId] || new Set()}
+                onUpdateSelectedModels={(bootId, modelIndices) => {
+                  setSelectedModels(prev => ({
+                    ...prev,
+                    [bootId]: modelIndices,
+                  }));
+                }}
+                onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
+              />
+            ))}
+          </div>
+
           {/* Header with Save/Login Button */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -522,40 +557,6 @@ export default function ResultsPage() {
               </Button>
             </div>
           </motion.div>
-
-          {/* Results Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {session.recommendedBoots.map((boot, index) => (
-              <ResultCard
-                key={boot.bootId}
-                boot={boot}
-                sessionId={sessionId || undefined}
-                index={index}
-                recommendedSize={recommendedMondo}
-                footLength={session.answers?.footLengthMM}
-                shoeSize={session.answers?.shoeSize}
-                isCompareMode={isCompareMode}
-                onToggleCompareMode={() => {
-                  const newCompareMode = !isCompareMode;
-                  setIsCompareMode(newCompareMode);
-                  // If entering compare mode, open models dropdown in all cards
-                  if (newCompareMode) {
-                    setModelsVisible(true);
-                  }
-                }}
-                modelsVisible={modelsVisible}
-                onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
-                selectedModels={selectedModels[boot.bootId] || new Set()}
-                onUpdateSelectedModels={(bootId, modelIndices) => {
-                  setSelectedModels(prev => ({
-                    ...prev,
-                    [bootId]: modelIndices,
-                  }));
-                }}
-                onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
-              />
-            ))}
-          </div>
 
           {/* Custom Fitting Card */}
           <motion.div
@@ -632,6 +633,7 @@ export default function ResultsPage() {
               </CardContent>
             </Card>
           </motion.div>
+          </div>
         </div>
       </main>
       <Footer />

@@ -1,6 +1,6 @@
 // Simple script to set admin claim
 // Usage:
-// 1. Install firebase-admin: npm install firebase-admin
+// 1. Install firebase-admin: pnpm add firebase-admin
 // 2. Get your service account key from Firebase Console
 // 3. Update the serviceAccount path below
 // 4. Run: node scripts/set-admin-simple.js <user-email>
