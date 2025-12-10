@@ -29,6 +29,25 @@ STRIPE_WEBHOOK_SECRET=whsec_... (get from Stripe Dashboard after creating webhoo
 OPENAI_API_KEY=sk-... (get from https://platform.openai.com/api-keys)
 ```
 
+### Google Maps Configuration (Required for Boot Fitter Locator)
+
+**Important:** If your API key has HTTP referrer restrictions, you need TWO keys:
+
+```env
+# Server-side key (for API routes) - NO restrictions
+GOOGLE_MAPS_API_KEY=your_server_side_api_key_here
+
+# Client-side key (for static maps) - Can have referrer restrictions
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_client_side_api_key_here
+```
+
+**OR** if you have one unrestricted key, use it for both:
+
+```env
+GOOGLE_MAPS_API_KEY=your_unrestricted_api_key_here
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_unrestricted_api_key_here
+```
+
 ## How to Get Your Keys
 
 ### Stripe Keys (Test Mode)
@@ -51,6 +70,27 @@ OPENAI_API_KEY=sk-... (get from https://platform.openai.com/api-keys)
 1. Go to: https://platform.openai.com/api-keys
 2. Click "Create new secret key"
 3. Copy the key (starts with `sk-`)
+
+### Google Maps API Key
+
+1. Go to: https://console.cloud.google.com/google/maps-apis
+2. Create a new project or select an existing one
+3. Enable the following APIs:
+   - Geocoding API
+   - Maps Static API
+4. Go to "Credentials" → "Create Credentials" → "API Key"
+
+**For Server-Side API Routes (Geocoding):**
+- Create an API key WITHOUT HTTP referrer restrictions
+- Restrict it to: Geocoding API only
+- Add to `.env.local` as: `GOOGLE_MAPS_API_KEY=your_key_here`
+
+**For Client-Side (Static Maps):**
+- Can use the same key OR create a separate one
+- Can have HTTP referrer restrictions (restrict to your domain)
+- Add to `.env.local` as: `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key_here`
+
+**Note:** If you get "API keys with referer restrictions cannot be used with this API" error, you need to create a separate unrestricted key for server-side use.
 
 ## Important Notes
 

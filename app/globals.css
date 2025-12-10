@@ -7,6 +7,8 @@
   --button-text: #2B2D30;
 }
 
+/* @theme is a Tailwind CSS v4 directive - valid syntax */
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -177,7 +179,7 @@ html {
   border: 3px solid rgba(245, 228, 208, 0.4);
   background: #F5E4D0;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 4px;
   box-shadow: 0 0 0 2px #1a1a1a;
 }
 
@@ -187,7 +189,7 @@ html {
   border: 3px solid rgba(245, 228, 208, 0.4);
   background: #F5E4D0;
   cursor: pointer;
-  border-radius: 0;
+  border-radius: 4px;
   -moz-appearance: none;
   box-shadow: 0 0 0 2px #1a1a1a;
 }
@@ -202,6 +204,16 @@ html {
   background: #F5E4D0;
 }
 
+/* Hide scrollbar but keep scrolling functionality */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   .glow-layer,
@@ -210,4 +222,14 @@ html {
     animation: none;
     opacity: 1;
   }
+}
+
+/* Card flip animation */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }

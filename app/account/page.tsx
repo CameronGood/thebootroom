@@ -17,6 +17,12 @@ import { User, SavedResult, QuizSession, FittingBreakdown } from "@/types";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Card, CardContent } from "@/components/ui/card";
+import BreakdownDisplay from "@/components/BreakdownDisplay";
+import ResultsCarousel from "@/components/ResultsCarousel";
+import {
+  calculateRecommendedMondo,
+  shoeSizeToMondo,
+} from "@/lib/mondo-conversions";
 
 export default function AccountPage() {
   const { user, loading: authLoading } = useAuth();
@@ -29,9 +35,14 @@ export default function AccountPage() {
   const [breakdowns, setBreakdowns] = useState<Map<string, FittingBreakdown>>(
     new Map()
   );
-  const [expandedBreakdown, setExpandedBreakdown] = useState<string | null>(
-    null
-  );
+  // Per-quizId state (like results page)
+  const [isFlipped, setIsFlipped] = useState<Map<string, boolean>>(new Map());
+  const [isCompareMode, setIsCompareMode] = useState<Map<string, boolean>>(new Map());
+  const [modelsVisible, setModelsVisible] = useState<Map<string, boolean>>(new Map());
+  const [selectedModels, setSelectedModels] = useState<Map<string, Record<string, Set<number>>>>(new Map());
+  const [generatingBreakdown, setGeneratingBreakdown] = useState(false);
+  const [deletingQuizId, setDeletingQuizId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const hasAutoSavedRef = useRef(false);
   const showSaveMessage = searchParams.get("saveResults") === "true";
   const sessionId = searchParams.get("sessionId");
@@ -68,7 +79,7 @@ export default function AccountPage() {
               quizId: sessionId,
               completedAt: session.completedAt || new Date(),
               recommendedBoots: session.recommendedBoots,
-            });
+            }, user.email || undefined);
 
             // Link the anonymous session to the user via API
             await fetch(`/api/sessions/${sessionId}`, {
@@ -131,18 +142,32 @@ export default function AccountPage() {
             // Fetch breakdown if user is logged in
             if (user) {
               try {
+                // Get auth token to pass to API (though Admin SDK now bypasses rules)
+                const token = await user.getIdToken();
                 const breakdownResponse = await fetch(
-                  `/api/breakdowns/${user.uid}/${result.quizId}`
+                  `/api/breakdowns/${user.uid}/${result.quizId}`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }
                 );
                 if (breakdownResponse.ok) {
                   const breakdown: FittingBreakdown =
                     await breakdownResponse.json();
                   if (breakdown) {
                     breakdownsMap.set(result.quizId, breakdown);
+                    console.log(`Loaded breakdown for quiz ${result.quizId}`);
                   }
+                } else if (breakdownResponse.status === 404) {
+                  // Breakdown doesn't exist yet - this is fine, it will be created when user generates it
+                  console.log(`No breakdown found for quiz ${result.quizId} - breakdown must be generated on results page first`);
+                } else {
+                  console.warn(`Failed to fetch breakdown for ${result.quizId}:`, breakdownResponse.status, breakdownResponse.statusText);
                 }
               } catch (error) {
                 // Breakdown might not exist, which is fine
+                console.warn(`Error fetching breakdown for ${result.quizId}:`, error);
               }
             }
           } catch (error) {
@@ -162,28 +187,39 @@ export default function AccountPage() {
   const handleDeleteResult = async (quizId: string) => {
     if (!user) return;
 
-    if (!confirm("Are you sure you want to remove this saved result?")) {
-      return;
-    }
+    // Show confirmation dialog
+    setShowDeleteConfirm(quizId);
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !showDeleteConfirm) return;
+
+    const quizIdToDelete = showDeleteConfirm;
+    setShowDeleteConfirm(null);
+    setDeletingQuizId(quizIdToDelete);
 
     try {
-      await deleteSavedResult(user.uid, quizId);
+      await deleteSavedResult(user.uid, quizIdToDelete);
       toast.success("Result removed successfully");
       // Refresh user data
       await fetchUserData();
     } catch (error) {
       console.error("Error deleting result:", error);
       toast.error("Failed to remove result");
+    } finally {
+      setDeletingQuizId(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(null);
   };
 
   if (authLoading || (user && (loading || savingResults))) {
     return (
       <div className="min-h-screen flex flex-col bg-[#040404]">
-        <div className="sticky top-0 z-50 bg-[#040404] pt-4">
         <Header />
-        </div>
-        <main className="flex-grow flex items-center justify-center bg-[#040404]">
+        <main className="flex-grow flex items-center justify-center bg-[#040404] pt-[120px]">
           <div className="text-center">
             <Spinner size="lg" />
             {savingResults && (
@@ -199,10 +235,8 @@ export default function AccountPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col bg-[#040404]">
-        <div className="sticky top-0 z-50 bg-[#040404] pt-4">
         <Header />
-        </div>
-        <main className="flex-grow bg-[#040404] py-8">
+        <main className="flex-grow bg-[#040404] py-8 pt-[120px]">
           <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
             {showSaveMessage && (
               <Card className="bg-[#F5E4D0]/20 border-[#F5E4D0]/40 mb-6">
@@ -225,11 +259,11 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040404]">
-      <div className="sticky top-0 z-50 bg-[#040404] pt-4">
-      <Header />
+      <div className="sticky top-0 z-50 bg-[#040404] pt-2 pb-0">
+        <Header />
       </div>
       <main className="flex-grow bg-[#040404] pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+        <div className="w-full px-4 md:px-[50px] pt-24 sm:pt-28 md:pt-32">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-[#F4F4F4]">My Account</h1>
             <Link
@@ -256,10 +290,198 @@ export default function AccountPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-8">
+            <>
+              {/* Delete Confirmation Dialog */}
+              {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                  <Card className="bg-[#2B2D30] border-[#F5E4D0]/20 max-w-md w-full">
+                    <CardContent className="pt-6">
+                      <h3 className="text-xl font-semibold text-[#F4F4F4] mb-4">
+                        Confirm Deletion
+                      </h3>
+                      <p className="text-[#F4F4F4]/80 mb-6">
+                        Are you sure you want to delete this saved result? This action cannot be undone.
+                      </p>
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={cancelDelete}
+                          className="px-4 py-2 text-sm text-[#F4F4F4] hover:bg-[#F5E4D0]/10 rounded-lg transition"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={confirmDelete}
+                          className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-lg transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+            <div className="space-y-16">
               {savedResults.map((result, index) => {
                 const session = sessions.get(result.quizId);
                 const answers = session?.answers;
+                const breakdown = breakdowns.get(result.quizId);
+                const quizId = result.quizId;
+                
+                // Create unique key using quizId, index, and completedAt timestamp
+                const uniqueKey = `${result.quizId}-${index}-${result.completedAt.getTime()}`;
+                
+                // Per-quizId state getters
+                const getIsFlipped = () => isFlipped.get(quizId) || false;
+                const getIsCompareMode = () => isCompareMode.get(quizId) || false;
+                const getModelsVisible = () => modelsVisible.get(quizId) || false;
+                const getSelectedModels = () => selectedModels.get(quizId) || {};
+                
+                // Per-quizId state setters
+                const setIsFlippedForQuiz = (value: boolean) => {
+                  setIsFlipped(prev => {
+                    const next = new Map(prev);
+                    next.set(quizId, value);
+                    return next;
+                  });
+                };
+                const setIsCompareModeForQuiz = (value: boolean) => {
+                  setIsCompareMode(prev => {
+                    const next = new Map(prev);
+                    next.set(quizId, value);
+                    return next;
+                  });
+                  if (value) {
+                    setModelsVisible(prev => {
+                      const next = new Map(prev);
+                      next.set(quizId, true);
+                      return next;
+                    });
+                  }
+                };
+                const setModelsVisibleForQuiz = (value: boolean) => {
+                  setModelsVisible(prev => {
+                    const next = new Map(prev);
+                    next.set(quizId, value);
+                    return next;
+                  });
+                };
+                const setSelectedModelsForQuiz = (bootId: string, modelIndices: Set<number>) => {
+                  setSelectedModels(prev => {
+                    const next = new Map(prev);
+                    const current = next.get(quizId) || {};
+                    next.set(quizId, {
+                      ...current,
+                      [bootId]: modelIndices,
+                    });
+                    return next;
+                  });
+                };
+                
+                // Handlers (like results page - can view or generate breakdown)
+                const handleFlipBack = () => {
+                  setIsFlippedForQuiz(false);
+                };
+                const handleViewComparison = () => {
+                  if (breakdown) {
+                    setIsFlippedForQuiz(true);
+                  } else {
+                    // If no breakdown, generate it
+                    handleGetBreakdown();
+                  }
+                };
+                
+                // Generate breakdown (same as results page)
+                const handleGetBreakdown = async () => {
+                  if (!user) {
+                    toast.error("Please log in to get a breakdown");
+                    return;
+                  }
+
+                  if (!session) {
+                    toast.error("Session data not loaded");
+                    return;
+                  }
+
+                  setGeneratingBreakdown(true);
+                  toast.loading("Generating your breakdown...", { id: "breakdown" });
+
+                  try {
+                    // Convert selected models to a serializable format
+                    const modelsToInclude: Record<string, number[]> = {};
+                    const currentSelected = getSelectedModels();
+                    
+                    Object.entries(currentSelected).forEach(([bootId, modelIndices]) => {
+                      if (modelIndices.size > 0) {
+                        modelsToInclude[bootId] = Array.from(modelIndices);
+                      }
+                    });
+
+                    // Call breakdown generation endpoint
+                    const response = await fetch("/api/breakdowns/generate", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        quizId: quizId,
+                        userId: user.uid,
+                        selectedModels: modelsToInclude,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      const errorData = await response.json().catch(() => ({}));
+                      const errorMessage =
+                        errorData.error ||
+                        errorData.details ||
+                        errorData.message ||
+                        `Server error: ${response.status}`;
+                      throw new Error(errorMessage);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.success && result.breakdown) {
+                      // Update breakdown in state
+                      setBreakdowns(prev => {
+                        const next = new Map(prev);
+                        next.set(quizId, result.breakdown);
+                        return next;
+                      });
+                      
+                      // Auto-flip to show breakdown
+                      setIsFlippedForQuiz(true);
+                      setIsCompareModeForQuiz(false);
+                      setModelsVisibleForQuiz(false);
+                      
+                      toast.success("Breakdown generated successfully!", { id: "breakdown" });
+                    } else {
+                      throw new Error(result.error || "Failed to generate breakdown");
+                    }
+                  } catch (error: any) {
+                    console.error("Error generating breakdown:", error);
+                    toast.error(
+                      error.message || "Failed to generate breakdown. Please try again.",
+                      { id: "breakdown" }
+                    );
+                  } finally {
+                    setGeneratingBreakdown(false);
+                  }
+                };
+                
+                // Calculate recommended mondo
+                let recommendedMondo = "N/A";
+                if (answers) {
+                  if (answers.footLengthMM) {
+                    const smallerFoot = Math.min(
+                      answers.footLengthMM.left,
+                      answers.footLengthMM.right
+                    );
+                    recommendedMondo = calculateRecommendedMondo(smallerFoot);
+                  } else if (answers.shoeSize) {
+                    const { system, value } = answers.shoeSize;
+                    recommendedMondo = shoeSizeToMondo(system, value);
+                  }
+                }
 
                 // Format answer summary
                 const formatAnswerSummary = () => {
@@ -289,15 +511,10 @@ export default function AccountPage() {
                   return parts.join(" • ");
                 };
 
-                // Create unique key using quizId and index, plus completedAt timestamp for extra uniqueness
-                const uniqueKey = `${result.quizId}-${index}-${result.completedAt.getTime()}`;
-
                 return (
-                  <div
-                    key={uniqueKey}
-                    className="bg-[#2B2D30] rounded-lg shadow-md p-6 border border-[#F5E4D0]/20"
-                  >
-                    <div className="flex justify-between items-start mb-4">
+                  <div key={uniqueKey} className="w-full">
+                    {/* Header info - separate from cards */}
+                    <div className="flex justify-between items-start mb-6">
                       <div className="flex-1">
                         <h2 className="text-xl font-semibold mb-1 text-[#F4F4F4]">
                           {formatAnswerSummary()}
@@ -305,104 +522,97 @@ export default function AccountPage() {
                         <p className="text-sm text-[#F4F4F4]/80">
                           Completed: {result.completedAt.toLocaleDateString()}
                         </p>
-                        {answers && (
-                          <div className="mt-2 text-sm text-[#F4F4F4]/60">
-                            {answers.toeShape} toe • {answers.instepHeight}{" "}
-                            instep • {answers.calfVolume} calf
-                            {answers.footWidth && (
-                              <>
-                                {" • "}
-                                {"category" in answers.footWidth &&
-                                answers.footWidth.category
-                                  ? answers.footWidth.category + " width"
-                                  : "left" in answers.footWidth ||
-                                      "right" in answers.footWidth
-                                    ? (() => {
-                                        const left = answers.footWidth.left || 0;
-                                        const right = answers.footWidth.right || 0;
-                                        const validWidths = [left, right].filter((w) => w > 0);
-                                        const minWidth = validWidths.length > 0 ? Math.min(...validWidths) : 0;
-                                        return minWidth > 0 ? `${minWidth}mm width` : "";
-                                      })()
-                                    : ""}
-                              </>
-                            )}
-                          </div>
-                        )}
                       </div>
                       <button
                         onClick={() => handleDeleteResult(result.quizId)}
-                        className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition ml-4"
+                        disabled={deletingQuizId === result.quizId}
+                        className="px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition ml-4 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Delete
+                        {deletingQuizId === result.quizId ? "Deleting..." : "Delete"}
                       </button>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      {result.recommendedBoots.map((boot) => (
-                        <ResultCard key={boot.bootId} boot={boot} />
-                      ))}
+
+                    {/* Mobile Carousel */}
+                    <div className={`md:hidden ${getIsFlipped() ? 'mb-2' : 'mb-8'}`}>
+                      <ResultsCarousel
+                        boots={result.recommendedBoots}
+                        sessionId={quizId}
+                        recommendedMondo={recommendedMondo}
+                        footLength={answers?.footLengthMM}
+                        shoeSize={answers?.shoeSize}
+                        isCompareMode={getIsCompareMode()}
+                        onToggleCompareMode={() => setIsCompareModeForQuiz(!getIsCompareMode())}
+                        modelsVisible={getModelsVisible()}
+                        onToggleModelsVisibility={() => setModelsVisibleForQuiz(!getModelsVisible())}
+                        selectedModels={getSelectedModels()}
+                        onUpdateSelectedModels={setSelectedModelsForQuiz}
+                        onPurchaseComparison={() => handleGetBreakdown()}
+                        resetToFirst={!!breakdown}
+                        isFlipped={getIsFlipped()}
+                        breakdown={breakdown || undefined}
+                        onFlipBack={handleFlipBack}
+                        onViewComparison={handleViewComparison}
+                      />
                     </div>
 
-                    {/* Breakdown Section */}
-                    {breakdowns.has(result.quizId) && (
-                      <div className="mt-6 border-t pt-6">
-                        <button
-                          onClick={() =>
-                            setExpandedBreakdown(
-                              expandedBreakdown === result.quizId
-                                ? null
-                                : result.quizId
-                            )
-                          }
-                          className="flex items-center gap-2 text-[#F5E4D0] hover:text-[#E8D4B8] font-medium"
-                        >
-                          <span>
-                            {expandedBreakdown === result.quizId
-                              ? "Hide"
-                              : "View"}{" "}
-                            Detailed Fitting Breakdown
-                          </span>
-                          <span className="text-sm">
-                            {expandedBreakdown === result.quizId ? "▲" : "▼"}
-                          </span>
-                        </button>
-                        {expandedBreakdown === result.quizId && (
-                          <div className="mt-4 space-y-6">
-                            {breakdowns
-                              .get(result.quizId)
-                              ?.sections.map((section) => {
-                                const boot = result.recommendedBoots.find(
-                                  (b) => b.bootId === section.bootId
-                                );
-                                return (
-                                  <div
-                                    key={section.bootId}
-                                    className="border-b border-[#F5E4D0]/20 pb-4 last:border-b-0"
-                                  >
-                                    <h3 className="text-lg font-semibold mb-2 text-[#F4F4F4]">
-                                      {section.heading}
-                                    </h3>
-                                    {boot && (
-                                      <p className="text-sm text-[#F4F4F4]/80 mb-2">
-                                        {boot.brand} {boot.model} • Flex{" "}
-                                        {boot.flex} • Match Score:{" "}
-                                        {boot.score.toFixed(1)}/100
-                                      </p>
-                                    )}
-                                    <p className="text-[#F4F4F4] whitespace-pre-line leading-relaxed">
-                                      {section.body}
-                                    </p>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        )}
+                    {/* Desktop Grid */}
+                    <div className={`hidden md:grid md:grid-cols-3 gap-6 ${getIsFlipped() ? 'mb-2' : 'mb-8'}`}>
+                      {result.recommendedBoots.map((boot, bootIndex) => {
+                        // Find the breakdown section for this boot
+                        const breakdownSection = breakdown?.sections.find(s => s.bootId === boot.bootId);
+                        const bootScore = boot.score;
+                        
+                        return (
+                          <ResultCard
+                            key={boot.bootId}
+                            boot={boot}
+                            sessionId={quizId}
+                            index={bootIndex}
+                            recommendedSize={recommendedMondo}
+                            footLength={answers?.footLengthMM}
+                            shoeSize={answers?.shoeSize}
+                            isCompareMode={getIsCompareMode()}
+                            onToggleCompareMode={() => setIsCompareModeForQuiz(!getIsCompareMode())}
+                            modelsVisible={getModelsVisible()}
+                            onToggleModelsVisibility={() => setModelsVisibleForQuiz(!getModelsVisible())}
+                            selectedModels={getSelectedModels()[boot.bootId] || new Set()}
+                            onUpdateSelectedModels={setSelectedModelsForQuiz}
+                            onPurchaseComparison={() => handleGetBreakdown()}
+                            isFlipped={getIsFlipped()}
+                            breakdownSection={breakdownSection}
+                            bootScore={bootScore}
+                            onFlipBack={handleFlipBack}
+                            onViewComparison={handleViewComparison}
+                            hasBreakdown={!!breakdown}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {/* Breakdown Display - Only show comparison sections below flipped cards */}
+                    {getIsFlipped() && session && (
+                      <div className="mt-12">
+                        <BreakdownDisplay
+                          breakdown={breakdown || null}
+                          loading={false}
+                          generating={generatingBreakdown}
+                          error={false}
+                          sessionBoots={session.recommendedBoots.map(boot => ({
+                            bootId: boot.bootId,
+                            brand: boot.brand,
+                            model: boot.model,
+                          }))}
+                          userAnswers={session.answers}
+                          recommendedBoots={session.recommendedBoots}
+                          selectedModels={getSelectedModels()}
+                        />
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
+            </>
           )}
         </div>
       </main>

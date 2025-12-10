@@ -6,6 +6,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { firestore } from "../firebase";
+import { auth } from "../firebase";
 import { User, SavedResult } from "../../types";
 
 // Helper function to safely convert Firestore Timestamp to Date
@@ -57,34 +58,87 @@ export async function getUserDoc(userId: string): Promise<User | null> {
 
 export async function upsertSavedResult(
   userId: string,
-  savedResult: SavedResult
+  savedResult: SavedResult,
+  userEmail?: string
 ): Promise<void> {
-  const userRef = doc(firestore, "users", userId);
-  const userDoc = await getDoc(userRef);
+  // Verify user is authenticated - Firebase SDK automatically includes auth token with requests
+  // But we should verify the user matches before proceeding
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("User must be authenticated to save results");
+  }
+  if (currentUser.uid !== userId) {
+    throw new Error(`User ID mismatch: authenticated user is ${currentUser.uid}, but trying to save to ${userId}`);
+  }
 
-  if (!userDoc.exists()) {
-    // Create user doc if it doesn't exist
-    const userData = userDoc.data();
-    await setDoc(
-      userRef,
-      {
-        email: userData?.email || "",
-        createdAt: serverTimestamp(),
-        savedResults: [savedResult],
-      },
-      { merge: true }
-    );
-  } else {
-    // Add to existing savedResults array
-    const currentData = userDoc.data();
-    const savedResults = currentData.savedResults || [];
-    await setDoc(
-      userRef,
-      {
-        savedResults: [...savedResults, savedResult],
-      },
-      { merge: true }
-    );
+  // Ensure auth token is fresh - this helps ensure Firestore gets the latest token
+  try {
+    await currentUser.getIdToken(true); // Force token refresh
+  } catch (tokenError) {
+    console.error("Error refreshing auth token:", tokenError);
+    throw new Error("Failed to refresh authentication token. Please try logging in again.");
+  }
+
+  const userRef = doc(firestore, "users", userId);
+  
+  try {
+    // Try to read the document first
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      // Create user doc if it doesn't exist
+      // Email is optional - can be set later if needed
+      await setDoc(
+        userRef,
+        {
+          email: userEmail || "",
+          createdAt: serverTimestamp(),
+          savedResults: [savedResult],
+        },
+        { merge: false } // Use merge: false for initial creation
+      );
+    } else {
+      // Update existing savedResults array - check for duplicates by quizId
+      const currentData = userDoc.data();
+      const savedResults = currentData.savedResults || [];
+      
+      // Check if a result with the same quizId already exists
+      const existingIndex = savedResults.findIndex(
+        (result: any) => String(result.quizId) === String(savedResult.quizId)
+      );
+      
+      let updatedResults: SavedResult[];
+      if (existingIndex >= 0) {
+        // Replace existing result (update)
+        updatedResults = [...savedResults];
+        updatedResults[existingIndex] = savedResult;
+      } else {
+        // Add new result (insert)
+        updatedResults = [...savedResults, savedResult];
+      }
+      
+      await setDoc(
+        userRef,
+        {
+          savedResults: updatedResults,
+        },
+        { merge: true }
+      );
+    }
+  } catch (error: any) {
+    console.error("Error in upsertSavedResult:", error);
+    console.error("Authenticated user UID:", currentUser?.uid);
+    console.error("Document path userId:", userId);
+    console.error("Error code:", error?.code);
+    console.error("Error message:", error?.message);
+    console.error("Full error:", error);
+    
+    // Check if it's a permission error
+    if (error?.code === 'permission-denied') {
+      throw new Error("Permission denied. Please ensure you are logged in and the user ID matches. If the problem persists, try logging out and back in.");
+    }
+    
+    throw new Error(`Failed to save result: ${error?.message || 'Unknown error'}`);
   }
 }
 
@@ -96,17 +150,34 @@ export async function deleteSavedResult(
   const userDoc = await getDoc(userRef);
 
   if (!userDoc.exists()) {
-    return;
+    throw new Error("User document not found");
   }
 
   const currentData = userDoc.data();
   const savedResults = currentData.savedResults || [];
 
-  // Remove the result with matching quizId
+  // Verify quizId is provided
+  if (!quizId) {
+    throw new Error("quizId is required");
+  }
+
+  // Remove only the result with matching quizId (strict comparison)
   const updatedResults = savedResults.filter(
-    (result: any) => result.quizId !== quizId
+    (result: any) => {
+      // Ensure we're comparing the same type (both strings)
+      const resultQuizId = String(result.quizId || "");
+      const targetQuizId = String(quizId || "");
+      return resultQuizId !== targetQuizId;
+    }
   );
 
+  // Only update if we actually removed something (safety check)
+  if (updatedResults.length === savedResults.length) {
+    console.warn(`No result found with quizId: ${quizId}`);
+    // Still proceed - maybe the result was already deleted
+  }
+
+  // Update the document - use merge: false to ensure we replace the array completely
   await setDoc(
     userRef,
     {

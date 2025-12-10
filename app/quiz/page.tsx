@@ -15,20 +15,20 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import dynamic from "next/dynamic";
 import BrutalistQuizForm from "@/components/quiz/BrutalistQuizForm";
 
-// Dynamically import quiz step components for better code splitting
-const QuizStepGender = dynamic(() => import("@/components/quiz/QuizStepGender"), { ssr: false });
-const QuizStepFootLength = dynamic(() => import("@/components/quiz/QuizStepFootLength"), { ssr: false });
-const QuizStepFootWidth = dynamic(() => import("@/components/quiz/QuizStepFootWidth"), { ssr: false });
-const QuizStepToeShape = dynamic(() => import("@/components/quiz/QuizStepToeShape"), { ssr: false });
-const QuizStepInstepHeight = dynamic(() => import("@/components/quiz/QuizStepInstepHeight"), { ssr: false });
-const QuizStepCalfVolume = dynamic(() => import("@/components/quiz/QuizStepCalfVolume"), { ssr: false });
-const QuizStepWeight = dynamic(() => import("@/components/quiz/QuizStepWeight"), { ssr: false });
-const QuizStepAbility = dynamic(() => import("@/components/quiz/QuizStepAbility"), { ssr: false });
-const QuizStepBootType = dynamic(() => import("@/components/quiz/QuizStepBootType"), { ssr: false });
-const QuizStepAnkleVolume = dynamic(() => import("@/components/quiz/QuizStepAnkleVolume"), { ssr: false });
+// Import all quiz step components directly (no dynamic loading to prevent delays)
+import QuizStepGender from "@/components/quiz/QuizStepGender";
+import QuizStepFootLength from "@/components/quiz/QuizStepFootLength";
+import QuizStepFootWidth from "@/components/quiz/QuizStepFootWidth";
+import QuizStepToeShape from "@/components/quiz/QuizStepToeShape";
+import QuizStepInstepHeight from "@/components/quiz/QuizStepInstepHeight";
+import QuizStepCalfVolume from "@/components/quiz/QuizStepCalfVolume";
+import QuizStepWeight from "@/components/quiz/QuizStepWeight";
+import QuizStepAbility from "@/components/quiz/QuizStepAbility";
+import QuizStepBootType from "@/components/quiz/QuizStepBootType";
+import QuizStepAnkleVolume from "@/components/quiz/QuizStepAnkleVolume";
+
 const TOTAL_STEPS = 10;
 
 export default function QuizPage() {
@@ -137,19 +137,22 @@ export default function QuizPage() {
           }, 100);
         }
       } else {
-        // Normal flow - get or create session ID
-        let id = localStorage.getItem("quizSessionId");
-        if (!id) {
-          id = uuidv4();
-          localStorage.setItem("quizSessionId", id);
-        }
-        setSessionId(id);
+        // Normal flow - always generate a new session ID for a new quiz
+        // Clear any existing session ID to ensure each quiz gets a unique ID
+        localStorage.removeItem("quizSessionId");
+        const newId = uuidv4();
+        localStorage.setItem("quizSessionId", newId);
+        setSessionId(newId);
+
+        // Reset answers and step for new quiz
+        setAnswers({});
+        setCurrentStep(1);
 
         // Initialize session
-        if (id && user) {
-          createOrUpdateSession(id, { userId: user.uid });
-        } else if (id) {
-          createOrUpdateSession(id, {});
+        if (newId && user) {
+          createOrUpdateSession(newId, { userId: user.uid });
+        } else if (newId) {
+          createOrUpdateSession(newId, {});
         }
       }
     };
@@ -269,6 +272,10 @@ export default function QuizPage() {
         return;
       }
 
+      // Clear localStorage session ID before redirecting to results
+      // This ensures the next quiz will get a fresh session ID
+      localStorage.removeItem("quizSessionId");
+      
       router.push(`/results?sessionId=${sessionId}`);
     } catch (error: any) {
       console.error("Error submitting quiz:", error);
@@ -347,6 +354,7 @@ export default function QuizPage() {
           <QuizStepFootLength
             footLengthMM={answers.footLengthMM}
             shoeSize={answers.shoeSize}
+            gender={answers.gender}
             onNext={(value) => {
               updateAnswers(value);
               handleNext();
@@ -509,7 +517,7 @@ export default function QuizPage() {
         className="min-h-screen flex flex-col bg-[#040404]"
       >
         <div
-          className="sticky top-0 z-50 bg-[#040404] pt-4"
+          className="sticky top-0 z-[9999] bg-[#040404] pt-4"
         >
           <Header />
         </div>
@@ -525,7 +533,7 @@ export default function QuizPage() {
   return (
     <>
       <div
-        className="sticky top-0 z-50 bg-[#040404] pt-4 pb-0"
+        className="sticky top-0 z-[9999] bg-[#040404] pt-4 pb-0"
       >
         <Header />
       </div>

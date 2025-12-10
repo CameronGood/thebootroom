@@ -40,6 +40,7 @@ export interface BootSummary {
   model: string; // family name when grouped
   flex: number;
   bootType?: BootType; // String: "Standard" | "Freestyle" | "Hybrid" | "Touring"
+  bootWidth?: WidthCategory; // Width category: "Narrow" | "Average" | "Wide"
   lastWidthMM?: number;
   imageUrl?: string;
   affiliateUrl?: string; // Legacy single URL (for backwards compatibility)
@@ -49,6 +50,11 @@ export interface BootSummary {
   walkMode?: boolean;
   rearEntry?: boolean;
   calfAdjustment?: boolean;
+  // Shape data for comparison table
+  toeBoxShape?: ToeShape;
+  instepHeight?: Volume[];
+  ankleVolume?: Volume[];
+  calfVolume?: Volume[];
   models?: {
     model: string;
     flex: number;

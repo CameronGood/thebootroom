@@ -8,11 +8,12 @@ import Spinner from "@/components/Spinner";
 import { useAuth } from "@/lib/auth";
 import BootsTab from "@/components/admin/BootsTab";
 import AnalyticsTab from "@/components/admin/AnalyticsTab";
+import BootFittersTab from "@/components/admin/BootFittersTab";
 
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"boots" | "analytics">("boots");
+  const [activeTab, setActiveTab] = useState<"boots" | "bootFitters" | "analytics">("boots");
 
   // Temporary: Allow specific emails for development
   // TODO: Remove this and use proper admin claims in production
@@ -47,11 +48,9 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040404]">
-      <div className="sticky top-0 z-50 bg-[#040404] pt-4">
       <Header />
-      </div>
-      <main className="flex-grow bg-[#040404] pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+      <main className="flex-grow bg-[#040404] pb-8 pt-[120px]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold mb-8 text-[#F4F4F4]">Admin Dashboard</h1>
 
           {/* Tabs */}
@@ -68,6 +67,16 @@ export default function AdminPage() {
                 Boots
               </button>
               <button
+                onClick={() => setActiveTab("bootFitters")}
+                className={`px-4 py-2 font-medium border-b-2 transition ${
+                  activeTab === "bootFitters"
+                    ? "border-[#F5E4D0] text-[#F5E4D0]"
+                    : "border-transparent text-[#F4F4F4]/60 hover:text-[#F4F4F4]"
+                }`}
+              >
+                Boot Fitters
+              </button>
+              <button
                 onClick={() => setActiveTab("analytics")}
                 className={`px-4 py-2 font-medium border-b-2 transition ${
                   activeTab === "analytics"
@@ -82,6 +91,7 @@ export default function AdminPage() {
 
           {/* Tab Content */}
           {activeTab === "boots" && <BootsTab />}
+          {activeTab === "bootFitters" && <BootFittersTab />}
           {activeTab === "analytics" && <AnalyticsTab />}
         </div>
       </main>

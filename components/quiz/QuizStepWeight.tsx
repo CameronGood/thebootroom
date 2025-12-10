@@ -46,11 +46,38 @@ export default function QuizStepWeight({ value, gender, onNext, onBack, currentS
     }
   }, [value, unit, gender]);
 
-  // Get min/max values based on unit
+  // Clamp weight to max when gender or unit changes
+  useEffect(() => {
+    const maxKg = gender === "Male" ? 170 : 130;
+    const maxLbs = gender === "Male" ? 375 : 287; // 130kg ≈ 286.6lbs, rounded
+    const maxSt = gender === "Male" ? 27 : 21;   // 130kg ≈ 20.5st, rounded
+    const minKg = gender === "Male" ? 45 : 35;
+    const minLbs = gender === "Male" ? 99 : 77;  // 35kg ≈ 77.2lbs, rounded
+    const minSt = gender === "Male" ? 7 : 6;     // 35kg ≈ 5.5st, rounded
+    
+    const currentMin = unit === "kg" ? minKg : unit === "lbs" ? minLbs : minSt;
+    const currentMax = unit === "kg" ? maxKg : unit === "lbs" ? maxLbs : maxSt;
+    
+    const currentWeight = parseFloat(weight);
+    if (currentWeight && currentWeight > currentMax) {
+      setWeight(currentMax.toString());
+    } else if (currentWeight && currentWeight < currentMin) {
+      setWeight(currentMin.toString());
+    }
+  }, [gender, unit]);
+
+  // Get min/max values based on unit and gender
   const getMinMax = () => {
-    if (unit === "kg") return { min: 45, max: 200 };
-    if (unit === "lbs") return { min: 99, max: 440 };
-    return { min: 7, max: 31 }; // stone
+    const maxKg = gender === "Male" ? 170 : 130;
+    const maxLbs = gender === "Male" ? 375 : 287; // 130kg ≈ 286.6lbs
+    const maxSt = gender === "Male" ? 27 : 21; // 130kg ≈ 20.5st
+    const minKg = gender === "Male" ? 45 : 35;
+    const minLbs = gender === "Male" ? 99 : 77; // 35kg ≈ 77.2lbs
+    const minSt = gender === "Male" ? 7 : 6; // 35kg ≈ 5.5st
+    
+    if (unit === "kg") return { min: minKg, max: maxKg };
+    if (unit === "lbs") return { min: minLbs, max: maxLbs };
+    return { min: minSt, max: maxSt }; // stone
   };
 
   const { min, max } = getMinMax();
@@ -74,11 +101,14 @@ export default function QuizStepWeight({ value, gender, onNext, onBack, currentS
     };
 
     if (isUnitDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      // Use setTimeout to ensure click handlers fire first
+      setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+      }, 0);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [isUnitDropdownOpen]);
 
@@ -118,7 +148,7 @@ export default function QuizStepWeight({ value, gender, onNext, onBack, currentS
   return (
     <QuizStepLayout
       title="Weight"
-      description="Please input your weight. This will be used to help select the boot flex."
+      description="Use the slider to adjust your weight."
       currentStep={currentStep}
       totalSteps={totalSteps}
       onBack={onBack}
@@ -127,21 +157,25 @@ export default function QuizStepWeight({ value, gender, onNext, onBack, currentS
       noContentSpacing={true}
       brutalistMode={true}
     >
-      <div className="flex justify-start w-full items-stretch gap-6 flex-wrap">
-        {/* Weight Display and Unit Selector */}
-        <div className="relative inline-flex items-center justify-center gap-3 border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-3 transition-all duration-200 hover:border-[#F5E4D0]/15 min-w-[140px]" ref={dropdownRef}>
-          <span className="text-[#F4F4F4] text-2xl lg:text-3xl xl:text-4xl font-bold font-sans min-w-[3ch] text-right">
-            {Math.round(parseFloat(weight) || 0)}
-          </span>
-          <button
-            type="button"
+      <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+        {/* Dropdown Container */}
+        <div className="flex gap-4 flex-shrink-0" ref={dropdownRef}>
+          {/* Weight Display and Unit Selector */}
+          <div 
+            className="inline-flex items-center gap-2 border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-3 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0]/15 cursor-pointer" 
             onClick={() => setIsUnitDropdownOpen(!isUnitDropdownOpen)}
-            className="px-2 py-1 bg-transparent text-[#F4F4F4] transition-all duration-200 underline decoration-[#F5E4D0] underline-offset-4 text-[#F5E4D0] font-bold hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10 text-lg lg:text-xl"
           >
-            {unit}
-          </button>
+            <span className="text-[#F4F4F4] text-lg font-medium font-sans text-left w-12 inline-block overflow-hidden">
+              {Math.round(parseFloat(weight) || 0)}
+            </span>
+            <span className="text-[#F5E4D0] font-bold text-lg underline decoration-[#F5E4D0] underline-offset-4">
+              {unit}
+            </span>
+          </div>
+
+          {/* Dropdown Options */}
           {isUnitDropdownOpen && (
-            <div className="absolute top-1/2 -translate-y-1/2 left-[calc(100%+0.5rem)] flex flex-row z-50 bg-[#2B2D30] border-[3px] border-[#F5E4D0]/10 overflow-hidden shadow-lg">
+            <>
               {(["kg", "lbs", "st"] as Array<"kg" | "lbs" | "st">)
                 .filter((optionUnit) => optionUnit !== unit)
                 .map((optionUnit) => {
@@ -157,22 +191,24 @@ export default function QuizStepWeight({ value, gender, onNext, onBack, currentS
                   };
 
                   return (
-                    <button
+                    <div
                       key={optionUnit}
-                      type="button"
-                      onClick={() => handleUnitChange(optionUnit)}
-                      className="px-2 py-1 bg-transparent text-[#F4F4F4] transition-all duration-200 text-[#F5E4D0] font-bold hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10 text-lg lg:text-xl border-r-[3px] border-[#F5E4D0]/10 last:border-r-0 min-w-[60px] h-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnitChange(optionUnit);
+                      }}
+                      className="inline-flex items-center justify-center border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-3 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0] cursor-pointer"
                     >
-                      {optionUnit}
-                    </button>
+                      <span className="text-[#F5E4D0] font-bold text-lg">{optionUnit}</span>
+                    </div>
                   );
                 })}
-            </div>
+            </>
           )}
         </div>
         
         {/* Slider */}
-        <div className={`inline-flex items-center justify-center border-[3px] border-[#F5E4D0]/10 px-4 py-3 flex-1 transition-all duration-200 ${isUnitDropdownOpen ? 'ml-[140px]' : ''}`} style={{ width: '400px', minWidth: '350px' }}>
+        <div className="flex items-center justify-start border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-3 w-full sm:flex-1 sm:min-w-[300px] rounded-[4px] transition-all duration-200">
           <input
             type="range"
             min={min}

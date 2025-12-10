@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { QuizAnswers } from "@/types";
 import HelpModal from "./HelpModal";
+import QuizOptionButton from "./QuizOptionButton";
 import QuizStepLayout from "./QuizStepLayout";
 import { convertShoeSize } from "@/lib/mondo-conversions";
 
 interface Props {
   footLengthMM?: { left: number; right: number };
   shoeSize?: { system: "UK" | "US" | "EU"; value: number };
+  gender?: "Male" | "Female";
   onNext: (value: {
     footLengthMM?: { left: number; right: number };
     shoeSize?: { system: "UK" | "US" | "EU"; value: number };
@@ -21,6 +23,7 @@ interface Props {
 export default function QuizStepFootLength({
   footLengthMM,
   shoeSize,
+  gender,
   onNext,
   onBack,
   currentStep,
@@ -34,9 +37,13 @@ export default function QuizStepFootLength({
   const [shoeSystem, setShoeSystem] = useState<"UK" | "US" | "EU">(
     shoeSize?.system || "UK"
   );
-  // Initialize shoe size with default value
-  const defaultShoeSize = shoeSize?.value || 7;
-  const [shoeValue, setShoeValue] = useState(defaultShoeSize.toString());
+  // Initialize shoe size with default value based on gender
+  const getDefaultShoeSize = () => {
+    if (shoeSize?.value) return shoeSize.value;
+    // Default to UK 9 for men, UK 6 for women
+    return gender === "Male" ? 9 : gender === "Female" ? 6 : 7;
+  };
+  const [shoeValue, setShoeValue] = useState(getDefaultShoeSize().toString());
   const [showCard, setShowCard] = useState(false);
   const [isSystemDropdownOpen, setIsSystemDropdownOpen] = useState(false);
   const systemDropdownRef = useRef<HTMLDivElement>(null);
@@ -68,6 +75,14 @@ export default function QuizStepFootLength({
       setShoeValue(shoeSize.value.toString());
     }
   }, [shoeSize]);
+  
+  // Initialize default shoe size when gender changes and no value is set
+  useEffect(() => {
+    if (gender && !shoeSize?.value && inputType === "shoe") {
+      const defaultSize = getDefaultShoeSize();
+      setShoeValue(defaultSize.toString());
+    }
+  }, [gender, inputType]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -78,11 +93,14 @@ export default function QuizStepFootLength({
     };
 
     if (isSystemDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      // Use setTimeout to ensure click handlers fire first
+      setTimeout(() => {
+        document.addEventListener("click", handleClickOutside);
+      }, 0);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [isSystemDropdownOpen]);
 
@@ -105,13 +123,13 @@ export default function QuizStepFootLength({
 
   const isValid =
     inputType === "mm"
-      ? leftMM && rightMM && parseFloat(leftMM) > 0 && parseFloat(rightMM) > 0
-      : shoeValue && parseFloat(shoeValue) > 0;
+      ? !!leftMM && !!rightMM && parseFloat(leftMM) > 0 && parseFloat(rightMM) > 0
+      : !!shoeValue && parseFloat(shoeValue) > 0;
 
   return (
     <QuizStepLayout
       title="Foot Length"
-      description="Measure each foot from heel to longest toe."
+      description="Measure each foot separately from the back of the heel to the tip of the longest toe."
       currentStep={currentStep}
       totalSteps={totalSteps}
       brutalistMode={true}
@@ -119,7 +137,7 @@ export default function QuizStepFootLength({
         <>
           <button
             onClick={() => setShowCard(!showCard)}
-            className="w-8 h-8 border-[3px] border-[#F5E4D0]/10 hover:bg-[#F5E4D0]/10 text-[#F4F4F4] inline-flex items-center justify-center font-bold text-lg"
+            className="w-8 h-8 border border-[#F5E4D0]/10 bg-[#F4F4F4] hover:bg-[#E8D4B8] text-[#2B2D30] inline-flex items-center justify-center font-bold text-lg rounded-[4px] transition-colors"
             title="How to measure"
           >
             ?
@@ -129,41 +147,43 @@ export default function QuizStepFootLength({
             onClose={() => setShowCard(false)}
             title="How to Measure Foot Length"
           >
-            <div className="space-y-4">
-              <div className="bg-amber-500/10 border border-amber-500/20 p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-amber-400 text-xl">💡</span>
-                  <span className="font-bold text-amber-400 text-lg">Pro Tip:</span>
+            <div className="space-y-3 md:space-y-4">
+              <div className="bg-amber-500/10 border border-amber-500/20 p-2 md:p-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-400 text-base md:text-lg">💡</span>
+                    <span className="font-bold text-amber-400 text-base md:text-lg">Pro Tip:</span>
+                  </div>
                   <span className="text-base text-[#F4F4F4]/90">For Performance fit measure without socks. For comfort fit measure with socks.</span>
                 </div>
               </div>
               
-              <div className="flex gap-6 items-start">
-                <div className="flex-shrink-0 w-96">
+              <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-start">
+                <div className="flex-shrink-0 w-full sm:w-96">
                   <img
                     src="/quiz/Foot Length.svg"
                     alt="How to measure foot length"
-                    className="w-full h-auto max-h-[500px] object-contain border border-[#F5E4D0]/10"
+                    className="w-full h-auto max-h-[300px] md:max-h-[350px] object-contain border border-[#F5E4D0]/10"
                   />
                 </div>
                 
-                <div className="flex-1">
-                  <div className="space-y-3">
+                <div className="flex-1 w-full">
+                  <div className="space-y-2 md:space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
-                    <p className="text-[#F4F4F4]/90">Place a sheet of paper on the floor so the edge is touching the book or cereal box.</p>
+                    <div className="w-6 h-6 bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
+                  <p className="text-[#F4F4F4]/90 text-base">Place a sheet of paper on the floor so the edge is touching the book or cereal box.</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
-                    <p className="text-[#F4F4F4]/90">Stand on the sheet of paper with your heel against the book or cereal box.</p>
+                    <div className="w-6 h-6 bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
+                  <p className="text-[#F4F4F4]/90 text-base">Stand on the sheet of paper with your heel against the book or cereal box.</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
-                    <p className="text-[#F4F4F4]/90">Use a pen to draw a line just in front of your longest toe. Repeat for both feet.</p>
+                    <div className="w-6 h-6 bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
+                  <p className="text-[#F4F4F4]/90 text-base">Use a pen to draw a line just in front of your longest toe. Repeat for both feet.</p>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
-                    <p className="text-[#F4F4F4]/90">Using a ruler, measure the distance between the start of the paper and line.</p>
+                    <div className="w-6 h-6 bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center text-sm font-bold flex-shrink-0">4</div>
+                    <p className="text-[#F4F4F4]/90 text-base">Using a ruler, measure the distance between the start of the paper and line.</p>
                   </div>
                 </div>
               </div>
@@ -177,96 +197,100 @@ export default function QuizStepFootLength({
       isValid={isValid}
       toggleContent={
         <div className="flex gap-3">
-          <button
+          <QuizOptionButton
+            active={inputType === "mm"}
             onClick={() => {
               setInputType("mm");
               setShoeSystem("UK");
               setShoeValue("");
             }}
-            className={`px-6 py-2 border-[3px] font-bold uppercase transition-all duration-200 ${
-              inputType === "mm"
-                ? "bg-[#F5E4D0] text-[#2B2D30] border-[#F5E4D0]"
-                : "bg-transparent text-[#F4F4F4] border-[#F5E4D0]/10 hover:border-[#F5E4D0]/20 hover:bg-[#F5E4D0]/10"
-            }`}
           >
             My feet
-          </button>
-          <button
+          </QuizOptionButton>
+          <QuizOptionButton
+            active={inputType === "shoe"}
             onClick={() => {
               setInputType("shoe");
               setLeftMM("");
               setRightMM("");
+              // Set default shoe size based on gender
+              const defaultSize = getDefaultShoeSize();
+              setShoeValue(defaultSize.toString());
+              setShoeSystem("UK");
             }}
-            className={`px-6 py-2 border-[3px] font-bold uppercase transition-all duration-200 ${
-              inputType === "shoe"
-                ? "bg-[#F5E4D0] text-[#2B2D30] border-[#F5E4D0]"
-                : "bg-transparent text-[#F4F4F4] border-[#F5E4D0]/10 hover:border-[#F5E4D0]/20 hover:bg-[#F5E4D0]/10"
-            }`}
           >
             Quick
-          </button>
+          </QuizOptionButton>
         </div>
       }
     >
       {inputType === "mm" ? (
-        <div className="flex gap-4 w-full items-stretch">
-          <div className="relative flex-1 flex items-end justify-center border-[3px] border-[#F5E4D0] bg-[#2B2D30]/50 pl-4 pr-2 py-3 transition-all duration-200 hover:border-[#F5E4D0] focus-within:border-[#F5E4D0] focus-within:bg-[#2B2D30]/70">
+        <div className="flex gap-4 w-full">
+          <div className="flex-1 flex items-center justify-center gap-2 border border-[#F5E4D0] bg-[#2B2D30]/50 px-2 py-2 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0] focus-within:border-[#F5E4D0] focus-within:bg-[#2B2D30]/70">
             <input
               id="leftFootMM"
               name="leftFootMM"
               type="number"
               value={leftMM}
               onChange={(e) => setLeftMM(e.target.value)}
-              className="bg-transparent text-[#F4F4F4] text-2xl lg:text-3xl xl:text-4xl font-bold focus:outline-none text-center placeholder:text-[#F4F4F4]/40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] w-auto min-w-[4ch] p-0"
+              className="bg-transparent text-[#F4F4F4] text-lg font-medium focus:outline-none placeholder:text-[#F4F4F4]/40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] w-20 px-2 py-1 text-left sm:px-2 sm:py-1"
               placeholder="268"
               min="100"
               max="400"
             />
-            <span className="text-[#F4F4F4] font-bold pointer-events-none whitespace-nowrap ml-2 leading-none">mm</span>
+            <span className="text-[#F4F4F4] text-lg font-medium pointer-events-none whitespace-nowrap">mm</span>
           </div>
-          <div className="relative flex-1 flex items-end justify-center border-[3px] border-[#F5E4D0] bg-[#2B2D30]/50 pl-4 pr-2 py-3 transition-all duration-200 hover:border-[#F5E4D0] focus-within:border-[#F5E4D0] focus-within:bg-[#2B2D30]/70">
+          <div className="flex-1 flex items-center justify-center gap-2 border border-[#F5E4D0] bg-[#2B2D30]/50 px-2 py-2 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0] focus-within:border-[#F5E4D0] focus-within:bg-[#2B2D30]/70">
             <input
               id="rightFootMM"
               name="rightFootMM"
               type="number"
               value={rightMM}
               onChange={(e) => setRightMM(e.target.value)}
-              className="bg-transparent text-[#F4F4F4] text-2xl lg:text-3xl xl:text-4xl font-bold focus:outline-none text-center placeholder:text-[#F4F4F4]/40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] w-auto min-w-[4ch] p-0"
+              className="bg-transparent text-[#F4F4F4] text-lg font-medium focus:outline-none placeholder:text-[#F4F4F4]/40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield] w-20 px-2 py-1 text-left sm:px-2 sm:py-1"
               placeholder="265"
               min="100"
               max="400"
             />
-            <span className="text-[#F4F4F4] font-bold pointer-events-none whitespace-nowrap ml-2 leading-none">mm</span>
+            <span className="text-[#F4F4F4] text-lg font-medium pointer-events-none whitespace-nowrap">mm</span>
           </div>
         </div>
       ) : (
-          <div className="flex justify-start w-full items-stretch gap-6 flex-wrap">
-            {/* Size Display and Unit Selector */}
-            <div className="relative inline-flex items-center justify-center gap-3 border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-3 transition-all duration-200 hover:border-[#F5E4D0]/15 min-w-[160px]" ref={systemDropdownRef}>
-              <span className="text-[#F4F4F4] text-2xl lg:text-3xl xl:text-4xl font-bold font-sans min-w-[4ch] text-right">
-                {sliderSizeValue % 1 === 0 ? sliderSizeValue : sliderSizeValue.toFixed(1)}
-              </span>
-              <button
-                type="button"
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            {/* Dropdown Container */}
+            <div className="flex gap-4 flex-shrink-0" ref={systemDropdownRef}>
+              {/* Size Display and Unit Selector */}
+              <div 
+                className="inline-flex items-center gap-2 border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-2 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0]/15 cursor-pointer" 
                 onClick={() => setIsSystemDropdownOpen(!isSystemDropdownOpen)}
-                className="px-2 py-1 bg-transparent text-[#F4F4F4] transition-all duration-200 underline decoration-[#F5E4D0] underline-offset-4 text-[#F5E4D0] font-bold hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10 text-lg lg:text-xl"
               >
-                {shoeSystem}
-              </button>
+                <span className="text-[#F4F4F4] text-lg font-medium font-sans text-left w-12 inline-block overflow-hidden">
+                  {sliderSizeValue % 1 === 0 ? sliderSizeValue : sliderSizeValue.toFixed(1)}
+                </span>
+                <span className="text-[#F5E4D0] font-bold text-lg underline decoration-[#F5E4D0] underline-offset-4">
+                  {shoeSystem}
+                </span>
+              </div>
+
+              {/* Dropdown Options */}
               {isSystemDropdownOpen && (
-                <div className="absolute top-1/2 -translate-y-1/2 left-[calc(100%+0.5rem)] flex flex-row z-50 bg-[#2B2D30] border-[3px] border-[#F5E4D0]/10 overflow-hidden shadow-lg">
+                <>
                   {(["UK", "US", "EU"] as Array<"UK" | "US" | "EU">)
                     .filter((optionSystem) => optionSystem !== shoeSystem)
                     .map((optionSystem) => {
                       const handleSystemChange = (newSystem: "UK" | "US" | "EU") => {
                         // Convert current shoe size to new system
-                        const currentValue = parseFloat(shoeValue) || (shoeSystem === "UK" ? 7 : shoeSystem === "US" ? 8 : 40.5);
+                        const currentValue = parseFloat(shoeValue) || getDefaultShoeSize();
                         const convertedValue = convertShoeSize(shoeSystem, currentValue, newSystem);
                         
-                        // Use converted value if available, otherwise use default for new system
+                        // Use converted value if available, otherwise use default for new system based on gender
+                        const defaultUK = gender === "Male" ? 9 : gender === "Female" ? 6 : 7;
+                        const defaultUS = gender === "Male" ? 10 : gender === "Female" ? 7 : 8;
+                        const defaultEU = gender === "Male" ? 43 : gender === "Female" ? 38 : 40.5;
+                        
                         const newValue = convertedValue !== undefined 
                           ? convertedValue 
-                          : (newSystem === "UK" ? 7 : newSystem === "US" ? 8 : 40.5);
+                          : (newSystem === "UK" ? defaultUK : newSystem === "US" ? defaultUS : defaultEU);
                         
                         setShoeSystem(newSystem);
                         setIsSystemDropdownOpen(false);
@@ -274,22 +298,24 @@ export default function QuizStepFootLength({
                       };
 
                       return (
-                        <button
+                        <div
                           key={optionSystem}
-                          type="button"
-                          onClick={() => handleSystemChange(optionSystem)}
-                          className="px-2 py-1 bg-transparent text-[#F4F4F4] transition-all duration-200 text-[#F5E4D0] font-bold hover:text-[#F5E4D0] hover:bg-[#F5E4D0]/10 text-lg lg:text-xl border-r-[3px] border-[#F5E4D0]/10 last:border-r-0 min-w-[60px] h-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSystemChange(optionSystem);
+                          }}
+                          className="inline-flex items-center justify-center border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-2 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0] cursor-pointer"
                         >
-                          {optionSystem}
-                        </button>
+                          <span className="text-[#F5E4D0] font-bold text-lg">{optionSystem}</span>
+                        </div>
                       );
                     })}
-                </div>
+                </>
               )}
             </div>
             
             {/* Slider */}
-            <div className={`inline-flex items-center justify-center border-[3px] border-[#F5E4D0]/10 px-4 py-3 flex-1 transition-all duration-200 ${isSystemDropdownOpen ? 'ml-[140px]' : ''}`} style={{ width: '400px', minWidth: '350px' }}>
+            <div className="flex items-center justify-start border border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-4 py-2 w-full sm:flex-1 sm:min-w-[300px] rounded-[4px] transition-all duration-200">
               <input
                 type="range"
                 min={sizeMin}

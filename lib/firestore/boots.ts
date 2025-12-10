@@ -83,6 +83,8 @@ export async function listBoots(filters?: {
   });
 }
 
+// Admin SDK version (bypasses security rules; for server-side use only)
+
 export async function getBoot(
   bootId: string
 ): Promise<(Boot & { bootId: string }) | null> {

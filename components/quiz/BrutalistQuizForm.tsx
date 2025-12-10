@@ -27,134 +27,139 @@ export default function BrutalistQuizForm({
   steps,
   onStepClick,
 }: BrutalistQuizFormProps) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const currentStepRef = useRef<HTMLDivElement | null>(null);
 
-  // Scroll current step into view and center it when it changes
+  // Scroll to show current step at 120px from top (below nav)
   useEffect(() => {
-    if (currentStepRef.current) {
-      // Use setTimeout to ensure DOM is updated
-      setTimeout(() => {
-        currentStepRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "nearest",
-        });
-      }, 100);
+    if (currentStepRef.current && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const stepElement = currentStepRef.current;
+      
+      // Calculate position to place element at 120px from top of viewport
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = stepElement.getBoundingClientRect();
+      const scrollTop = container.scrollTop;
+      const navOffset = 120; // Position 120px from top
+      const targetScrollTop = scrollTop + elementRect.top - containerRect.top - navOffset;
+      
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: 'smooth'
+      });
     }
   }, [currentStep]);
 
   const isStepCompleted = (stepNum: number): boolean => {
     switch (stepNum) {
-      case 1:
-        return !!answers.gender;
-      case 2:
-        return !!answers.bootType;
-      case 3:
-        return !!answers.ability;
-      case 4:
-        return !!answers.weightKG;
-      case 5:
-        return !!(answers.footLengthMM || answers.shoeSize);
-      case 6:
-        return !!answers.footWidth;
-      case 7:
-        return !!answers.toeShape;
-      case 8:
-        return !!answers.instepHeight;
-      case 9:
-        return !!answers.ankleVolume;
-      case 10:
-        return !!answers.calfVolume;
-      default:
-        return false;
+      case 1: return !!answers.gender;
+      case 2: return !!answers.bootType;
+      case 3: return !!answers.ability;
+      case 4: return !!answers.weightKG;
+      case 5: return !!(answers.footLengthMM || answers.shoeSize);
+      case 6: return !!answers.footWidth;
+      case 7: return !!answers.toeShape;
+      case 8: return !!answers.instepHeight;
+      case 9: return !!answers.ankleVolume;
+      case 10: return !!answers.calfVolume;
+      default: return false;
     }
   };
 
   const getStepTitle = (stepNum: number): string => {
-    switch (stepNum) {
-      case 1:
-        return "ANATOMY";
-      case 2:
-        return "BOOT TYPE";
-      case 3:
-        return "ABILITY";
-      case 4:
-        return "WEIGHT";
-      case 5:
-        return "FOOT LENGTH";
-      case 6:
-        return "FOOT WIDTH";
-      case 7:
-        return "TOE SHAPE";
-      case 8:
-        return "INSTEP HEIGHT";
-      case 9:
-        return "ANKLE VOLUME";
-      case 10:
-        return "CALF VOLUME";
-      default:
-        return "";
-    }
+    const titles: Record<number, string> = {
+      1: "ANATOMY", 2: "BOOT TYPE", 3: "ABILITY", 4: "WEIGHT",
+      5: "FOOT LENGTH", 6: "FOOT WIDTH", 7: "TOE SHAPE",
+      8: "INSTEP HEIGHT", 9: "ANKLE VOLUME", 10: "CALF VOLUME"
+    };
+    return titles[stepNum] || "";
   };
 
-  const renderStep = (stepNum: number) => {
-    const completed = isStepCompleted(stepNum);
-    
-    if (stepNum === currentStep) {
-      // Current step - expanded
-      const step = steps.find((s) => s.stepNumber === stepNum);
-      if (!step) return null;
-      return (
-        <div
-          key={stepNum}
-          ref={currentStepRef}
-          className="border-[4px] border-[#F5E4D0]/10 bg-[#2B2D30]/50 p-0"
-        >
-          {step.component}
-        </div>
-      );
-    } else if (completed) {
-      // Completed step - collapsed with checkmark (clickable)
-      return (
-        <div
-          key={stepNum}
-          onClick={() => onStepClick?.(stepNum)}
-          className="border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/50 px-6 py-4 cursor-pointer transition-all hover:bg-[#2B2D30]/70 hover:border-[#F5E4D0]/20"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold uppercase text-[#F4F4F4]">
-              {getStepTitle(stepNum)}
-            </h3>
-            <Check className="w-6 h-6 text-[#F5E4D0] flex-shrink-0" />
-          </div>
-        </div>
-      );
-    } else if (stepNum === currentStep + 1) {
-      // Next step - heading only (if not completed)
-      return (
-        <div
-          key={stepNum}
-          className="border-[3px] border-[#F5E4D0]/10 bg-[#2B2D30]/30 px-6 py-4"
-        >
-          <h3 className="text-xl font-bold uppercase text-[#F4F4F4]/60">
-            {getStepTitle(stepNum)}
-          </h3>
-        </div>
-      );
-    } else {
-      // Future incomplete steps - hidden
-      return null;
-    }
-  };
+  // Sort steps: current first, then incomplete future steps, then completed steps
+  const sortedSteps = Array.from({ length: totalSteps }, (_, i) => i + 1).sort((a, b) => {
+    const aCompleted = isStepCompleted(a);
+    const bCompleted = isStepCompleted(b);
+    const aCurrent = a === currentStep;
+    const bCurrent = b === currentStep;
+
+    // Current step always first
+    if (aCurrent) return -1;
+    if (bCurrent) return 1;
+
+    // Completed steps go to bottom
+    if (aCompleted && !bCompleted) return 1;
+    if (!aCompleted && bCompleted) return -1;
+
+    // For steps in the same category, maintain original order
+    return a - b;
+  });
 
   return (
-    <div className="min-h-screen bg-[#040404] pt-[132px] pb-8">
-      <div className="w-[90%] mx-auto max-w-6xl space-y-4">
-        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((stepNum) =>
-          renderStep(stepNum)
-        )}
+    <div className="bg-[#040404] min-h-screen relative">
+      {/* Scrollable container */}
+      <div 
+        ref={scrollContainerRef}
+        className="relative min-h-screen overflow-y-auto z-[90]"
+        style={{ 
+          paddingTop: '120px',
+          paddingBottom: '120px',
+        }}
+      >
+        <div className="w-full max-w-4xl mx-auto px-4">
+          <div className="flex flex-col" style={{ gap: '5px' }}>
+            {/* Render steps in sorted order */}
+            {sortedSteps.map((stepNum) => {
+              const completed = isStepCompleted(stepNum);
+              const isCurrent = stepNum === currentStep;
+              const step = steps[stepNum - 1];
+
+              return (
+                <div
+                  key={`step-${stepNum}`}
+                  ref={isCurrent ? currentStepRef : undefined}
+                  className="w-full"
+                  style={{
+                    scrollSnapAlign: isCurrent ? 'center' : 'none',
+                    marginBottom: 0,
+                    marginTop: 0,
+                  }}
+                >
+                  {isCurrent && step ? (
+                    // Current step: render full component
+                    <div className="w-full">
+                      {step.component}
+                    </div>
+                  ) : completed ? (
+                    // Completed step: collapsed heading with checkmark
+                    <div
+                      onClick={() => {
+                        if (onStepClick) {
+                          onStepClick(stepNum);
+                        }
+                      }}
+                      className="w-full border border-[#F5E4D0]/20 bg-[#2B2D30]/70 px-6 py-4 cursor-pointer hover:bg-[#2B2D30]/90 hover:border-[#F5E4D0]/20 rounded-[8px] transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold uppercase text-[#F4F4F4]">
+                          {getStepTitle(stepNum)}
+                        </h3>
+                        <Check className="w-6 h-6 text-[#F4F4F4] flex-shrink-0" />
+                      </div>
+                    </div>
+                  ) : (
+                    // Future step: collapsed heading only
+                    <div className="w-full border border-[#F5E4D0]/20 bg-[#2B2D30]/70 px-6 py-4 rounded-[8px]">
+                      <h3 className="text-xl font-bold uppercase text-[#040404]">
+                        {getStepTitle(stepNum)}
+                      </h3>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
-

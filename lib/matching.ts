@@ -9,15 +9,29 @@ import { getUserWidthCategory } from "./utils/widthCategory";
 import { getBootFamily } from "./utils/getBootFamily";
 
 // Extended Boot type with bootId
-type BootWithId = Boot & { bootId: string };
+export type BootWithId = Boot & { bootId: string };
 
 // Get acceptable flex values based on gender, ability, and weight
 // Returns an array of flex values that are acceptable for this user
 export function getAcceptableFlexValues(
   gender: Gender,
   ability: Ability,
-  weightKG: number
+  weightKG: number,
+  bootType: BootType
 ): number[] {
+  // Freestyle: unified ranges for both genders, no weight adjustment
+  if (bootType === "Freestyle") {
+    switch (ability) {
+      case "Beginner":
+        return [70, 75, 80];
+      case "Intermediate":
+        return [90, 95, 100];
+      case "Advanced":
+        return [110, 115, 120];
+      default:
+        return [90, 95, 100];
+    }
+  }
   let baseFlexes: number[];
 
   if (gender === "Male") {
@@ -72,9 +86,10 @@ export function getAcceptableFlexValues(
 export function calculateTargetFlex(
   gender: Gender,
   ability: Ability,
-  weightKG: number
+  weightKG: number,
+  bootType: BootType
 ): number {
-  const acceptableFlexes = getAcceptableFlexValues(gender, ability, weightKG);
+  const acceptableFlexes = getAcceptableFlexValues(gender, ability, weightKG, bootType);
   // Return the midpoint of acceptable flexes for scoring
   const sum = acceptableFlexes.reduce((a, b) => a + b, 0);
   return sum / acceptableFlexes.length;
@@ -222,6 +237,17 @@ function calculateFeatureScore(answers: QuizAnswers, boot: Boot): number {
 }
 
 // Filter boots based on hard requirements
+// Normalize boot type strings (handles case, spacing, and common aliases)
+function normalizeBootType(value: unknown): BootType | null {
+  if (!value || typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "standard" || normalized === "all-mountain") return "Standard";
+  if (normalized === "freestyle") return "Freestyle";
+  if (normalized === "hybrid") return "Hybrid";
+  if (normalized === "freeride") return "Freeride";
+  return null;
+}
+
 function filterBoots(
   boots: BootWithId[],
   answers: QuizAnswers,
@@ -243,7 +269,8 @@ function filterBoots(
     if (answers.bootType) {
       let bootTypeMatches = false;
       if (typeof boot.bootType === "string") {
-        bootTypeMatches = boot.bootType === answers.bootType;
+        const normalizedBootType = normalizeBootType(boot.bootType);
+        bootTypeMatches = normalizedBootType === answers.bootType;
       } else if (typeof boot.bootType === "object" && boot.bootType !== null) {
         // Handle legacy object format for backwards compatibility
         const bootTypeObj = boot.bootType as any;
@@ -260,17 +287,6 @@ function filterBoots(
 
     // Features filtering removed - awarding full scores automatically for now
     // Features step has been removed from the quiz
-
-    // Filter by width category (categorical system)
-    // Allow wider boots but reject narrower boots
-    if (boot.bootWidth !== userWidthCategory) {
-      const order = ["Narrow", "Average", "Wide"];
-      const userIndex = order.indexOf(userWidthCategory);
-      const bootIndex = order.indexOf(boot.bootWidth);
-
-      // Reject narrower boots (can't make boot wider)
-      if (bootIndex < userIndex) return false;
-    }
 
     return true;
   });
@@ -307,27 +323,54 @@ function scoreBoot(
 
 // Main matching function
 export async function matchBoots(
-  answers: QuizAnswers
+  answers: QuizAnswers,
+  preloadedBoots?: BootWithId[]
 ): Promise<{ boots: BootSummary[]; recommendedMondo: string }> {
   // Get all boots
-  const allBoots = await listBoots();
+  const allBoots = preloadedBoots || (await listBoots());
 
   if (allBoots.length === 0) {
     throw new Error("No boots found in database. Please import boots first.");
   }
 
+  // Debug: log available boot types in inventory
+  const availableBootTypes = Array.from(
+    new Set(
+      allBoots
+        .map((b) => {
+          if (typeof b.bootType === "string") {
+            return normalizeBootType(b.bootType);
+          }
+          if (b.bootType && typeof b.bootType === "object") {
+            const obj: any = b.bootType;
+            if (obj.standard) return "Standard";
+            if (obj.freestyle) return "Freestyle";
+            if (obj.hybrid) return "Hybrid";
+            if (obj.freeride) return "Freeride";
+          }
+          return null;
+        })
+        .filter(Boolean)
+    )
+  );
+  console.log(
+    `[Matching] Inventory boot types available: ${availableBootTypes.join(", ") || "none"}`
+  );
+
   // Get acceptable flex values (discrete values like 100, 110)
   const acceptableFlexes = getAcceptableFlexValues(
     answers.gender,
     answers.ability,
-    answers.weightKG
+    answers.weightKG,
+    answers.bootType
   );
 
   // Also calculate target flex for display/debugging (midpoint of acceptable values)
   const targetFlex = calculateTargetFlex(
     answers.gender,
     answers.ability,
-    answers.weightKG
+    answers.weightKG,
+    answers.bootType
   );
 
   // --- Determine foot length & width ---
@@ -674,7 +717,7 @@ export async function matchBoots(
   const bootToSummary = (boot: BootWithId, score: number): BootSummary => {
     let bootTypeStr: BootType | undefined;
     if (typeof boot.bootType === "string") {
-      bootTypeStr = boot.bootType;
+      bootTypeStr = normalizeBootType(boot.bootType) || undefined;
     } else if (typeof boot.bootType === "object" && boot.bootType !== null) {
       const bootTypeObj = boot.bootType as any;
       if (bootTypeObj.standard) bootTypeStr = "Standard";
@@ -690,6 +733,7 @@ export async function matchBoots(
       links: boot.links,
       flex: boot.flex,
       bootType: bootTypeStr,
+      bootWidth: boot.bootWidth,
       lastWidthMM: boot.lastWidthMM,
       imageUrl: boot.imageUrl,
       affiliateUrl: boot.affiliateUrl,
@@ -698,6 +742,11 @@ export async function matchBoots(
       walkMode: boot.walkMode,
       rearEntry: boot.rearEntry,
       calfAdjustment: boot.calfAdjustment,
+      // Include shape data for comparison table
+      toeBoxShape: boot.toeBoxShape,
+      instepHeight: boot.instepHeight,
+      ankleVolume: boot.ankleVolume,
+      calfVolume: boot.calfVolume,
     };
   };
 
@@ -713,7 +762,7 @@ export async function matchBoots(
 
     let bootTypeStr: BootType | undefined;
     if (typeof b.bootType === "string") {
-      bootTypeStr = b.bootType;
+      bootTypeStr = normalizeBootType(b.bootType) || undefined;
     } else if (typeof b.bootType === "object" && b.bootType !== null) {
       const bootTypeObj = b.bootType as any;
       if (bootTypeObj.standard) bootTypeStr = "Standard";
@@ -728,17 +777,35 @@ export async function matchBoots(
       model: fam.family, // family name for display
       flex: fam.highestFlex,
       bootType: bootTypeStr,
+      bootWidth: b.bootWidth,
       lastWidthMM: b.lastWidthMM,
       imageUrl: b.imageUrl,
       links: b.links,
       affiliateUrl: b.affiliateUrl,
       score: Math.round(fam.score * 100) / 100,
       models: modelList,
+      // Include shape data for comparison table
+      toeBoxShape: b.toeBoxShape,
+      instepHeight: b.instepHeight,
+      ankleVolume: b.ankleVolume,
+      calfVolume: b.calfVolume,
     };
   });
 
+  // Enforce bootType selection at the very end to guard against any upstream data anomalies
+  const bootTypeFiltered = answers.bootType
+    ? topBoots.filter((b) => b.bootType === answers.bootType)
+    : topBoots;
+
+  if (bootTypeFiltered.length === 0) {
+    const availableTypes = Array.from(new Set(topBoots.map((b) => b.bootType).filter(Boolean)));
+    throw new Error(
+      `No boots match your selected boot type (${answers.bootType}). Available boot types in inventory: ${availableTypes.join(", ") || "none"}.`
+    );
+  }
+
   // Sort final results by score (descending) to maintain consistent ordering
-  topBoots.sort((a, b) => b.score - a.score);
+  bootTypeFiltered.sort((a, b) => b.score - a.score);
 
   // Calculate recommended mondo
   let recommendedMondo = "N/A";
@@ -757,7 +824,7 @@ export async function matchBoots(
   }
 
   return {
-    boots: topBoots,
+    boots: bootTypeFiltered,
     recommendedMondo,
   };
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { matchRequestSchema } from "@/lib/validators";
 import { matchBoots } from "@/lib/matching";
-import { createOrUpdateSession } from "@/lib/firestore/quizSessions";
+import { createOrUpdateSessionAdmin } from "@/lib/firestore/quizSessionsAdmin";
+import { listBootsAdmin } from "@/lib/firestore/bootsAdmin";
 import { v4 as uuidv4 } from "uuid";
 
 // Generate session ID if not provided
@@ -41,11 +42,14 @@ export async function POST(request: NextRequest) {
 
     const sessionId = getOrCreateSessionId(validated.sessionId);
 
-    // Run matching algorithm
-    const result = await matchBoots(validated.answers);
+    // Fetch boots via Admin SDK to bypass client security rules
+    const boots = await listBootsAdmin();
+
+    // Run matching algorithm with preloaded boots
+    const result = await matchBoots(validated.answers, boots);
 
     // Persist to quizSessions
-    await createOrUpdateSession(sessionId, {
+    await createOrUpdateSessionAdmin(sessionId, {
       answers: validated.answers,
       recommendedBoots: result.boots,
       recommendedMondo: result.recommendedMondo,

@@ -1,8 +1,8 @@
 "use client";
 
-import { BootSummary, Region } from "@/types";
+import { BootSummary, Region, FittingBreakdown } from "@/types";
 import { motion } from "framer-motion";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, X, ShoppingBag, Search } from "lucide-react";
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { useRegion } from "@/lib/region";
 import { useAuth } from "@/lib/auth";
@@ -45,6 +45,12 @@ interface Props {
   selectedModels?: Set<number>;
   onUpdateSelectedModels?: (bootId: string, modelIndices: Set<number>) => void;
   onPurchaseComparison?: () => void;
+  isFlipped?: boolean;
+  breakdownSection?: FittingBreakdown['sections'][0];
+  bootScore?: number;
+  onFlipBack?: () => void;
+  onViewComparison?: () => void;
+  hasBreakdown?: boolean; // Indicates if a breakdown exists (even if this boot doesn't have a section)
 }
 
 export default function ResultCard({
@@ -61,6 +67,12 @@ export default function ResultCard({
   selectedModels: selectedModelsProp,
   onUpdateSelectedModels,
   onPurchaseComparison,
+  isFlipped = false,
+  breakdownSection,
+  bootScore,
+  onFlipBack,
+  onViewComparison,
+  hasBreakdown = false,
 }: Props) {
   const { region, loading: regionLoading } = useRegion();
   const { user } = useAuth();
@@ -106,10 +118,18 @@ export default function ResultCard({
     ? modelsVisibleProp 
     : localModelsVisible;
   
+  // Check if this is a single-model boot (no models array)
+  const isSingleModelBoot = !boot.models || boot.models.length === 0;
+  
   // Use prop if provided, otherwise use local state
   const [localSelectedModels, setLocalSelectedModels] = useState<Set<number>>(() => {
     const initialSet = new Set<number>();
-    sortedModels.forEach((_, i) => initialSet.add(i));
+    if (isSingleModelBoot) {
+      // For single-model boots, use index 0 to represent the single model
+      initialSet.add(0);
+    } else {
+      sortedModels.forEach((_, i) => initialSet.add(i));
+    }
     return initialSet;
   });
   
@@ -125,21 +145,26 @@ export default function ResultCard({
     }
   };
 
-  // When compare mode is first activated, ensure all models are selected
+  // When compare mode is first activated, ensure all models (or single model) are selected
   useEffect(() => {
-    if (isCompareMode && sortedModels.length > 0) {
+    if (isCompareMode) {
       const allSelected = new Set<number>();
-      sortedModels.forEach((_, i) => allSelected.add(i));
+      if (isSingleModelBoot) {
+        // For single-model boots, use index 0
+        allSelected.add(0);
+      } else if (sortedModels.length > 0) {
+        sortedModels.forEach((_, i) => allSelected.add(i));
+      }
       // Only update if not already all selected (check if any are missing)
       const hasAllSelected = allSelected.size === selectedForCompare.size && 
         Array.from(allSelected).every(i => selectedForCompare.has(i));
-      if (!hasAllSelected) {
+      if (!hasAllSelected && allSelected.size > 0) {
         setSelectedForCompare(allSelected);
       }
     }
     // Only run when compare mode is activated or models change, not when selection changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCompareMode, sortedModels.length]);
+  }, [isCompareMode, sortedModels.length, isSingleModelBoot]);
 
   // Get affiliate links for the selected model
   const selectedModelLinks = useMemo(() => {
@@ -194,16 +219,234 @@ export default function ResultCard({
     return boot.imageUrl;
   }, [boot.imageUrl, selectedModelIndex, sortedModels]);
 
+  const comparisonSectionRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(false);
+
+  // Scroll to comparison section when it becomes visible
+  useEffect(() => {
+    if (isCompareMode && shouldScrollRef.current) {
+      // Use requestAnimationFrame for better timing
+      const scrollToElement = () => {
+        const element = comparisonSectionRef.current || document.getElementById(`comparison-section-${boot.bootId}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+          const headerOffset = 150; // Account for sticky header
+          const targetY = scrollY + rect.top - headerOffset;
+          
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: "smooth"
+          });
+          
+          shouldScrollRef.current = false;
+          return true;
+        }
+        return false;
+      };
+      
+      // Try immediately
+      if (!scrollToElement()) {
+        // If element not found, try after a delay
+        requestAnimationFrame(() => {
+          if (!scrollToElement()) {
+            setTimeout(() => scrollToElement(), 100);
+          }
+        });
+      }
+    }
+  }, [isCompareMode, boot.bootId]);
+
+  // Handle Match Score button click
+  const handleMatchScoreClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Set flag to scroll when compare mode is enabled
+    shouldScrollRef.current = true;
+    
+    // Enable compare mode if not already enabled (this will also show models)
+    if (!isCompareMode && onToggleCompareMode) {
+      onToggleCompareMode();
+    } else {
+      // Already in compare mode - scroll immediately
+      if (!modelsVisible && onToggleModelsVisibility) {
+        onToggleModelsVisibility();
+      }
+      
+      // Scroll to comparison section immediately if already in compare mode
+      requestAnimationFrame(() => {
+        const element = comparisonSectionRef.current || document.getElementById(`comparison-section-${boot.bootId}`);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+          const headerOffset = 150;
+          const targetY = scrollY + rect.top - headerOffset;
+          
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: "smooth"
+          });
+        }
+      });
+    }
+  };
+
+  // Render breakdown content for back side
+  const renderBreakdownContent = () => {
+    // Only show "Not Included" if:
+    // 1. A breakdown exists (hasBreakdown is true)
+    // 2. AND this boot doesn't have a breakdown section (meaning it wasn't included in the breakdown)
+    // This handles the case where a breakdown was generated with only some boots selected
+    const shouldShowNotIncluded = hasBreakdown && breakdownSection === undefined;
+    
+    // If boot is not included in the breakdown, show "Not Included" message
+    if (shouldShowNotIncluded) {
+      return (
+        <>
+          <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+            {/* Close button */}
+            {onFlipBack && (
+              <button
+                onClick={onFlipBack}
+                className="absolute top-8 right-8 w-6 h-6 flex items-center justify-center text-[#F4F4F4] hover:text-[#F5E4D0] transition-colors z-10"
+                aria-label="Close breakdown"
+              >
+                <X className="w-6 h-6" strokeWidth={2.5} />
+              </button>
+            )}
+            
+            {/* Brand and Model */}
+            <div className="mb-4">
+              <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">
+                {boot.brand}
+              </p>
+              <p className="text-2xl font-bold text-[#F5E4D0]/80 leading-tight">
+                {boot.model}
+              </p>
+            </div>
+          </CardHeader>
+          <div className="px-8 pt-2 pb-6 mb-0 flex-1 flex items-center justify-center" style={{ paddingBottom: '1.5rem', marginBottom: 0, minHeight: '200px' }}>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[#F4F4F4]/50 mb-2">
+                Not Included
+              </p>
+              <p className="text-base text-[#F4F4F4]/40">
+                This boot was not selected for comparison
+              </p>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    // If boot is selected but no breakdown section, return null
+    if (!breakdownSection) return null;
+
+    // Parse brand and model from heading or use boot data
+    const headingParts = breakdownSection.heading.split(' ');
+    const brand = headingParts[0] || boot.brand;
+    const model = headingParts.slice(1).join(' ') || boot.model;
+
+    return (
+      <>
+        <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+          {/* Close button */}
+          {onFlipBack && (
+            <button
+              onClick={onFlipBack}
+              className="absolute top-8 right-8 w-6 h-6 flex items-center justify-center text-[#F4F4F4] hover:text-[#F5E4D0] transition-colors z-10"
+              aria-label="Close breakdown"
+            >
+              <X className="w-6 h-6" strokeWidth={2.5} />
+            </button>
+          )}
+          
+          {/* Brand and Model */}
+          <div className="mb-4">
+            <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">
+              {brand}
+            </p>
+            {model && (
+              <p className="text-2xl font-bold text-[#F5E4D0]/80 leading-tight">
+                {model}
+              </p>
+            )}
+          </div>
+
+          {/* Match Score */}
+          {bootScore !== undefined && (
+            <p className="text-lg font-semibold text-white">
+              Match Score: <span className="font-bold text-[#F5E4D0]">{bootScore}</span>
+            </p>
+          )}
+        </CardHeader>
+        <div className="px-8 pt-2 pb-6 mb-0 flex-1" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
+          <div className="text-[#F4F4F4] text-base leading-[1.8] [&>*:last-child]:!mb-0">
+            {breakdownSection.body
+              .split(/\r?\n/) // Handle both \n and \r\n
+              .map((line, lineIndex) => {
+                const trimmedLine = line.trim();
+                
+                // Skip empty lines
+                if (!trimmedLine) {
+                  return null;
+                }
+                
+                // Check if line starts with bullet point markers (-, •, or *) with optional space
+                // This handles: "- text", "-text", "• text", "* text", etc.
+                const bulletMatch = trimmedLine.match(/^[-•*]\s*(.+)$/);
+                if (bulletMatch) {
+                  return (
+                    <div key={lineIndex} className="flex items-start mb-3.5">
+                      <span className="text-[#F5E4D0] mr-4 mt-[4px] flex-shrink-0 text-lg leading-none font-bold">•</span>
+                      <span className="flex-1 text-base leading-relaxed">{bulletMatch[1].trim()}</span>
+                    </div>
+                  );
+                }
+                
+                // Regular paragraph line (not a bullet point)
+                return (
+                  <p key={lineIndex} className="mb-3.5 text-base leading-relaxed">
+                    {trimmedLine}
+                  </p>
+                );
+              })}
+          </div>
+        </div>
+      </>
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-      whileHover={{ y: -8 }}
-      className="h-full"
+      transition={{ duration: 0.5, delay: (index + 1) * 0.1 }}
+      whileHover={!isFlipped ? { y: -8 } : {}}
       id={boot.bootId}
+      data-boot-id={boot.bootId}
+      className="relative h-full"
+      style={{ perspective: "1000px" }}
     >
-      <Card className="h-full flex flex-col overflow-hidden hover:shadow-xl border-[#F5E4D0]/20 transition-all duration-300 bg-[#2B2D30]/70">
+      <div
+        className="relative w-full h-full"
+        style={{
+          transformStyle: "preserve-3d",
+          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          transition: "transform 0.6s ease-in-out",
+        }}
+      >
+        {/* Front Side */}
+        <div
+          className="w-full h-full"
+          style={{
+            WebkitBackfaceVisibility: "hidden",
+            backfaceVisibility: "hidden",
+            transform: "rotateY(0deg)",
+          }}
+        >
+          <Card className="flex flex-col overflow-hidden hover:shadow-xl border-[#F5E4D0]/20 transition-all duration-300 bg-[#2B2D30] h-full">
         {/* 1. Image with Match Score Overlay */}
         {currentImageUrl && (
           <motion.div
@@ -220,27 +463,14 @@ export default function ResultCard({
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             />
-            {/* Match Score - Top Right Overlay */}
-            <div className="absolute top-3 right-3">
-              <Badge 
-                variant="default" 
-                onClick={() => {
-                  const breakdownSection = document.getElementById('fitting-breakdown');
-                  if (breakdownSection) {
-                    const headerHeight = 120; // Header height with padding to ensure full visibility
-                    const elementPosition = breakdownSection.getBoundingClientRect().top;
-                    const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
-                    window.scrollTo({
-                      top: offsetPosition,
-                      behavior: 'smooth'
-                    });
-                  }
-                }}
-                className="text-sm font-semibold px-3 py-1.5 shadow-lg bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 rounded-md text-[#F5E4D0] cursor-pointer hover:bg-[#2B2D30] transition-colors"
-              >
-                Match: {Math.floor(boot.score)}
-              </Badge>
-            </div>
+            {/* Match Score Button Overlay */}
+            <button
+              onClick={handleMatchScoreClick}
+              className="absolute top-3 right-3 bg-[#2B2D30] text-white px-3 py-1.5 rounded-[4px] font-semibold text-sm hover:bg-[#2B2D30]/80 transition-colors shadow-lg z-10"
+              aria-label="View Match Score"
+            >
+              Match Score
+            </button>
           </motion.div>
         )}
         
@@ -283,7 +513,7 @@ export default function ResultCard({
           )}
 
           {/* Models - Tertiary information */}
-          {sortedModels.length > 0 && (
+          {(sortedModels.length > 0 || (isCompareMode && isSingleModelBoot)) && (
             <div className="mb-4">
               <div className="flex items-center justify-between mb-3">
                 <button
@@ -296,31 +526,59 @@ export default function ResultCard({
                       onToggleModelsVisibility();
                     }
                   }}
-                  className="text-base font-semibold text-white hover:opacity-80 transition-opacity cursor-pointer"
+                  className="flex items-baseline gap-2 text-base font-semibold text-white hover:opacity-80 transition-opacity cursor-pointer"
                 >
-                  View Models:
+                  <Search className="w-5 h-5 text-[#F5E4D0] flex-shrink-0" />
+                  <span>{isSingleModelBoot ? "Boot Selection:" : "View Models:"}</span>
                 </button>
-                <button
-                  onClick={() => {
-                    // Only use local state for individual card toggle
-                    // Shared state is only used when in compare mode
-                    if (!isCompareMode) {
-                      setLocalModelsVisible(!localModelsVisible);
-                    } else if (onToggleModelsVisibility) {
-                      onToggleModelsVisibility();
-                    }
-                  }}
-                  className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer"
-                  title={modelsVisible ? "Hide models" : "Show models"}
-                >
-                  {modelsVisible ? (
-                    <ChevronUp className="w-5 h-5 text-[#F5E4D0]" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5 text-[#F5E4D0]" />
-                  )}
-                </button>
+                {!isSingleModelBoot && (
+                  <button
+                    onClick={() => {
+                      // Only use local state for individual card toggle
+                      // Shared state is only used when in compare mode
+                      if (!isCompareMode) {
+                        setLocalModelsVisible(!localModelsVisible);
+                      } else if (onToggleModelsVisibility) {
+                        onToggleModelsVisibility();
+                      }
+                    }}
+                    className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer"
+                    title={modelsVisible ? "Hide models" : "Show models"}
+                  >
+                    {modelsVisible ? (
+                      <ChevronUp className="w-5 h-5 text-[#F5E4D0]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-[#F5E4D0]" />
+                    )}
+                  </button>
+                )}
               </div>
-              {modelsVisible && (
+              {/* Single model boot selection in compare mode */}
+              {isCompareMode && isSingleModelBoot && (
+                <div className="mb-4">
+                  <Badge 
+                    variant="secondary" 
+                    onClick={() => {
+                      const newSet = new Set(selectedForCompare);
+                      if (selectedForCompare.has(0)) {
+                        newSet.delete(0);
+                      } else {
+                        newSet.add(0);
+                      }
+                      setSelectedForCompare(newSet);
+                    }}
+                    className={`text-base px-3 py-1.5 cursor-pointer rounded-[4px] ${
+                      selectedForCompare.has(0)
+                        ? "bg-[#F5E4D0]/70 text-[#2B2D30] border-[#F5E4D0]/70 font-bold hover:bg-[#F5E4D0]/70 hover:text-[#2B2D30] hover:border-[#F5E4D0]/70"
+                        : "text-[#F4F4F4] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors"
+                    }`}
+                  >
+                    {boot.model} {boot.flex && `• Flex ${boot.flex}`}
+                  </Badge>
+                </div>
+              )}
+              {/* Multiple models list */}
+              {sortedModels.length > 0 && modelsVisible && (
                 <ul className="space-y-2 mb-4">
                   {sortedModels.map((m, i) => {
                     const isSelected = selectedModelIndex === i;
@@ -329,33 +587,26 @@ export default function ResultCard({
                       <li key={i}>
                         <Badge 
                           variant="secondary" 
-                          onClick={() => setSelectedModelIndex(i)}
-                          className={`text-base px-3 py-1.5 cursor-pointer rounded-md relative ${
-                            isSelected
+                          onClick={() => {
+                            if (isCompareMode) {
+                              const newSet = new Set(selectedForCompare);
+                              if (isSelectedForCompare) {
+                                newSet.delete(i);
+                              } else {
+                                newSet.add(i);
+                              }
+                              setSelectedForCompare(newSet);
+                            } else {
+                              setSelectedModelIndex(i);
+                            }
+                          }}
+                          className={`text-base px-3 py-1.5 cursor-pointer rounded-[4px] ${
+                            (isCompareMode ? isSelectedForCompare : isSelected)
                               ? "bg-[#F5E4D0]/70 text-[#2B2D30] border-[#F5E4D0]/70 font-bold hover:bg-[#F5E4D0]/70 hover:text-[#2B2D30] hover:border-[#F5E4D0]/70"
                               : "text-[#F4F4F4] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors"
                           }`}
                         >
-                          <span className={isCompareMode ? "pr-6" : ""}>{m.model}</span>
-                          {/* Compare Mode Checkbox - Inside badge, aligned right */}
-                          {isCompareMode && (
-                            <input
-                              type="checkbox"
-                              checked={isSelectedForCompare}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                const newSet = new Set(selectedForCompare);
-                                if (e.target.checked) {
-                                  newSet.add(i);
-                                } else {
-                                  newSet.delete(i);
-                                }
-                                setSelectedForCompare(newSet);
-                              }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded border-[#F5E4D0] bg-[#2B2D30] text-[#F5E4D0] focus:ring-[#F5E4D0] focus:ring-2 cursor-pointer"
-                            />
-                          )}
+                          {m.model}
                         </Badge>
                       </li>
                     );
@@ -367,9 +618,12 @@ export default function ResultCard({
               {selectedModelIndex !== null && (selectedModelLinks.length > 0 || selectedModelLegacyUrl) && (
                 <div className="mt-4 pt-4 border-t border-[#F5E4D0]/10">
                   <div className="flex items-center justify-between mb-3 relative">
-                    <h4 className="text-base font-semibold text-white">
+                    <div className="flex items-baseline gap-2">
+                      <ShoppingBag className="w-5 h-5 text-[#F5E4D0] flex-shrink-0" />
+                      <h4 className="text-base font-semibold text-white m-0">
                       Available at:
                     </h4>
+                    </div>
                     <button
                       onClick={() => setShowRegionSelector(!showRegionSelector)}
                       className="hover:opacity-70 transition-opacity cursor-pointer flex items-center"
@@ -423,7 +677,7 @@ export default function ResultCard({
                             handleBuy(link.store);
                           }}
                           whileHover={{ scale: 1.02 }}
-                          className="text-base px-3 py-1.5 rounded-md bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
+                          className="text-base px-3 py-1.5 rounded-[4px] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
                         >
                           {link.store}
                         </motion.a>
@@ -440,7 +694,7 @@ export default function ResultCard({
                           handleBuy(undefined, selectedModelLegacyUrl);
                         }}
                         whileHover={{ scale: 1.02 }}
-                        className="text-base px-3 py-1.5 rounded-md bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
+                        className="text-base px-3 py-1.5 rounded-[4px] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
                       >
                         View Product
                       </motion.a>
@@ -452,12 +706,17 @@ export default function ResultCard({
           )}
         </CardHeader>
 
-        <CardContent className="flex-grow flex flex-col justify-end pt-0 pb-6 px-8">
-          {/* Fit Breakdown & Comparison Section - shown when in compare mode */}
-          {isCompareMode && (
-            <div className="mb-4 pb-4 border-b border-[#F5E4D0]/10">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-white">
+        <CardContent className="flex flex-col pt-0 pb-6 px-8">
+          <div className="pt-4 border-t border-[#F5E4D0]/10">
+            {/* Fit Breakdown & Comparison Section - shown when in compare mode */}
+            {isCompareMode && (
+              <div 
+                ref={comparisonSectionRef}
+                id={`comparison-section-${boot.bootId}`} 
+                className="mb-6 pb-6 border-b border-[#F5E4D0]/20"
+              >
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-base font-semibold text-[#F5E4D0]">
                   Comparison Includes:
                 </h4>
                 <button
@@ -466,58 +725,93 @@ export default function ResultCard({
                       onToggleCompareMode();
                     }
                   }}
-                  className="w-5 h-5 flex items-center justify-center hover:opacity-70 transition-opacity cursor-pointer text-white"
+                  className="w-6 h-6 flex items-center justify-center hover:bg-[#F5E4D0]/10 rounded-[4px] transition-colors cursor-pointer text-[#F4F4F4] -mt-0.5"
                   title="Exit compare mode"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <ul className="space-y-0.5 text-sm text-[#F4F4F4]/80 leading-relaxed">
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
+              <ul className="space-y-2.5 text-base text-[#F4F4F4] leading-relaxed">
+                <li className="flex items-start gap-3">
+                  <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
                   <span>Breakdown of your Match Score</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
                   <span>Boot-to-Boot Comparison</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
                   <span>Help selecting the correct Flex</span>
                 </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Fitting Advise to get the most out your boots.</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
+                  <span>Fitting Advice to get the most out of your boots</span>
                 </li>
               </ul>
-            </div>
-          )}
-          
-          <div className="flex items-center gap-6">
-            <Button
+              </div>
+            )}
+            
+            {isCompareMode ? (
+              <div className="space-y-4">
+              <div className="bg-[#F5E4D0]/5 border border-[#F5E4D0]/20 rounded-[4px] p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold text-white">Price:</span>
+                  <span className="text-xl font-bold text-[#F5E4D0]">£2.99</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  if (onPurchaseComparison) {
+                    onPurchaseComparison();
+                  }
+                }}
+                className="w-full bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border border-[#F5E4D0] font-bold text-base p-4 rounded-[4px] transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                Purchase Comparison
+              </button>
+              <div className="flex items-start gap-2">
+                <span className="text-base text-[#F5E4D0] font-bold flex-shrink-0">*</span>
+                <p className="text-base text-[#F4F4F4]/80">
+                  Make sure you have selected all the models you want to compare!
+                </p>
+              </div>
+              </div>
+            ) : (
+              <Button
               onClick={() => {
-                if (isCompareMode && onPurchaseComparison) {
-                  // In compare mode, trigger purchase comparison
-                  onPurchaseComparison();
+                if (breakdownSection && onViewComparison) {
+                  onViewComparison();
                 } else if (onToggleCompareMode) {
-                  // Not in compare mode, toggle compare mode
                   onToggleCompareMode();
                 }
               }}
               variant="outline"
               size="lg"
-              className={`${isCompareMode ? 'flex-1' : 'w-full'} border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10`}
+              className="w-full border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 rounded-[4px]"
             >
-              {isCompareMode ? "Purchase Comparison" : "Compare"}
+              {breakdownSection ? "View Comparison" : "Compare"}
             </Button>
-            {isCompareMode && (
-              <div className="text-base font-bold text-white whitespace-nowrap">
-                Price: £ 2.99
-              </div>
             )}
           </div>
         </CardContent>
       </Card>
+        </div>
+        
+        {/* Back Side */}
+        <div
+          className="absolute top-0 left-0 w-full h-full"
+          style={{
+            WebkitBackfaceVisibility: "hidden",
+            backfaceVisibility: "hidden",
+            transform: "rotateY(180deg)",
+          }}
+        >
+          <Card className="flex flex-col overflow-hidden border-[#F5E4D0]/20 bg-[#2B2D30] h-full justify-start" style={{ paddingBottom: 0 }}>
+            {renderBreakdownContent()}
+          </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }

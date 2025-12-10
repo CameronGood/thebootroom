@@ -5,8 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ResultCard from "@/components/ResultCard";
+import ResultsCarousel from "@/components/ResultsCarousel";
 import Spinner from "@/components/Spinner";
-import PaymentForm from "@/components/PaymentForm";
+import BreakdownDisplay from "@/components/BreakdownDisplay";
+// PaymentForm import removed - payment wall temporarily disabled for testing
 import { QuizSession, BootSummary, FittingBreakdown, Region } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { useRegion } from "@/lib/region";
@@ -15,7 +17,6 @@ import {
   calculateRecommendedMondo,
   shoeSizeToMondo,
 } from "@/lib/mondo-conversions";
-import { v4 as uuidv4 } from "uuid";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -190,16 +191,15 @@ export default function ResultsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const sessionId = searchParams.get("sessionId");
-  const paymentSuccess = searchParams.get("payment") === "success";
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<QuizSession | null>(null);
   const [recommendedMondo, setRecommendedMondo] = useState<string>("N/A");
   const [saving, setSaving] = useState(false);
   const [breakdown, setBreakdown] = useState<FittingBreakdown | null>(null);
   const [loadingBreakdown, setLoadingBreakdown] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  // Payment form state removed - payment wall temporarily disabled for testing
   const [generatingBreakdown, setGeneratingBreakdown] = useState(false);
+  const [breakdownError, setBreakdownError] = useState(false);
   const [selectedPriceTab, setSelectedPriceTab] = useState<number>(0);
   const [showRegionSelector, setShowRegionSelector] = useState(false);
   const [isCompareMode, setIsCompareMode] = useState(false);
@@ -207,6 +207,45 @@ export default function ResultsPage() {
   // Track selected models for each boot (bootId -> Set of model indices)
   const [selectedModels, setSelectedModels] = useState<Record<string, Set<number>>>({});
   const { region, setRegion } = useRegion();
+
+  // Clear breakdown when sessionId changes
+  useEffect(() => {
+    setBreakdown(null);
+    setBreakdownError(false);
+    setGeneratingBreakdown(false);
+  }, [sessionId]);
+
+  // Flip state management
+  const [isFlipped, setIsFlipped] = useState(false);
+  
+  // Reset result cards to default state when breakdown appears
+  const [previousBreakdown, setPreviousBreakdown] = useState<FittingBreakdown | null>(null);
+  useEffect(() => {
+    // Only reset when breakdown transitions from null/undefined to having a value
+    if (breakdown && !previousBreakdown) {
+      setIsCompareMode(false);
+      setModelsVisible(false);
+      setIsFlipped(true); // Automatically flip cards when breakdown is generated
+    }
+    setPreviousBreakdown(breakdown);
+  }, [breakdown, previousBreakdown]);
+
+  // Handle flipping cards back to front
+  const handleFlipBack = () => {
+    setIsFlipped(false);
+    // Optionally clear breakdown if you want to hide comparison sections
+    // setBreakdown(null); // Commented out - keep breakdown so "View Comparison" button works
+  };
+
+  // Handle viewing comparison (flip to back)
+  const handleViewComparison = () => {
+    if (breakdown) {
+      setIsFlipped(true);
+    } else {
+      // If no breakdown exists yet, generate it
+      handleGetBreakdown(selectedModels);
+    }
+  };
 
   useEffect(() => {
     if (!sessionId) {
@@ -253,63 +292,12 @@ export default function ResultsPage() {
     fetchSession();
   }, [sessionId, router]);
 
-  // Fetch breakdown if user is logged in
-  useEffect(() => {
-    if (user && sessionId && session) {
-      fetchBreakdown();
-    }
-  }, [user, sessionId, session]);
-
-  // Poll for breakdown after payment success
-  useEffect(() => {
-    if (paymentSuccess && user && sessionId) {
-      setGeneratingBreakdown(true);
-      const pollInterval = setInterval(async () => {
-        try {
-          const response = await fetch(
-            `/api/breakdowns/${user.uid}/${sessionId}`
-          );
-          if (response.ok) {
-            const breakdownData: FittingBreakdown = await response.json();
-            setBreakdown(breakdownData);
-            setGeneratingBreakdown(false);
-            clearInterval(pollInterval);
-          }
-        } catch (error) {
-          console.error("Error polling for breakdown:", error);
-        }
-      }, 2000); // Poll every 2 seconds
-
-      // Stop polling after 60 seconds
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        setGeneratingBreakdown(false);
-      }, 60000);
-
-      return () => clearInterval(pollInterval);
-    }
-  }, [paymentSuccess, user, sessionId]);
-
-  const fetchBreakdown = async () => {
-    if (!user || !sessionId) return;
-
-    setLoadingBreakdown(true);
-    try {
-      const response = await fetch(`/api/breakdowns/${user.uid}/${sessionId}`);
-      if (response.ok) {
-        const breakdownData: FittingBreakdown = await response.json();
-        setBreakdown(breakdownData);
-      }
-    } catch (error) {
-      console.error("Error fetching breakdown:", error);
-    } finally {
-      setLoadingBreakdown(false);
-    }
-  };
+  // Don't fetch breakdown automatically - only generate when user clicks button
+  // Breakdowns are not persisted, so we don't fetch them on load
 
   const handleGetBreakdown = async (selectedModelsForBreakdown?: Record<string, Set<number>>) => {
     if (!user) {
-      toast.error("Please log in to purchase a breakdown");
+      toast.error("Please log in to get a breakdown");
       router.push(`/account?saveResults=true&sessionId=${sessionId}`);
       return;
     }
@@ -319,7 +307,14 @@ export default function ResultsPage() {
       return;
     }
 
-    setShowPaymentForm(true);
+    if (!session) {
+      toast.error("Session data not loaded");
+      return;
+    }
+
+    setGeneratingBreakdown(true);
+    toast.loading("Generating your breakdown...", { id: "breakdown" });
+
     try {
       // Convert selected models to a serializable format
       const modelsToInclude: Record<string, number[]> = {};
@@ -331,7 +326,8 @@ export default function ResultsPage() {
         }
       });
 
-      const response = await fetch("/api/payments/create-payment-intent", {
+      // Call breakdown generation endpoint directly (bypassing payment)
+      const response = await fetch("/api/breakdowns/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -345,52 +341,38 @@ export default function ResultsPage() {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage =
           errorData.error ||
+          errorData.details ||
           errorData.message ||
           `Server error: ${response.status}`;
-        console.error("Payment intent API error:", errorMessage, errorData);
+        console.error("Breakdown generation API error:", errorMessage, errorData);
+        console.error("Full error response:", { status: response.status, errorData });
         throw new Error(errorMessage);
       }
 
-      const { clientSecret: secret } = await response.json();
-      if (!secret) {
-        throw new Error("No client secret returned from server");
+      const result = await response.json();
+      
+      // Breakdown is returned directly in the response
+      if (result.success && result.breakdown) {
+        setBreakdown(result.breakdown);
+        setBreakdownError(false);
+        setGeneratingBreakdown(false);
+        toast.success("Breakdown generated successfully!", { id: "breakdown" });
+      } else {
+        throw new Error(result.error || "Failed to generate breakdown");
       }
-      setClientSecret(secret);
+
     } catch (error: any) {
-      console.error("Error creating payment intent:", error);
+      console.error("Error generating breakdown:", error);
       toast.error(
-        error.message ||
-          "Failed to initialize payment. Please check your Stripe configuration."
+        error.message || "Failed to generate breakdown. Please try again.",
+        { id: "breakdown" }
       );
-      setShowPaymentForm(false);
+      setGeneratingBreakdown(false);
+      setBreakdownError(true);
     }
   };
 
-  const handlePaymentSuccess = (quizId: string) => {
-    setShowPaymentForm(false);
-    setClientSecret(null);
-    setGeneratingBreakdown(true);
-    // Start polling for breakdown
-    const pollInterval = setInterval(async () => {
-      if (!user) return;
-      try {
-        const response = await fetch(`/api/breakdowns/${user.uid}/${quizId}`);
-        if (response.ok) {
-          const breakdownData: FittingBreakdown = await response.json();
-          setBreakdown(breakdownData);
-          setGeneratingBreakdown(false);
-          clearInterval(pollInterval);
-        }
-      } catch (error) {
-        console.error("Error polling for breakdown:", error);
-      }
-    }, 2000);
-
-    setTimeout(() => {
-      clearInterval(pollInterval);
-      setGeneratingBreakdown(false);
-    }, 60000);
-  };
+  // handlePaymentSuccess removed - payment wall temporarily disabled for testing
 
   const handleSaveResult = async () => {
     // If not logged in, redirect to account page with message and sessionId
@@ -402,15 +384,25 @@ export default function ResultsPage() {
       return;
     }
 
-    if (!session || !session.recommendedBoots) return;
+    // Ensure we have a valid sessionId before saving
+    if (!sessionId) {
+      toast.error("Session ID is missing. Cannot save results.");
+      console.error("Attempted to save result without sessionId");
+      return;
+    }
+
+    if (!session || !session.recommendedBoots) {
+      toast.error("Session data is incomplete. Cannot save results.");
+      return;
+    }
 
     setSaving(true);
     try {
       await upsertSavedResult(user.uid, {
-        quizId: sessionId || uuidv4(),
+        quizId: sessionId, // Use the sessionId from URL - should always be present
         completedAt: session.completedAt || new Date(),
         recommendedBoots: session.recommendedBoots,
-      });
+      }, user.email || undefined);
       toast.success("Result saved successfully!");
     } catch (error) {
       console.error("Error saving result:", error);
@@ -457,76 +449,123 @@ export default function ResultsPage() {
       className="min-h-screen flex flex-col bg-[#040404]"
     >
       <div
-        className="sticky top-0 z-50 bg-[#040404] pt-4 pb-0"
+        className="sticky top-0 z-50 bg-[#040404] pt-2 pb-0"
       >
         <Header />
       </div>
         <main
         className="flex-grow bg-[#040404] pb-8"
       >
-        <div className="w-full px-[50px] pt-24 sm:pt-28 md:pt-32">
-          <div className="w-[90%] mx-auto">
-          {/* Results Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {session.recommendedBoots.map((boot, index) => (
-              <ResultCard
-                key={boot.bootId}
-                boot={boot}
-                sessionId={sessionId || undefined}
-                index={index}
-                recommendedSize={recommendedMondo}
-                footLength={session.answers?.footLengthMM}
-                shoeSize={session.answers?.shoeSize}
-                isCompareMode={isCompareMode}
-                onToggleCompareMode={() => {
-                  const newCompareMode = !isCompareMode;
-                  setIsCompareMode(newCompareMode);
-                  // If entering compare mode, open models dropdown in all cards
-                  if (newCompareMode) {
-                    setModelsVisible(true);
-                  }
-                }}
-                modelsVisible={modelsVisible}
-                onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
-                selectedModels={selectedModels[boot.bootId] || new Set()}
-                onUpdateSelectedModels={(bootId, modelIndices) => {
-                  setSelectedModels(prev => ({
-                    ...prev,
-                    [bootId]: modelIndices,
-                  }));
-                }}
-                onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
-              />
-            ))}
-          </div>
-
-          {/* Header with Save/Login Button */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-6 flex justify-between items-center"
-          >
-            <Button
-              onClick={() => {
-                const breakdownSection = document.getElementById('fitting-breakdown');
-                if (breakdownSection) {
-                  const headerHeight = 120;
-                  const elementPosition = breakdownSection.getBoundingClientRect().top;
-                  const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
-                  window.scrollTo({
-                    top: offsetPosition,
-                    behavior: 'smooth'
-                  });
+        <div className="w-full px-4 md:px-[50px] pt-24 sm:pt-28 md:pt-32">
+          {/* Mobile Carousel */}
+          <div className={`md:hidden ${isFlipped ? 'mb-2' : 'mb-8'}`}>
+            <ResultsCarousel
+              boots={session.recommendedBoots}
+              sessionId={sessionId || undefined}
+              recommendedMondo={recommendedMondo}
+              footLength={session.answers?.footLengthMM}
+              shoeSize={session.answers?.shoeSize}
+              isCompareMode={isCompareMode}
+              onToggleCompareMode={() => {
+                const newCompareMode = !isCompareMode;
+                setIsCompareMode(newCompareMode);
+                // If entering compare mode, open models dropdown in all cards
+                if (newCompareMode) {
+                  setModelsVisible(true);
                 }
               }}
-              variant="outline"
-              size="lg"
-              className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10"
+              modelsVisible={modelsVisible}
+              onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
+              selectedModels={selectedModels}
+              onUpdateSelectedModels={(bootId, modelIndices) => {
+                setSelectedModels(prev => ({
+                  ...prev,
+                  [bootId]: modelIndices,
+                }));
+              }}
+              onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
+              resetToFirst={!!breakdown}
+              isFlipped={isFlipped}
+              breakdown={breakdown || undefined}
+              onFlipBack={handleFlipBack}
+              onViewComparison={handleViewComparison}
+            />
+          </div>
+
+          {/* Desktop Grid */}
+          <div className={`hidden md:grid md:grid-cols-3 gap-6 ${isFlipped ? 'mb-2' : 'mb-8'}`}>
+            {session.recommendedBoots.map((boot, index) => {
+              // Find the breakdown section for this boot
+              const breakdownSection = breakdown?.sections.find(s => s.bootId === boot.bootId);
+              const bootScore = boot.score;
+              
+              return (
+                <ResultCard
+                  key={boot.bootId}
+                  boot={boot}
+                  sessionId={sessionId || undefined}
+                  index={index}
+                  recommendedSize={recommendedMondo}
+                  footLength={session.answers?.footLengthMM}
+                  shoeSize={session.answers?.shoeSize}
+                  isCompareMode={isCompareMode}
+                  onToggleCompareMode={() => {
+                    const newCompareMode = !isCompareMode;
+                    setIsCompareMode(newCompareMode);
+                    // If entering compare mode, open models dropdown in all cards
+                    if (newCompareMode) {
+                      setModelsVisible(true);
+                    }
+                  }}
+                  modelsVisible={modelsVisible}
+                  onToggleModelsVisibility={() => setModelsVisible(!modelsVisible)}
+                  selectedModels={selectedModels[boot.bootId] || new Set()}
+                  onUpdateSelectedModels={(bootId, modelIndices) => {
+                    setSelectedModels(prev => ({
+                      ...prev,
+                      [bootId]: modelIndices,
+                    }));
+                  }}
+                  onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
+                  isFlipped={isFlipped}
+                  breakdownSection={breakdownSection}
+                  bootScore={bootScore}
+                  onFlipBack={handleFlipBack}
+                  onViewComparison={handleViewComparison}
+                  hasBreakdown={!!breakdown}
+                />
+              );
+            })}
+          </div>
+
+          {/* Breakdown Display - Only show comparison sections below flipped cards */}
+          {isFlipped && (
+            <div className="mt-12">
+            <BreakdownDisplay
+              breakdown={breakdown}
+              loading={loadingBreakdown}
+              generating={generatingBreakdown}
+              error={breakdownError}
+              sessionBoots={session.recommendedBoots.map(boot => ({
+                bootId: boot.bootId,
+                brand: boot.brand,
+                model: boot.model,
+              }))}
+              userAnswers={session.answers}
+              recommendedBoots={session.recommendedBoots}
+              selectedModels={selectedModels}
+            />
+            </div>
+          )}
+
+          {/* Header with Save/Login Button */}
+          <div className="hidden md:block mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="hidden md:grid md:grid-cols-3 gap-6 w-full"
             >
-              COMPARE RESULTS
-            </Button>
-            <div className="flex gap-3">
               <Button
                 onClick={() => {
                   if (sessionId && session?.answers) {
@@ -542,75 +581,62 @@ export default function ResultsPage() {
                 }}
                 variant="outline"
                 size="lg"
-                className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10"
+                className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 text-sm sm:text-base px-4 sm:px-8 p-4"
               >
                 EDIT ANSWERS
               </Button>
+              <div></div>
               <Button
                 onClick={handleSaveResult}
                 disabled={saving}
                 variant="outline"
                 size="lg"
-                className="bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[#F5E4D0]"
+                className="bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[#F5E4D0] text-sm sm:text-base px-4 sm:px-8 p-4"
               >
                 {saving ? "SAVING..." : "SAVE RESULTS"}
               </Button>
-            </div>
-          </motion.div>
-
-          {/* Custom Fitting Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-8"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">Custom Fitting</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-[#F4F4F4] text-lg">
-                  Fine-tune your boots for the perfect fit.
-                </p>
-                <p className="text-[#F4F4F4]/80">
-                  Once you've picked your boots, a quick visit to a local ski
-                  shop can make a big difference. A boot fitter can:
-                </p>
-                <ul className="space-y-3 text-[#F4F4F4]">
-                  <li className="flex items-start gap-3">
-                    <span className="text-xl">🔥</span>
-                    <span>
-                      <strong>Heat-mould the liners</strong> for a glove-like
-                      feel.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-xl">🛠</span>
-                    <span>
-                      <strong>Adjust or stretch the shell</strong> to relieve
-                      pressure points.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="text-xl">🎯</span>
-                    <span>
-                      <strong>Add custom footbeds</strong> to improve comfort,
-                      balance, and control.
-                    </span>
-                  </li>
-                </ul>
-                <p className="text-[#F4F4F4]/70 italic">
-                  Even the right boot straight out of the box can feel better
-                  after a little personal tuning.
-                </p>
-                <p className="text-[#F4F4F4] font-medium">
-                  A custom fit = better performance, less fatigue, and happier
-                  feet.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
+            </motion.div>
+          </div>
+          
+          {/* Mobile Buttons */}
+          <div className="md:hidden mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="flex justify-center items-center w-full"
+            >
+              <div className="flex flex-row gap-3 w-full">
+                <Button
+                  onClick={() => {
+                    if (sessionId && session?.answers) {
+                      sessionStorage.setItem(
+                        "editQuizAnswers",
+                        JSON.stringify(session.answers)
+                      );
+                      router.push(`/quiz?editSessionId=${sessionId}`);
+                    } else {
+                      router.push("/quiz");
+                    }
+                  }}
+                  variant="outline"
+                  size="lg"
+                  className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 text-sm sm:text-base w-full px-4 sm:px-8 p-4"
+                >
+                  EDIT ANSWERS
+                </Button>
+                <Button
+                  onClick={handleSaveResult}
+                  disabled={saving}
+                  variant="outline"
+                  size="lg"
+                  className="bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border-[#F5E4D0] text-sm sm:text-base w-full px-4 sm:px-8 p-4"
+                >
+                  {saving ? "SAVING..." : "SAVE RESULTS"}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
 
           {/* Affiliate Disclosure Card */}
           <motion.div
@@ -624,7 +650,7 @@ export default function ResultsPage() {
                 <CardTitle className="text-2xl">Affiliate Disclosure</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-[#F4F4F4]">
+                <p className="text-[#F4F4F4] text-base">
                   Some links on this site are affiliate links, meaning The Boot
                   Room may earn a small commission if you purchase through them
                   — at no extra cost to you. We only recommend products we
@@ -633,7 +659,6 @@ export default function ResultsPage() {
               </CardContent>
             </Card>
           </motion.div>
-          </div>
         </div>
       </main>
       <Footer />

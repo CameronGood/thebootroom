@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFittingBreakdown } from "@/lib/firestore/fittingBreakdowns";
+import { getFittingBreakdownAdmin } from "@/lib/firestore/fittingBreakdowns";
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,9 @@ export async function GET(
 ) {
   try {
     const { userId, quizId } = await params;
-    const breakdown = await getFittingBreakdown(userId, quizId);
+
+    // Use Admin SDK to bypass Firestore rules for server-side access
+    const breakdown = await getFittingBreakdownAdmin(userId, quizId);
 
     if (!breakdown) {
       return NextResponse.json(
@@ -16,11 +18,26 @@ export async function GET(
       );
     }
 
+    // Verify the breakdown belongs to the requested user
+    if (breakdown.userId !== userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(breakdown);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Get breakdown API error:", error);
+    // If it's a permission error, return a helpful message
+    if (error?.code === "permission-denied" || error?.message?.includes("permission") || error?.message?.includes("Missing or insufficient permissions")) {
+      return NextResponse.json(
+        { error: "Permission denied. Please ensure you're logged in and have access to this breakdown." },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error?.message || "Internal server error" },
       { status: 500 }
     );
   }
