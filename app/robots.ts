@@ -13,7 +13,6 @@ export default function robots(): MetadataRoute.Robots {
           "/admin/",
           "/account/",
           "/results/",
-          "/measure-foot/",
         ],
       },
     ],

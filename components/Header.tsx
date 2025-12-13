@@ -87,17 +87,14 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link href="/" prefetch={false} ref={logoRef} className="flex items-center gap-2">
-                <span className="text-xl font-bold text-[#F5E4D0] hidden sm:inline">
+                <span className="text-xl font-bold text-[#F5E4D0]">
                   TheBootRoom
-                </span>
-                <span className="text-xl font-bold text-[#F5E4D0] sm:hidden">
-                  TBR
                 </span>
               </Link>
             </motion.div>
           </div>
 
-          <nav ref={navRightRef} className="flex items-center gap-4 sm:gap-6" aria-label="Main navigation">
+          <nav ref={navRightRef} className="flex items-center gap-2 sm:gap-6" aria-label="Main navigation">
 
             {user ? (
               <>

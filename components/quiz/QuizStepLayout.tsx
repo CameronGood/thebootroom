@@ -62,7 +62,7 @@ export default function QuizStepLayout({
         </div>
 
         {/* Question/Description Section */}
-        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 w-fit bg-[#2B2D30]/50 ${removeQuestionBottomBorder && !toggleContent ? '' : 'border-b border-[#F5E4D0]/20'}`}>
+        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 w-full bg-[#2B2D30]/50 ${removeQuestionBottomBorder && !toggleContent ? '' : 'border-b border-[#F5E4D0]/20'}`}>
           <p className="text-[#F4F4F4] text-base lg:text-lg xl:text-xl text-left leading-relaxed">
             {description}
           </p>
@@ -70,13 +70,13 @@ export default function QuizStepLayout({
 
         {/* Toggle Section */}
         {toggleContent && (
-          <div className="px-6 py-4 sm:border-r border-[#F5E4D0]/20 w-fit bg-[#2B2D30]/50">
+          <div className="px-6 py-4 sm:border-r border-[#F5E4D0]/20 w-full bg-[#2B2D30]/50">
             {toggleContent}
           </div>
         )}
 
         {/* Content/Input Section */}
-        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 bg-[#2B2D30]/50 ${toggleContent || addInputTopBorder ? 'border-t border-[#F5E4D0]/20' : ''} w-full sm:w-fit`}>
+        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 bg-[#2B2D30]/50 ${toggleContent || addInputTopBorder ? 'border-t border-[#F5E4D0]/20' : ''} w-full`}>
           <div className={`${noContentSpacing ? '' : 'max-h-[60vh] overflow-y-auto hide-scrollbar'}`}>
             {children}
           </div>

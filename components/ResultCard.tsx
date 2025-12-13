@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { ChevronDown, ChevronUp, X, ShoppingBag, Search } from "lucide-react";
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { useRegion } from "@/lib/region";
@@ -51,6 +52,7 @@ interface Props {
   onFlipBack?: () => void;
   onViewComparison?: () => void;
   hasBreakdown?: boolean; // Indicates if a breakdown exists (even if this boot doesn't have a section)
+  generatingBreakdown?: boolean;
 }
 
 export default function ResultCard({
@@ -73,6 +75,7 @@ export default function ResultCard({
   onFlipBack,
   onViewComparison,
   hasBreakdown = false,
+  generatingBreakdown = false,
 }: Props) {
   const { region, loading: regionLoading } = useRegion();
   const { user } = useAuth();
@@ -294,6 +297,51 @@ export default function ResultCard({
 
   // Render breakdown content for back side
   const renderBreakdownContent = () => {
+    const headingParts = breakdownSection?.heading?.split(" ") ?? [];
+    const brand = headingParts[0] || boot.brand;
+    const model = headingParts.slice(1).join(" ") || boot.model;
+
+    if (generatingBreakdown) {
+      return (
+        <>
+          <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+            {onFlipBack && (
+              <button
+                onClick={onFlipBack}
+                className="absolute top-8 right-8 w-6 h-6 flex items-center justify-center text-[#F4F4F4] hover:text-[#F5E4D0] transition-colors z-10"
+                aria-label="Close breakdown"
+              >
+                <X className="w-6 h-6" strokeWidth={2.5} />
+              </button>
+            )}
+            
+            <div className="mb-6">
+              <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">
+                {brand}
+              </p>
+              {model && (
+                <p className="text-2xl font-bold text-[#F5E4D0]/80 leading-tight">
+                  {model}
+                </p>
+              )}
+            </div>
+
+            {bootScore !== undefined && (
+              <p className="text-lg font-semibold text-white mt-2 mb-6">
+                Match Score: <span className="font-bold text-[#F5E4D0]">{bootScore}</span>
+              </p>
+            )}
+          </CardHeader>
+          <div className="px-8 pt-3 pb-6 mb-0 flex-1 flex items-center justify-center" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-base text-[#F4F4F4]">Generating your comparison...</p>
+              <span className="text-lg text-[#F5E4D0] font-mono dots-loading">. . . .</span>
+            </div>
+          </div>
+        </>
+      );
+    }
+
     // Only show "Not Included" if:
     // 1. A breakdown exists (hasBreakdown is true)
     // 2. AND this boot doesn't have a breakdown section (meaning it wasn't included in the breakdown)
@@ -343,11 +391,6 @@ export default function ResultCard({
     // If boot is selected but no breakdown section, return null
     if (!breakdownSection) return null;
 
-    // Parse brand and model from heading or use boot data
-    const headingParts = breakdownSection.heading.split(' ');
-    const brand = headingParts[0] || boot.brand;
-    const model = headingParts.slice(1).join(' ') || boot.model;
-
     return (
       <>
         <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
@@ -363,7 +406,7 @@ export default function ResultCard({
           )}
           
           {/* Brand and Model */}
-          <div className="mb-4">
+          <div className="mb-6">
             <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">
               {brand}
             </p>
@@ -376,42 +419,82 @@ export default function ResultCard({
 
           {/* Match Score */}
           {bootScore !== undefined && (
-            <p className="text-lg font-semibold text-white">
+            <p className="text-lg font-semibold text-white mt-2 mb-6">
               Match Score: <span className="font-bold text-[#F5E4D0]">{bootScore}</span>
             </p>
           )}
         </CardHeader>
-        <div className="px-8 pt-2 pb-6 mb-0 flex-1" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
+        <div className="px-8 pt-3 pb-6 mb-0 flex-1" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
           <div className="text-[#F4F4F4] text-base leading-[1.8] [&>*:last-child]:!mb-0">
-            {breakdownSection.body
-              .split(/\r?\n/) // Handle both \n and \r\n
-              .map((line, lineIndex) => {
+            {(() => {
+              const normalizedBody = breakdownSection.body.replace(/\s+[-\u2013\u2014]\s+/g, "\n- ");
+              const lines = normalizedBody.split(/\r?\n/);
+              const nodes: React.ReactNode[] = [];
+              let bulletBuffer: string[] = [];
+
+              const flushBullets = (keyBase: string) => {
+                if (bulletBuffer.length === 0) return;
+                nodes.push(
+                  <ul
+                    key={`ul-${keyBase}`}
+                    className="list-disc list-outside pl-6 space-y-2 text-base leading-relaxed"
+                  >
+                    {bulletBuffer.map((item, idx) => (
+                      <li key={`li-${keyBase}-${idx}`} className="text-[#F4F4F4]">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                );
+                bulletBuffer = [];
+              };
+
+              lines.forEach((line, lineIndex) => {
                 const trimmedLine = line.trim();
-                
-                // Skip empty lines
                 if (!trimmedLine) {
-                  return null;
+                  flushBullets(`gap-${lineIndex}`);
+                  return;
                 }
-                
-                // Check if line starts with bullet point markers (-, •, or *) with optional space
-                // This handles: "- text", "-text", "• text", "* text", etc.
-                const bulletMatch = trimmedLine.match(/^[-•*]\s*(.+)$/);
+
+                // Match bullets like -, •, *, en/em dash, or numbered lists "1." / "1)"
+                const bulletMatch = trimmedLine.match(/^(?:[-•*]|\u2013|\u2014)\s*(.+)$/);
+                const numberedMatch = trimmedLine.match(/^\d+[.)]\s*(.+)$/);
+
+                // Some AI outputs cram multiple bullets into one line separated by " - " or en/em dashes
+                const hyphenSplit = trimmedLine
+                  .split(/\s*[-\u2013\u2014]\s*/g)
+                  .filter(Boolean);
+
+                const pushClean = (text: string) => {
+                  const cleaned = text.replace(/^(?:[-•*]|\u2013|\u2014)\s*/, "").trim();
+                  if (cleaned) bulletBuffer.push(cleaned);
+                };
+
                 if (bulletMatch) {
-                  return (
-                    <div key={lineIndex} className="flex items-start mb-3.5">
-                      <span className="text-[#F5E4D0] mr-4 mt-[4px] flex-shrink-0 text-lg leading-none font-bold">•</span>
-                      <span className="flex-1 text-base leading-relaxed">{bulletMatch[1].trim()}</span>
-                    </div>
-                  );
+                  pushClean(bulletMatch[1]);
+                  return;
                 }
-                
-                // Regular paragraph line (not a bullet point)
-                return (
-                  <p key={lineIndex} className="mb-3.5 text-base leading-relaxed">
+                if (numberedMatch) {
+                  pushClean(numberedMatch[1]);
+                  return;
+                }
+
+                if (hyphenSplit.length > 1) {
+                  hyphenSplit.forEach(pushClean);
+                  return;
+                }
+
+                flushBullets(`p-${lineIndex}`);
+                nodes.push(
+                  <p key={`p-${lineIndex}`} className="mb-3.5 text-base leading-relaxed">
                     {trimmedLine}
                   </p>
                 );
-              })}
+              });
+
+              flushBullets(`end`);
+              return nodes;
+            })()}
           </div>
         </div>
       </>
@@ -684,20 +767,28 @@ export default function ResultCard({
                       ))}
                     
                     {/* Legacy single affiliate URL */}
-                    {selectedModelLegacyUrl && (
-                      <motion.a
-                        href={selectedModelLegacyUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleBuy(undefined, selectedModelLegacyUrl);
-                        }}
-                        whileHover={{ scale: 1.02 }}
-                        className="text-base px-3 py-1.5 rounded-[4px] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
-                      >
-                        View Product
-                      </motion.a>
+                      {selectedModelLegacyUrl && (
+                        <div className="flex flex-col gap-1">
+                        <motion.a
+                          href={selectedModelLegacyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleBuy(undefined, selectedModelLegacyUrl);
+                          }}
+                          whileHover={{ scale: 1.02 }}
+                          className="text-base px-3 py-1.5 rounded-[4px] bg-[#2B2D30]/90 backdrop-blur-md border border-[#F5E4D0]/20 text-[#F4F4F4] hover:bg-[#F5E4D0]/20 hover:border-[#F5E4D0]/40 hover:shadow-lg font-normal transition-colors text-left"
+                        >
+                          View Product
+                        </motion.a>
+                        <Link
+                          href="/affiliate-disclosure"
+                          className="text-xs text-[#F5E4D0] self-end text-right"
+                        >
+                          <span className="underline underline-offset-2">Affiliate Disclosure</span> *
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>

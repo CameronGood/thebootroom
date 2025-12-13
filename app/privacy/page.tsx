@@ -11,30 +11,27 @@ export default function PrivacyPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040404]">
-      <Header />
-      <main className="flex-grow bg-[#040404] pt-[120px] pb-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-50 bg-[#040404] pt-2 pb-0">
+        <Header />
+      </div>
+      <main className="flex-grow bg-[#040404] pb-16">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 md:pt-36">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="mb-8">
-              <Link
-                href="/"
-                className="text-[#F5E4D0] hover:text-[#E8D4B8] transition-colors inline-flex items-center gap-2 mb-6"
-              >
-                ← Back to Home
-              </Link>
-              <h1 className="text-4xl md:text-5xl font-bold text-[#F4F4F4] mb-4">
-                Privacy Policy
-              </h1>
-              <p className="text-[#F4F4F4]/80 text-sm">
-                Last updated: {lastUpdated}
-              </p>
-            </div>
+            <div className="bg-gradient-to-br from-[#1C1C1E] via-[#1F1F21] to-[#151517] border border-[#F5E4D0]/25 rounded-2xl shadow-2xl shadow-black/40 p-6 sm:p-9 space-y-6 relative overflow-hidden">
+              <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_20%,rgba(245,228,208,0.05),transparent_30%),radial-gradient(circle_at_85%_10%,rgba(245,228,208,0.05),transparent_30%)]" />
+              <div className="relative space-y-3 sm:space-y-4">
+                <span className="inline-flex items-center px-3 py-1 rounded-full border border-[#F5E4D0]/40 bg-[#F5E4D0]/5 text-xs font-semibold uppercase tracking-[0.08em] text-[#F5E4D0]">
+                  Privacy
+                </span>
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#F4F4F4]">Privacy Policy</h1>
+                <p className="text-[#F4F4F4]/70 text-sm sm:text-base">Last updated: {lastUpdated}</p>
+              </div>
 
-            <div className="space-y-6">
+            <div className="relative grid gap-5 sm:gap-6 mt-4 sm:mt-6">
               <Card className="bg-[#2B2D30] border-[#F5E4D0]/20">
                 <CardHeader>
                   <CardTitle className="text-2xl text-[#F4F4F4]">
@@ -480,15 +477,16 @@ export default function PrivacyPage() {
                     <p>
                       <strong>Website:</strong>{" "}
                       <Link
-                        href="/landing/contact.html"
+                        href="/contact-us"
                         className="text-[#F5E4D0] hover:underline"
                       >
-                        Contact Form
+                        Contact Us
                       </Link>
                     </p>
                   </div>
                 </CardContent>
               </Card>
+            </div>
             </div>
           </motion.div>
         </div>

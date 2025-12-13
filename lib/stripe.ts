@@ -8,7 +8,7 @@ try {
     console.error("STRIPE_SECRET_KEY is not set in environment variables");
   } else {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
+      apiVersion: "2025-10-29.clover",
     });
   }
 } catch (error) {

@@ -76,75 +76,7 @@ export default function Home() {
           </motion.div>
         </motion.div>
       </section>
-      <main className="bg-[#040404]">
-
-        {/* 3-Step Explainer */}
-        <section className="py-16 bg-[#040404]" aria-label="How it works">
-          <div className="w-full px-4 sm:px-8 md:px-[50px]">
-            <div className="w-[90%] mx-auto">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-center mb-12 text-[#F4F4F4]"
-            >
-              How It Works
-            </motion.h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <Card className="text-center">
-                  <CardContent className="pt-6">
-                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-[#2B2D30]">1</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Take the Quiz</h3>
-                    <p className="text-[#F4F4F4]/80">Answer 10 simple questions about your feet, skiing ability, and preferences.</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Card className="text-center">
-                  <CardContent className="pt-6">
-                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-[#2B2D30]">2</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Get Matched</h3>
-                    <p className="text-[#F4F4F4]/80">Our algorithm finds the top 3 boots that best fit your specific requirements.</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <Card className="text-center">
-                  <CardContent className="pt-6">
-                    <div className="bg-[#F5E4D0] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-[#2B2D30]">3</span>
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-[#F4F4F4]">Buy & Save</h3>
-                    <p className="text-[#F4F4F4]/80">Purchase through our affiliate links and save your results for later.</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </div>
-            </div>
-          </div>
-        </section>
-      </main>
+      <main className="bg-[#040404]"></main>
       <Footer />
     </>
   );

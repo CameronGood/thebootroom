@@ -29,42 +29,42 @@ interface FlexInfo {
 // Static flex information database
 const flexInfoMap: Record<number, FlexInfo> = {
   // Men's flexes
-  80: {
-    rating: 80,
+  70: {
+    rating: 70,
     plasticsUsed: "Soft PU/polyolefin.",
     linerMaterials: "Soft and plush with a warm, comfort-first feel.",
     bestFor: "Someone completely new to skiing who wants a relaxed, confidence-building boot that won't punish mistakes.",
     practicalDifferences: "Extremely easy to flex and forgiving — ideal for learning balance and basic technique.",
   },
-  90: {
-    rating: 90,
+  80: {
+    rating: 80,
     plasticsUsed: "Slightly firmer PU.",
     linerMaterials: "Medium-soft and supportive while still relaxed and comfortable.",
     bestFor: "A developing skier gaining control and starting to explore more of the mountain, but still wanting easy, friendly support.",
     practicalDifferences: "A touch more stability and support while still very manageable for progressing skiers.",
   },
-  100: {
-    rating: 100,
+  90: {
+    rating: 90,
     plasticsUsed: "PU with moderate stiffness.",
     linerMaterials: "Medium-density with good structure for all-day comfort.",
     bestFor: "A skier who is comfortable on most pistes and wants a boot that helps them carve more cleanly without feeling demanding.",
     practicalDifferences: "Better edge control and stability across a wider range of conditions.",
   },
-  110: {
-    rating: 110,
+  100: {
+    rating: 100,
     plasticsUsed: "PU or bi-injected PU.",
     linerMaterials: "Firm and supportive with a more performance-orientated fit.",
     bestFor: "A confident skier who likes to ski faster or tackle mixed terrain and wants stronger support without entering \"expert-only\" stiffness.",
     practicalDifferences: "Stable, controlled feel in variable snow while remaining comfortable for resort days.",
   },
-  120: {
-    rating: 120,
+  110: {
+    rating: 110,
     plasticsUsed: "PU/Grilamid or reinforced materials.",
     linerMaterials: "Dense and performance-focused with a firm supportive feel.",
     bestFor: "Athletic skier that wants a direct, responsive connection to their skis.",
     practicalDifferences: "More immediate response and strong support for committed, fast skiing.",
   },
-  130: {
+  120: {
     rating: 130,
     plasticsUsed: "Very stiff PU/Grilamid with strong torsional support.",
     linerMaterials: "Low-bulk, race-inspired liner with a firmer, cooler, minimal-padding feel.",
@@ -86,26 +86,12 @@ const flexInfoMap: Record<number, FlexInfo> = {
     bestFor: "A progressing skier who wants a bit more support but still prioritises comfort and ease.",
     practicalDifferences: "Smooth, supportive feel without becoming demanding.",
   },
-  80: {
-    rating: 80,
-    plasticsUsed: "PU with moderate stiffness.",
-    linerMaterials: "Medium plush with improved structure and comfortable fit.",
-    bestFor: "A skier who's starting to link parallel turns and wants more balance and stability as they improve.",
-    practicalDifferences: "Helps hold a centred stance and improves control.",
-  },
   85: {
     rating: 85,
     plasticsUsed: "PU with light reinforcement.",
     linerMaterials: "Moderately firm with supportive heel hold while remaining comfortable.",
     bestFor: "A lighter or developing intermediate skier who wants stability without feeling locked into a stiff boot.",
     practicalDifferences: "More precise control without feeling heavy or overpowering.",
-  },
-  90: {
-    rating: 90,
-    plasticsUsed: "PU/bi-injected.",
-    linerMaterials: "Medium-density and supportive with balanced warmth.",
-    bestFor: "A skier who enjoys exploring the mountain and wants a boot that feels predictable and controlled across different snow types.",
-    practicalDifferences: "Stable and confidence-building for a wide range of conditions.",
   },
   95: {
     rating: 95,
@@ -114,26 +100,12 @@ const flexInfoMap: Record<number, FlexInfo> = {
     bestFor: "A skier who's comfortable at speed and wants more edge hold and accuracy without sacrificing approachability.",
     practicalDifferences: "Stronger stability and more drive through the ski.",
   },
-  100: {
-    rating: 100,
-    plasticsUsed: "PU/Grilamid blend.",
-    linerMaterials: "Firm and performance-shaped with a supportive feel.",
-    bestFor: "A skier who likes to ski with intent — carving, steeper pistes, and mixed terrain — and wants a responsive boot to match.",
-    practicalDifferences: "Provides solid power and control while still suitable for full-day skiing.",
-  },
   105: {
     rating: 105,
     plasticsUsed: "Reinforced PU/Grilamid.",
     linerMaterials: "Dense, supportive performance liner suited to skiers who like a stronger, more connected feel.",
     bestFor: "A skier who drives their boots with strength and wants a controlled, precise feel without going into race-level stiffness.",
     practicalDifferences: "Strong energy transfer and a more purposeful, accurate ride.",
-  },
-  110: {
-    rating: 110,
-    plasticsUsed: "High-stiffness materials.",
-    linerMaterials: "Firm, low-bulk liner focused on support and hold.",
-    bestFor: "Someone who skis fast, confidently, and technically, and wants a boot that keeps up with powerful movements.",
-    practicalDifferences: "Quick steering and decisive response.",
   },
   115: {
     rating: 115,

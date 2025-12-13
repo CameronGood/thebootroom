@@ -115,11 +115,11 @@ function QuizStepCalfVolume({
       <div className="flex flex-row items-center justify-start gap-3 max-w-2xl flex-wrap">
         {volumes.map((volume, index) => (
           <QuizOptionButton
-            key={volume.value}
+              key={volume.value}
             active={selected === volume.value}
             onClick={() => handleSliderChange(index)}
-          >
-            {volume.label}
+            >
+              {volume.label}
           </QuizOptionButton>
         ))}
       </div>

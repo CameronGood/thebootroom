@@ -21,6 +21,7 @@ interface ResultsCarouselProps {
   resetToFirst?: boolean; // Prop to reset carousel to first card
   isFlipped?: boolean;
   breakdown?: FittingBreakdown;
+  generatingBreakdown?: boolean;
   onFlipBack?: () => void;
   onViewComparison?: () => void;
 }
@@ -45,6 +46,7 @@ export default function ResultsCarousel({
   resetToFirst,
   isFlipped,
   breakdown,
+  generatingBreakdown,
   onFlipBack,
   onViewComparison,
 }: ResultsCarouselProps) {
@@ -143,6 +145,7 @@ export default function ResultsCarousel({
               onUpdateSelectedModels={onUpdateSelectedModels}
               onPurchaseComparison={onPurchaseComparison}
               hasBreakdown={!!breakdown}
+              generatingBreakdown={!!generatingBreakdown}
             />
           )}
       </div>
@@ -211,12 +214,13 @@ export default function ResultsCarousel({
                 selectedModels={selectedModels[boot.bootId] || new Set()}
                 onUpdateSelectedModels={onUpdateSelectedModels}
                 onPurchaseComparison={onPurchaseComparison}
-                    isFlipped={isFlipped}
-                    breakdownSection={breakdownSection}
-                    bootScore={bootScore}
-                    onFlipBack={onFlipBack}
-                    onViewComparison={onViewComparison}
-                    hasBreakdown={!!breakdown}
+                isFlipped={isFlipped}
+                generatingBreakdown={!!generatingBreakdown}
+                breakdownSection={breakdownSection}
+                bootScore={bootScore}
+                onFlipBack={onFlipBack}
+                onViewComparison={onViewComparison}
+                hasBreakdown={!!breakdown}
               />
                 );
               })()}
