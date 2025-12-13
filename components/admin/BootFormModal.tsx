@@ -74,7 +74,6 @@ export default function BootFormModal({
         bootType: "Standard",
         brand: "",
         model: "",
-        lastWidthMM: "",
         bootWidth: "Average",
         flex: "",
         instepHeight: ["Low"],
@@ -179,7 +178,7 @@ export default function BootFormModal({
 
       await onSave(bootData);
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving boot:", error);
       if (error.message === "Duplicate Boot") {
         setError("Duplicate Boot");

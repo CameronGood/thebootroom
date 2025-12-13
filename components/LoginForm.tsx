@@ -26,7 +26,7 @@ export default function LoginForm() {
         await login(email, password);
         toast.success("Logged in successfully!");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Map common signup errors to a clearer message
       const message = err?.message || "";
       const isEmailInUse =
@@ -46,8 +46,8 @@ export default function LoginForm() {
     try {
       await loginWithGoogle();
       toast.success("Logged in with Google!");
-    } catch (err: any) {
-      const errorMsg = err.message || "Google login failed";
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : "Google login failed";
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {

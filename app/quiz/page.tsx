@@ -40,8 +40,11 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false);
   const [answers, setAnswers] = useState<Partial<QuizAnswers>>({});
   const [loadingAnswers, setLoadingAnswers] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    if (initialized) return;
+
     const loadExistingAnswers = async () => {
       // Check if we're editing an existing session
       const editSessionId = searchParams.get("editSessionId");
@@ -78,6 +81,7 @@ export default function QuizPage() {
             setTimeout(() => {
               router.replace("/quiz");
             }, 100);
+            setInitialized(true);
             return;
           } catch (error) {
             console.error("Error parsing stored answers:", error);
@@ -135,6 +139,7 @@ export default function QuizPage() {
           setTimeout(() => {
             router.replace("/quiz");
           }, 100);
+          setInitialized(true);
         }
       } else {
         // Normal flow - always generate a new session ID for a new quiz
@@ -154,11 +159,13 @@ export default function QuizPage() {
         } else if (newId) {
           createOrUpdateSession(newId, {});
         }
+
+        setInitialized(true);
       }
     };
 
     loadExistingAnswers();
-  }, [user, searchParams]);
+  }, [user, searchParams, initialized]);
 
   const updateAnswers = (stepAnswers: Partial<QuizAnswers>) => {
     const newAnswers = { ...answers };
@@ -172,13 +179,6 @@ export default function QuizPage() {
         (newAnswers as any)[key] = value;
       }
     });
-    
-    // Log features specifically when they're updated
-    if (stepAnswers.features !== undefined) {
-      console.log(`[QuizPage] updateAnswers - Features updated:`, stepAnswers.features);
-      console.log(`[QuizPage] updateAnswers - Full answers after update:`, { ...newAnswers, features: stepAnswers.features });
-    }
-    
     setAnswers(newAnswers);
 
     // Autosave to Firestore
@@ -188,8 +188,6 @@ export default function QuizPage() {
         ...newAnswers,
         features: (newAnswers as any).features || [],
       } as QuizAnswers;
-      
-      console.log(`[QuizPage] updateAnswers - Saving to Firestore with features:`, answersToSave.features);
       
       createOrUpdateSession(sessionId, {
         userId: user?.uid,
@@ -219,10 +217,6 @@ export default function QuizPage() {
       features: answersToSubmit.features || [],
     } as QuizAnswers;
 
-    console.log(`[QuizPage] handleSubmitWithAnswers - Complete answers being sent:`, completeAnswers);
-    console.log(`[QuizPage] handleSubmitWithAnswers - Features array:`, completeAnswers.features);
-    console.log(`[QuizPage] handleSubmitWithAnswers - Features includes 'Rear Entry'?`, completeAnswers.features.includes("Rear Entry"));
-
     // Validate required fields before submitting
     if (
       !completeAnswers.gender ||
@@ -240,8 +234,6 @@ export default function QuizPage() {
 
     setLoading(true);
     try {
-      console.log("[QuizPage] Submitting quiz with answers:", completeAnswers);
-      console.log("[QuizPage] Features in request body:", completeAnswers.features);
       const response = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -277,7 +269,7 @@ export default function QuizPage() {
       localStorage.removeItem("quizSessionId");
       
       router.push(`/results?sessionId=${sessionId}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error submitting quiz:", error);
       const errorMessage =
         error.message || "Failed to submit quiz. Please try again.";

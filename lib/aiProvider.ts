@@ -71,7 +71,6 @@ export async function generateBreakdown({
     // Priority 1: Manual category selection (user's explicit choice takes precedence)
     if (answers.footWidth && "category" in answers.footWidth) {
       userWidthCategory = (answers.footWidth as any).category as "Narrow" | "Average" | "Wide";
-      console.log(`[Breakdown Width Calculation] Using manual category (PRIORITY): ${userWidthCategory}`);
     }
     // Priority 2: Calculate from measurements (mm or converted from shoe size)
     else if (userFootLengthMM && userFootWidthMM) {
@@ -80,18 +79,12 @@ export async function generateBreakdown({
         userFootLengthMM,
         userFootWidthMM
       );
-      console.log(`[Breakdown Width Calculation] Calculated from measurements: ${answers.gender}, ${userFootLengthMM}mm length, ${userFootWidthMM}mm width → ${userWidthCategory}`);
-    } else {
-      console.warn(`[Breakdown Width Calculation] Could not determine width category from answers:`, answers.footWidth);
     }
 
     if (!userWidthCategory) {
       console.error("[Breakdown Width Calculation] userWidthCategory is null - this should not happen");
       throw new Error("Unable to determine user width category for breakdown generation");
     }
-
-    console.log(`[Breakdown Width Calculation] FINAL userWidthCategory: ${userWidthCategory}`);
-    console.log(`[Breakdown Width Calculation] Raw footWidth from answers:`, JSON.stringify(answers.footWidth));
     
     // At this point, userWidthCategory is guaranteed to be non-null
     const finalWidthCategory: "Narrow" | "Average" | "Wide" = userWidthCategory;
@@ -121,12 +114,6 @@ User Profile:
     // Calculate acceptable flex range using shared utility
     const flexRange = getFlexRangeString(answers);
     const targetFlex = getTargetFlex(answers);
-
-    // Log boot data for debugging
-    console.log(`[Breakdown] Generating for ${boots.length} boots. User width category: ${finalWidthCategory}`);
-    boots.forEach((boot, idx) => {
-      console.log(`[Breakdown Boot ${idx + 1}] ${boot.brand} ${boot.model} - Width: ${boot.bootWidth || "MISSING"}, Score: ${boot.score}`);
-    });
 
     const bootsInfo = boots
       .map(
@@ -266,8 +253,6 @@ IMPORTANT: Generate one section per boot. Use the exact bootId provided. Each se
       throw new Error("AI response did not contain any breakdown sections");
     }
 
-    console.log(`Successfully parsed ${sections.length} sections from AI response`);
-
     // Ensure bootIds match and process each boot individually
     return boots.map((boot, idx) => {
       // Find matching section by bootId or use index
@@ -287,13 +272,13 @@ IMPORTANT: Generate one section per boot. Use the exact bootId provided. Each se
       body: section.body || "",
       };
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error generating breakdown:", error);
     console.error("Error details:", {
-      message: error?.message,
-      stack: error?.stack,
-      response: error?.response?.data || error?.response,
-      status: error?.status,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      response: error && typeof error === "object" && "response" in error ? error.response : undefined,
+      status: error && typeof error === "object" && "status" in error ? error.status : undefined,
     });
     throw error; // Re-throw to let the API route handle it with proper error messages
   }

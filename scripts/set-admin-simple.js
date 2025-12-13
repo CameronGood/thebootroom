@@ -1,19 +1,34 @@
 // Simple script to set admin claim
 // Usage:
-// 1. Install firebase-admin: pnpm add firebase-admin
-// 2. Get your service account key from Firebase Console
-// 3. Update the serviceAccount path below
-// 4. Run: node scripts/set-admin-simple.js <user-email>
+// 1. Ensure your .env.local has FIREBASE_ADMIN_PRIVATE_KEY and FIREBASE_ADMIN_CLIENT_EMAIL
+// 2. Run: node scripts/set-admin-simple.js <user-email>
 
 const admin = require("firebase-admin");
+require("dotenv").config({ path: ".env.local" });
 
-// TODO: Replace with path to your service account key JSON file
-// Download from: Firebase Console > Project Settings > Service Accounts > Generate New Private Key
-const serviceAccount = require("./path-to-service-account-key.json");
+// Initialize using environment variables
+if (!admin.apps.length) {
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+  if (!privateKey || !clientEmail || !projectId) {
+    console.error("❌ Missing required environment variables:");
+    console.error("   - FIREBASE_ADMIN_PRIVATE_KEY");
+    console.error("   - FIREBASE_ADMIN_CLIENT_EMAIL");
+    console.error("   - NEXT_PUBLIC_FIREBASE_PROJECT_ID");
+    console.error("\nMake sure these are set in your .env.local file.");
+    process.exit(1);
+  }
+
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId,
+      clientEmail,
+      privateKey: privateKey.replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 const userEmail = process.argv[2];
 

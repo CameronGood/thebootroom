@@ -15,17 +15,17 @@ import { Boot, Gender } from "../../types";
 import { toLAVArray } from "../utils/parseMulti";
 
 // Helper function to remove undefined values from objects (Firestore doesn't accept undefined)
-function removeUndefined(obj: any): any {
+function removeUndefined<T>(obj: T): T | null {
   if (obj === null || obj === undefined) {
     return null;
   }
-  
+
   if (Array.isArray(obj)) {
-    return obj.map(removeUndefined);
+    return obj.map(removeUndefined) as T;
   }
-  
+
   if (typeof obj === "object" && obj.constructor === Object) {
-    const cleaned: any = {};
+    const cleaned: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       if (value !== undefined) {
         cleaned[key] = removeUndefined(value);

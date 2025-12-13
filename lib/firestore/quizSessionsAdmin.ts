@@ -4,19 +4,19 @@ import { adminFirestore, admin } from "../firebase-admin";
 import { QuizSession, QuizAnswers, BootSummary } from "../../types";
 
 // Helper to remove undefined (same as client version)
-function removeUndefined(obj: any): any {
+function removeUndefined<T>(obj: T): T | null {
   if (obj === null || obj === undefined) {
     return null;
   }
   if (Array.isArray(obj)) {
-    return obj.map(removeUndefined);
+    return obj.map(removeUndefined) as T;
   }
   if (typeof obj === "object" && obj.constructor === Object) {
-    const cleaned: any = {};
+    const cleaned: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
       if (value !== undefined) cleaned[key] = removeUndefined(value);
     }
-    return cleaned;
+    return cleaned as T;
   }
   return obj;
 }
@@ -34,7 +34,7 @@ export async function createOrUpdateSessionAdmin(
   const sessionRef = adminFirestore.collection("quizSessions").doc(sessionId);
   const existingDoc = await sessionRef.get();
 
-  const updateData: any = {
+  const updateData: Record<string, unknown> = {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 

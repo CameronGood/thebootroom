@@ -13,33 +13,7 @@ function getOrCreateSessionId(sessionId?: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
-    // Debug: Log the raw body before validation
-    console.log("\n=== API MATCH REQUEST DEBUG ===");
-    console.log("Raw body received:", JSON.stringify(body, null, 2));
-    console.log("body.answers.features:", body.answers?.features);
-    console.log("body.answers.features type:", typeof body.answers?.features);
-    console.log("body.answers.features is array?", Array.isArray(body.answers?.features));
-    console.log("body.answers.features includes 'Rear Entry'?", body.answers?.features?.includes("Rear Entry"));
-    console.log("body.answers.footWidth:", body.answers?.footWidth);
-    console.log("body.answers.footWidth type:", typeof body.answers?.footWidth);
-    if (body.answers?.footWidth) {
-      console.log("footWidth keys:", Object.keys(body.answers.footWidth));
-      console.log("footWidth.category:", body.answers.footWidth.category);
-    }
-    console.log("================================\n");
-
     const validated = matchRequestSchema.parse(body);
-
-    // Debug: Log after validation
-    console.log("\n=== AFTER VALIDATION ===");
-    console.log("validated.answers.features:", validated.answers.features);
-    console.log("validated.answers.features type:", typeof validated.answers.features);
-    console.log("validated.answers.features is array?", Array.isArray(validated.answers.features));
-    console.log("validated.answers.features includes 'Rear Entry'?", validated.answers.features.includes("Rear Entry"));
-    console.log("validated.answers.footWidth:", validated.answers.footWidth);
-    console.log("========================\n");
-
     const sessionId = getOrCreateSessionId(validated.sessionId);
 
     // Fetch boots via Admin SDK to bypass client security rules
@@ -61,21 +35,22 @@ export async function POST(request: NextRequest) {
       recommendedMondo: result.recommendedMondo,
       boots: result.boots,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Match API error:", error);
-    console.error("Error stack:", error.stack);
+    console.error("Error stack:", error instanceof Error ? error.stack : undefined);
 
-    if (error.name === "ZodError") {
+    if (error && typeof error === "object" && "name" in error && error.name === "ZodError" && "errors" in error) {
       console.error(
         "Validation errors:",
         JSON.stringify(error.errors, null, 2)
       );
+      const zodErrors = error.errors as Array<{ path: (string | number)[]; message: string }>;
       return NextResponse.json(
         {
           error: "Invalid request data",
           details: error.errors,
-          message: error.errors
-            .map((e: any) => `${e.path.join(".")}: ${e.message}`)
+          message: zodErrors
+            .map((e) => `${e.path.join(".")}: ${e.message}`)
             .join(", "),
         },
         { status: 400 }
@@ -83,9 +58,9 @@ export async function POST(request: NextRequest) {
     }
 
     // More specific error messages
-    const errorMessage = error.message || "Internal server error";
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-      { error: errorMessage, details: error.stack },
+      { error: errorMessage, details: error instanceof Error ? error.stack : undefined },
       { status: 500 }
     );
   }

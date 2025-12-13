@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/firestore/quizSessions";
 import { generateBreakdown } from "@/lib/aiProvider";
 import { saveFittingBreakdownAdmin } from "@/lib/firestore/fittingBreakdowns";
+import { getFittingBreakdownAdmin } from "@/lib/firestore/fittingBreakdowns";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,20 @@ export async function POST(request: NextRequest) {
         { error: "Missing userId or quizId" },
         { status: 400 }
       );
+    }
+
+    // If we already have a stored breakdown for this user/quiz, return it immediately
+    try {
+      const existing = await getFittingBreakdownAdmin(userId, quizId);
+      if (existing?.sections?.length) {
+        return NextResponse.json({
+          success: true,
+          message: "Breakdown already generated",
+          breakdown: existing,
+        });
+      }
+    } catch (existingErr) {
+      console.warn("Existing breakdown lookup failed, continuing to generate", existingErr);
     }
 
     // Fetch quiz session
@@ -74,12 +89,12 @@ export async function POST(request: NextRequest) {
         boots: bootsToInclude,
         language: "en-GB",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("generateBreakdown error:", error);
       return NextResponse.json(
         { 
           error: "Failed to generate breakdown",
-          details: error?.message || "Unknown error occurred during breakdown generation"
+          details: error instanceof Error ? error.message : "Unknown error occurred during breakdown generation"
         },
         { status: 500 }
       );
@@ -115,7 +130,6 @@ export async function POST(request: NextRequest) {
     // Save breakdown to Firestore - MUST succeed before returning
     try {
       await saveFittingBreakdownAdmin(userId, quizId, breakdown);
-      console.log(`✓ Breakdown saved successfully for user ${userId}, quiz ${quizId}`);
     } catch (saveError: any) {
       console.error("✗ CRITICAL: Failed to save breakdown to Firestore");
       console.error("Save error details:", {
@@ -137,10 +151,10 @@ export async function POST(request: NextRequest) {
       message: "Breakdown generated successfully",
       breakdown,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error generating breakdown:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

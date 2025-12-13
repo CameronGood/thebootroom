@@ -9,8 +9,18 @@ import { firestore } from "../firebase";
 import { auth } from "../firebase";
 import { User, SavedResult } from "../../types";
 
+// Type for Firestore Timestamp-like objects
+type TimestampLike = 
+  | Date 
+  | Timestamp 
+  | { seconds: number; nanoseconds?: number } 
+  | number 
+  | string 
+  | null 
+  | undefined;
+
 // Helper function to safely convert Firestore Timestamp to Date
-function toDate(value: any): Date {
+function toDate(value: TimestampLike): Date {
   if (!value) {
     return new Date();
   }
@@ -44,11 +54,18 @@ export async function getUserDoc(userId: string): Promise<User | null> {
     return null;
   }
   const data = userDoc.data();
+  // Type guard for saved results
+  interface FirestoreSavedResult {
+    quizId: string;
+    completedAt: TimestampLike;
+    recommendedBoots: unknown[];
+  }
+
   return {
     email: data.email,
     displayName: data.displayName,
     createdAt: toDate(data.createdAt),
-    savedResults: (data.savedResults || []).map((sr: any) => ({
+    savedResults: (data.savedResults || []).map((sr: FirestoreSavedResult) => ({
       quizId: sr.quizId,
       completedAt: toDate(sr.completedAt),
       recommendedBoots: sr.recommendedBoots,
@@ -104,7 +121,7 @@ export async function upsertSavedResult(
       
       // Check if a result with the same quizId already exists
       const existingIndex = savedResults.findIndex(
-        (result: any) => String(result.quizId) === String(savedResult.quizId)
+        (result: SavedResult) => String(result.quizId) === String(savedResult.quizId)
       );
       
       let updatedResults: SavedResult[];
@@ -125,20 +142,24 @@ export async function upsertSavedResult(
         { merge: true }
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in upsertSavedResult:", error);
     console.error("Authenticated user UID:", currentUser?.uid);
     console.error("Document path userId:", userId);
-    console.error("Error code:", error?.code);
-    console.error("Error message:", error?.message);
+    
+    const errorCode = error && typeof error === "object" && "code" in error ? error.code : undefined;
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    console.error("Error code:", errorCode);
+    console.error("Error message:", errorMessage);
     console.error("Full error:", error);
     
     // Check if it's a permission error
-    if (error?.code === 'permission-denied') {
+    if (errorCode === 'permission-denied') {
       throw new Error("Permission denied. Please ensure you are logged in and the user ID matches. If the problem persists, try logging out and back in.");
     }
     
-    throw new Error(`Failed to save result: ${error?.message || 'Unknown error'}`);
+    throw new Error(`Failed to save result: ${errorMessage}`);
   }
 }
 
@@ -163,7 +184,7 @@ export async function deleteSavedResult(
 
   // Remove only the result with matching quizId (strict comparison)
   const updatedResults = savedResults.filter(
-    (result: any) => {
+    (result: SavedResult) => {
       // Ensure we're comparing the same type (both strings)
       const resultQuizId = String(result.quizId || "");
       const targetQuizId = String(quizId || "");

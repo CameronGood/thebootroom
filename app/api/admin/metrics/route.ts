@@ -1,39 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { collection, getDocs, query, doc, getDoc } from "firebase/firestore";
-import { firestore } from "@/lib/firebase";
-import { getBillingMetrics } from "@/lib/firestore/billingMetrics";
+import { adminFirestore } from "@/lib/firebase-admin";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 
-// TODO: Implement proper admin check with Firebase Admin SDK
-async function isAdmin(request: NextRequest): Promise<boolean> {
-  // Placeholder - implement proper admin check
-  return false;
+// Firestore document types
+interface QuizSessionDocument {
+  completedAt?: Date | FirebaseFirestore.Timestamp;
+  [key: string]: unknown;
+}
+
+interface AffiliateClickDocument {
+  bootId: string;
+  brand: string;
+  model: string;
+  country?: string;
+  region?: string;
+  vendor?: string;
+  clickedAt: Date | FirebaseFirestore.Timestamp;
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Implement proper admin check
-    // const admin = await isAdmin(request);
-    // if (!admin) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    // }
+    // Verify admin authentication
+    const authResult = await verifyAdminAuth(request);
+    
+    if (!authResult.isAdmin) {
+      console.error("[Metrics API] Unauthorized:", authResult.error);
+      return NextResponse.json(
+        { error: authResult.error || "Unauthorized - Admin access required" },
+        { status: 403 }
+      );
+    }
 
-    // Get all users
-    const usersSnapshot = await getDocs(collection(firestore, "users"));
+    // Get all users (using Admin SDK)
+    const usersSnapshot = await adminFirestore.collection("users").get();
     const usersCount = usersSnapshot.size;
 
-    // Get all quiz sessions
-    const sessionsSnapshot = await getDocs(
-      collection(firestore, "quizSessions")
-    );
-    const sessions = sessionsSnapshot.docs.map((doc) => doc.data());
+    // Get all quiz sessions (using Admin SDK)
+    const sessionsSnapshot = await adminFirestore.collection("quizSessions").get();
+    const sessions = sessionsSnapshot.docs.map((doc) => doc.data() as QuizSessionDocument);
     const quizStarts = sessions.length;
-    const quizCompletions = sessions.filter((s) => s.completedAt).length;
+    const quizCompletions = sessions.filter((s) => s.completedAt !== undefined).length;
 
-    // Get all affiliate clicks
-    const clicksSnapshot = await getDocs(
-      collection(firestore, "affiliateClicks")
-    );
-    const clicks = clicksSnapshot.docs.map((doc) => doc.data());
+    // Get all affiliate clicks (using Admin SDK)
+    const clicksSnapshot = await adminFirestore.collection("affiliateClicks").get();
+    const clicks = clicksSnapshot.docs.map((doc) => doc.data() as AffiliateClickDocument);
     const affiliateClicks = clicks.length;
 
     // Calculate top boot clicks
@@ -135,15 +145,16 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.clicks - a.clicks)
       .slice(0, 10);
 
-    // Get billing metrics for current month
+    // Get billing metrics for current month (using Admin SDK)
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const billingMetrics = await getBillingMetrics(currentMonth);
+    
+    // Get current month's billing metrics
+    const currentBillingDoc = await adminFirestore.collection("billingMetrics").doc(currentMonth).get();
+    const billingMetrics = currentBillingDoc.exists ? currentBillingDoc.data() : null;
 
-    // Get all billing metrics for historical data
-    const billingMetricsSnapshot = await getDocs(
-      collection(firestore, "billingMetrics")
-    );
+    // Get all billing metrics for historical data (using Admin SDK)
+    const billingMetricsSnapshot = await adminFirestore.collection("billingMetrics").get();
     const allBillingMetrics = billingMetricsSnapshot.docs.map((doc) => ({
       month: doc.id,
       ...doc.data(),
@@ -167,9 +178,15 @@ export async function GET(request: NextRequest) {
       allBillingMetrics: allBillingMetrics,
     });
   } catch (error) {
-    console.error("Metrics API error:", error);
+    console.error("[Metrics API] ❌ Caught error:", error);
+    console.error("[Metrics API] Error type:", error instanceof Error ? error.constructor.name : typeof error);
+    console.error("[Metrics API] Error message:", error instanceof Error ? error.message : String(error));
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

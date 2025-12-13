@@ -312,6 +312,13 @@ export default function ResultsPage() {
       return;
     }
 
+    // Prep UI: flip cards, show generating state, clear previous breakdown
+    setIsFlipped(true);
+    setIsCompareMode(true);
+    setModelsVisible(true);
+    setBreakdown(null);
+    setBreakdownError(false);
+
     setGeneratingBreakdown(true);
     toast.loading("Generating your breakdown...", { id: "breakdown" });
 
@@ -361,7 +368,7 @@ export default function ResultsPage() {
         throw new Error(result.error || "Failed to generate breakdown");
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating breakdown:", error);
       toast.error(
         error.message || "Failed to generate breakdown. Please try again.",
@@ -444,6 +451,17 @@ export default function ResultsPage() {
     );
   }
 
+  const hasAffiliateLinks = session.recommendedBoots.some((boot) => {
+    const hasLinksObject =
+      boot.links &&
+      Object.values(boot.links).some(
+        (arr) => Array.isArray(arr) && arr.length > 0
+      );
+    const hasAffiliateUrl = !!boot.affiliateUrl;
+    const hasModelAffiliate = boot.models?.some((m) => !!m.affiliateUrl);
+    return hasLinksObject || hasAffiliateUrl || hasModelAffiliate;
+  });
+
   return (
     <div
       className="min-h-screen flex flex-col bg-[#040404]"
@@ -486,6 +504,7 @@ export default function ResultsPage() {
               onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
               resetToFirst={!!breakdown}
               isFlipped={isFlipped}
+              generatingBreakdown={generatingBreakdown}
               breakdown={breakdown || undefined}
               onFlipBack={handleFlipBack}
               onViewComparison={handleViewComparison}
@@ -528,6 +547,7 @@ export default function ResultsPage() {
                   }}
                   onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
                   isFlipped={isFlipped}
+                generatingBreakdown={generatingBreakdown}
                   breakdownSection={breakdownSection}
                   bootScore={bootScore}
                   onFlipBack={handleFlipBack}
@@ -559,7 +579,7 @@ export default function ResultsPage() {
           )}
 
           {/* Header with Save/Login Button */}
-          <div className="hidden md:block mb-6">
+          <div className="hidden md:block mt-8 mb-6">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -581,9 +601,10 @@ export default function ResultsPage() {
                 }}
                 variant="outline"
                 size="lg"
-                className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 text-sm sm:text-base px-4 sm:px-8 p-4"
+                disabled={!!breakdown}
+                className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base px-4 sm:px-8 p-4"
               >
-                EDIT ANSWERS
+                {breakdown ? "EDIT UNAVAILABLE AFTER COMPARISON" : "EDIT ANSWERS"}
               </Button>
               <div></div>
               <Button
@@ -599,7 +620,7 @@ export default function ResultsPage() {
           </div>
           
           {/* Mobile Buttons */}
-          <div className="md:hidden mb-6">
+          <div className="md:hidden mt-8 mb-6">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -621,9 +642,10 @@ export default function ResultsPage() {
                   }}
                   variant="outline"
                   size="lg"
-                  className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 text-sm sm:text-base w-full px-4 sm:px-8 p-4"
+                  disabled={!!breakdown}
+                  className="border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full px-4 sm:px-8 p-4"
                 >
-                  EDIT ANSWERS
+                  {breakdown ? "EDIT UNAVAILABLE" : "EDIT ANSWERS"}
                 </Button>
                 <Button
                   onClick={handleSaveResult}
@@ -639,26 +661,6 @@ export default function ResultsPage() {
           </div>
 
           {/* Affiliate Disclosure Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-8"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">Affiliate Disclosure</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-[#F4F4F4] text-base">
-                  Some links on this site are affiliate links, meaning The Boot
-                  Room may earn a small commission if you purchase through them
-                  — at no extra cost to you. We only recommend products we
-                  genuinely believe in.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
         </div>
       </main>
       <Footer />

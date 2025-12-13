@@ -27,10 +27,12 @@ export async function GET(
     }
 
     return NextResponse.json(breakdown);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Get breakdown API error:", error);
+    const errorCode = error && typeof error === "object" && "code" in error ? error.code : undefined;
+    const errorMessage = error instanceof Error ? error.message : String(error);
     // If it's a permission error, return a helpful message
-    if (error?.code === "permission-denied" || error?.message?.includes("permission") || error?.message?.includes("Missing or insufficient permissions")) {
+    if (errorCode === "permission-denied" || errorMessage.includes("permission") || errorMessage.includes("Missing or insufficient permissions")) {
       return NextResponse.json(
         { error: "Permission denied. Please ensure you're logged in and have access to this breakdown." },
         { status: 403 }

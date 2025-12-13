@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/firebase";
-import { getIdToken } from "firebase/auth";
 import { upsertBoot, bootExists } from "@/lib/firestore/boots";
 import { bootSchema } from "@/lib/validators";
 import { toLAVArray } from "@/lib/utils/parseMulti";
+import { verifyAdminAuth } from "@/lib/admin-auth";
 
-// Check if user is admin
-async function isAdmin(request: NextRequest): Promise<boolean> {
-  try {
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return false;
-    }
-    const token = authHeader.substring(7);
-    // In a real app, verify the token and check claims
-    // For now, we'll check on the client side and pass a flag
-    // This should be properly implemented with Firebase Admin SDK on the server
-    return false; // Placeholder - implement proper admin check
-  } catch {
-    return false;
-  }
+// Type for raw CSV row (dynamic keys based on CSV headers)
+type CSVRow = Record<string, string>;
+
+// Type for mapped CSV row fields
+interface MappedCSVRow {
+  year: string;
+  gender: string;
+  bootType: string;
+  brand: string;
+  model: string;
+  bootWidth: string;
+  flex: string;
+  lastWidthMM: string;
+  toeBoxShape: string;
+  instepHeight: string;
+  ankleVolume: string;
+  calfVolume: string;
+  calfAdjustment: string;
+  walkMode: string;
+  rearEntry: string;
+  affiliateUrl: string;
+  imageUrl: string;
+  tags: string;
 }
 
 function parseCSVLine(line: string): string[] {
@@ -42,7 +49,7 @@ function parseCSVLine(line: string): string[] {
   return values;
 }
 
-function parseCSV(csvText: string): any[] {
+function parseCSV(csvText: string): CSVRow[] {
   // Remove BOM if present and normalize line endings
   let cleaned = csvText
     .replace(/^\uFEFF/, "")
@@ -51,7 +58,6 @@ function parseCSV(csvText: string): any[] {
   const lines = cleaned.split("\n").filter((line) => line.trim());
 
   if (lines.length < 2) {
-    console.log("Not enough lines in CSV. Lines:", lines.length);
     return [];
   }
 
@@ -61,23 +67,13 @@ function parseCSV(csvText: string): any[] {
     h.replace(/^"|"$/g, "").trim()
   );
 
-  console.log("Parsed headers:", headers);
-  console.log("Header count:", headers.length);
-
   // Verify we have the expected headers
   const expectedHeaders = ["year", "gender", "bootType", "brand", "model", "bootWidth"];
   const hasExpectedHeaders = expectedHeaders.every((h) =>
     headers.some((header) => header.toLowerCase() === h.toLowerCase())
   );
 
-  if (!hasExpectedHeaders) {
-    console.warn(
-      "Warning: CSV headers don't match expected format. Found:",
-      headers
-    );
-  }
-
-  const rows: any[] = [];
+  const rows: CSVRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i];
@@ -88,17 +84,11 @@ function parseCSV(csvText: string): any[] {
     // Remove quotes from values
     const cleanValues = values.map((v) => v.replace(/^"|"$/g, "").trim());
 
-    const row: any = {};
+    const row: CSVRow = {};
     headers.forEach((header, index) => {
       row[header] = cleanValues[index] || "";
     });
     rows.push(row);
-  }
-
-  console.log(`Parsed ${rows.length} data rows`);
-  if (rows.length > 0) {
-    console.log("First row keys:", Object.keys(rows[0]));
-    console.log("First row sample:", rows[0]);
   }
 
   return rows;
@@ -126,7 +116,7 @@ function parseTags(tagsString: string): string[] {
 }
 
 // Map different CSV column names to expected field names
-function mapRowFields(row: any) {
+function mapRowFields(row: CSVRow): MappedCSVRow {
   // Handle different possible column name variations
   return {
     year: row.year || row.Year || row.size || row.Size || "",
@@ -146,6 +136,13 @@ function mapRowFields(row: any) {
       row["boot width"] ||
       "",
     flex: row.flex || row.Flex || "",
+    lastWidthMM:
+      row.lastWidthMM ||
+      row["Last Width (mm)"] ||
+      row["last width (mm)"] ||
+      row["Last Width"] ||
+      row.lastWidth ||
+      "",
     instepHeight:
       row.instepHeight ||
       row["Instep Height"] ||
@@ -203,12 +200,14 @@ function mapRowFields(row: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Implement proper admin check with Firebase Admin SDK
-    // For now, this is a placeholder
-    // const admin = await isAdmin(request);
-    // if (!admin) {
-    //   return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    // }
+    // Verify admin authentication
+    const authResult = await verifyAdminAuth(request);
+    if (!authResult.isAdmin) {
+      return NextResponse.json(
+        { error: authResult.error || "Unauthorized - Admin access required" },
+        { status: 403 }
+      );
+    }
 
     const formData = await request.formData();
     const csvFile = formData.get("csv") as File | null;
@@ -232,33 +231,7 @@ export async function POST(request: NextRequest) {
     let skipped = 0;
     let duplicates = 0;
 
-    // Debug: Log first row headers to help diagnose CSV format issues
-    if (rows.length > 0) {
-      console.log("CSV Headers detected:", Object.keys(rows[0]));
-      console.log("First row sample:", JSON.stringify(rows[0], null, 2));
-      console.log("Total rows to process:", rows.length);
-
-      // Check if brand/model column headers exist (check column names, not data values)
-      const headers = Object.keys(rows[0]);
-      const headerLower = headers.map((h) => h.toLowerCase());
-      const hasBrandHeader = headerLower.some((h) => h === "brand");
-      const hasModelHeader = headerLower.some((h) => h === "model");
-
-      console.log(
-        "Has brand header:",
-        hasBrandHeader,
-        "Has model header:",
-        hasModelHeader
-      );
-
-      // Only warn if headers are completely missing - but don't block import
-      // The mapRowFields function handles various column name variations
-      if (!hasBrandHeader && !hasModelHeader) {
-        console.warn(
-          "Warning: Brand or model column headers not found. Import will continue but may skip rows without brand/model data."
-        );
-      }
-    } else {
+    if (rows.length === 0) {
       errors.push(
         "No rows found in CSV. Make sure CSV has a header row and at least one data row."
       );
@@ -279,16 +252,6 @@ export async function POST(request: NextRequest) {
 
         if (!brandValue && !modelValue) {
           skipped++;
-          if (i < 3) {
-            console.log(
-              `Skipping row ${i + 2} - no brand/model found. Row keys:`,
-              Object.keys(rawRow)
-            );
-            console.log(
-              `Row ${i + 2} brand: "${brandValue}", model: "${modelValue}"`
-            );
-            console.log(`Row ${i + 2} full data:`, rawRow);
-          }
           continue;
         }
 
@@ -416,15 +379,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse bootType as string
-        const bootTypeStr = (
-          row.bootType ||
-          row["Boot Type"] ||
-          row["boot type"] ||
-          row.boottype ||
-          ""
-        )
-          .toString()
-          .trim();
+        const bootTypeStr = (row.bootType || "").toString().trim();
 
         // Normalize bootType to match enum values
         const normalizeBootType = (value: string): string | null => {
@@ -489,26 +444,20 @@ export async function POST(request: NextRequest) {
 
         if (exists) {
           duplicates++;
-          console.log(
-            `⏭️  Skipped duplicate: ${validated.brand} ${validated.model} ${validated.year} ${validated.gender}`
-          );
           continue;
         }
 
         const savedBootId = await upsertBoot(validated);
-        console.log(
-          `✅ Imported boot: ${validated.brand} ${validated.model} (ID: ${savedBootId})`
-        );
         imported++;
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Better error messages
         let errorMsg = "Invalid data";
-        if (error.errors && Array.isArray(error.errors)) {
+        if (error && typeof error === "object" && "errors" in error && Array.isArray(error.errors)) {
           // Zod validation errors
           errorMsg = error.errors
-            .map((e: any) => `${e.path.join(".")}: ${e.message}`)
+            .map((e: { path: (string | number)[]; message: string }) => `${e.path.join(".")}: ${e.message}`)
             .join(", ");
-        } else if (error.message) {
+        } else if (error instanceof Error) {
           errorMsg = error.message;
         }
         // Only show first 20 errors to avoid overwhelming the UI
@@ -531,13 +480,14 @@ export async function POST(request: NextRequest) {
       processed: imported + errors.length + skipped + duplicates,
     };
 
-    console.log("Import summary:", result);
-
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Import boots error:", error);
     return NextResponse.json(
-      { error: "Internal server error", message: error.message },
+      { 
+        error: "Internal server error", 
+        message: error instanceof Error ? error.message : "Unknown error" 
+      },
       { status: 500 }
     );
   }

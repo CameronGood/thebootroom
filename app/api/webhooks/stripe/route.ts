@@ -20,6 +20,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (!stripe) {
+    console.error("Stripe is not initialized");
+    return NextResponse.json(
+      { error: "Stripe not configured" },
+      { status: 500 }
+    );
+  }
+
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
 
@@ -59,7 +67,6 @@ export async function POST(request: NextRequest) {
       // Check if breakdown already exists (idempotency)
       const exists = await breakdownExists(userId, quizId);
       if (exists) {
-        console.log(`Breakdown already exists for ${userId}_${quizId}`);
         return NextResponse.json({ received: true, skipped: true });
       }
 
@@ -137,12 +144,11 @@ export async function POST(request: NextRequest) {
       const amountGBP = BREAKDOWN_PRICE_GBP / 100; // Convert pennies to pounds
       await incrementBillingMetrics(amountGBP);
 
-      console.log(`Breakdown generated and saved for ${userId}_${quizId}`);
       return NextResponse.json({ received: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error processing webhook:", error);
       return NextResponse.json(
-        { error: error.message || "Internal server error" },
+        { error: error instanceof Error ? error.message : "Internal server error" },
         { status: 500 }
       );
     }

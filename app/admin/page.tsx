@@ -2,13 +2,39 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Spinner from "@/components/Spinner";
 import { useAuth } from "@/lib/auth";
-import BootsTab from "@/components/admin/BootsTab";
-import AnalyticsTab from "@/components/admin/AnalyticsTab";
-import BootFittersTab from "@/components/admin/BootFittersTab";
+
+// Lazy load admin tabs (heavy components with charts, Firebase, etc.)
+const BootsTab = dynamic(() => import("@/components/admin/BootsTab"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Spinner size="lg" />
+    </div>
+  ),
+  ssr: false,
+});
+
+const AnalyticsTab = dynamic(() => import("@/components/admin/AnalyticsTab"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Spinner size="lg" />
+    </div>
+  ),
+  ssr: false,
+});
+
+const BootFittersTab = dynamic(() => import("@/components/admin/BootFittersTab"), {
+  loading: () => (
+    <div className="flex items-center justify-center py-12">
+      <Spinner size="lg" />
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function AdminPage() {
   const { user, isAdmin, loading } = useAuth();

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://thebootroom.com";
@@ -64,7 +62,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/landing/disclosure.html"
+                  href="/affiliate-disclosure"
                   prefetch={false}
                   className="text-[#F4F4F4]/80 hover:text-[#F5E4D0] transition-colors"
                 >
@@ -73,7 +71,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/landing/contact.html"
+                  href="/contact-us"
                   prefetch={false}
                   className="text-[#F4F4F4]/80 hover:text-[#F5E4D0] transition-colors"
                 >
@@ -86,28 +84,16 @@ export default function Footer() {
           {/* SEO Links */}
           <div>
             <h2 className="text-lg font-semibold text-[#F4F4F4] mb-4">
-              Resources
+              Contact Us
             </h2>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/sitemap.xml"
-                  prefetch={false}
-                  className="text-[#F4F4F4]/80 hover:text-[#F5E4D0] transition-colors"
-                >
-                  Sitemap
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/robots.txt"
-                  prefetch={false}
-                  className="text-[#F4F4F4]/80 hover:text-[#F5E4D0] transition-colors"
-                >
-                  Robots.txt
-                </Link>
-              </li>
-            </ul>
+            <p className="text-[#F4F4F4]/80">
+              <a
+                href="mailto:hello@thebootroom.com"
+                className="text-[#F5E4D0] hover:text-[#E8D4B8] underline underline-offset-4"
+              >
+                hello@thebootroom.com
+              </a>
+            </p>
           </div>
         </div>
 

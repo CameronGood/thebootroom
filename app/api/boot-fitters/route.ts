@@ -29,10 +29,10 @@ export async function GET(request: NextRequest) {
     const fitters = await getBootFittersNearby(lat, lng, radius);
 
     return NextResponse.json({ fitters });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching boot fitters:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

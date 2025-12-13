@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Payment intent creation error:", error);
     console.error("Error details:", {
-      message: error.message,
+      message: error instanceof Error ? error.message : String(error),
       type: error.type,
       code: error.code,
       statusCode: error.statusCode,

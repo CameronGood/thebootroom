@@ -10,6 +10,7 @@ import {
 import { Boot } from "@/types";
 import Spinner from "@/components/Spinner";
 import BootFormModal from "./BootFormModal";
+import { auth } from "@/lib/firebase";
 
 export default function BootsTab() {
   const [boots, setBoots] = useState<(Boot & { bootId: string })[]>([]);
@@ -71,10 +72,11 @@ export default function BootsTab() {
           types.add(boot.bootType);
         } else if (typeof boot.bootType === "object") {
           // Legacy format: convert object to strings
-          if (boot.bootType.standard) types.add("Standard");
-          if (boot.bootType.freestyle) types.add("Freestyle");
-          if (boot.bootType.hybrid) types.add("Hybrid");
-          if (boot.bootType.freeride) types.add("Freeride");
+          const legacyType = boot.bootType as any;
+          if (legacyType.standard) types.add("Standard");
+          if (legacyType.freestyle) types.add("Freestyle");
+          if (legacyType.hybrid) types.add("Hybrid");
+          if (legacyType.freeride) types.add("Freeride");
         }
       }
     });
@@ -114,14 +116,17 @@ export default function BootsTab() {
           typeof boot.bootType === "string"
             ? boot.bootType
             : typeof boot.bootType === "object" && boot.bootType
-              ? [
-                  boot.bootType.standard ? "Standard" : "",
-                  boot.bootType.freestyle ? "Freestyle" : "",
-                  boot.bootType.hybrid ? "Hybrid" : "",
-                  boot.bootType.freeride ? "Freeride" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")
+              ? (() => {
+                  const legacyType = boot.bootType as any;
+                  return [
+                    legacyType.standard ? "Standard" : "",
+                    legacyType.freestyle ? "Freestyle" : "",
+                    legacyType.hybrid ? "Hybrid" : "",
+                    legacyType.freeride ? "Freeride" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                })()
               : "";
         const matchesSearch =
           boot.brand.toLowerCase().includes(searchLower) ||
@@ -142,10 +147,15 @@ export default function BootsTab() {
           typeof boot.bootType === "string"
             ? boot.bootType === filterBootType
             : typeof boot.bootType === "object" && boot.bootType
-              ? (filterBootType === "Standard" && boot.bootType.standard) ||
-                (filterBootType === "Freestyle" && boot.bootType.freestyle) ||
-                (filterBootType === "Hybrid" && boot.bootType.hybrid) ||
-                (filterBootType === "Freeride" && boot.bootType.freeride)
+              ? (() => {
+                  const legacyType = boot.bootType as any;
+                  return (
+                    (filterBootType === "Standard" && legacyType.standard) ||
+                    (filterBootType === "Freestyle" && legacyType.freestyle) ||
+                    (filterBootType === "Hybrid" && legacyType.hybrid) ||
+                    (filterBootType === "Freeride" && legacyType.freeride)
+                  );
+                })()
               : false;
         if (!bootTypeMatches) return false;
       }
@@ -230,13 +240,31 @@ export default function BootsTab() {
     setImportResult(null);
 
     try {
+      // Get current user's auth token
+      const user = auth.currentUser;
+      if (!user) {
+        alert("You must be signed in to import boots");
+        setImporting(false);
+        return;
+      }
+
+      const token = await user.getIdToken();
+
       const formData = new FormData();
       formData.append("csvText", csvText);
 
       const response = await fetch("/api/admin/import-boots", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to import boots");
+      }
 
       const result = await response.json();
       setImportResult(result);
@@ -246,7 +274,7 @@ export default function BootsTab() {
       }
     } catch (error) {
       console.error("Error importing boots:", error);
-      alert("Failed to import boots");
+      alert(`Failed to import boots: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setImporting(false);
     }
@@ -583,14 +611,17 @@ export default function BootsTab() {
                     {typeof boot.bootType === "string"
                       ? boot.bootType
                       : typeof boot.bootType === "object" && boot.bootType
-                        ? [
-                            boot.bootType.standard ? "Standard" : "",
-                            boot.bootType.freestyle ? "Freestyle" : "",
-                            boot.bootType.hybrid ? "Hybrid" : "",
-                            boot.bootType.freeride ? "Freeride" : "",
-                          ]
-                            .filter(Boolean)
-                            .join(", ") || "—"
+                        ? (() => {
+                            const legacyType = boot.bootType as any;
+                            return [
+                              legacyType.standard ? "Standard" : "",
+                              legacyType.freestyle ? "Freestyle" : "",
+                              legacyType.hybrid ? "Hybrid" : "",
+                              legacyType.freeride ? "Freeride" : "",
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "—";
+                          })()
                         : "—"}
                   </td>
                   <td className="px-4 py-3 text-sm text-[#F4F4F4]/80 whitespace-nowrap">

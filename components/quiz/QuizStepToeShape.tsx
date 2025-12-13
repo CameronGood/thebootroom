@@ -92,7 +92,7 @@ export default function QuizStepToeShape({
               {toeShapes.map((shape) => (
                 <div key={shape.value} className="border border-[#F5E4D0]/10 bg-[#2B2D30]/30 p-2 md:p-3 flex flex-col rounded-[4px]">
                   <img
-                    src={`/feet/${shape.label}-01.svg`}
+                    src={`/feet/${shape.label}-01-01.svg`}
                     alt={`${shape.label} toe box`}
                     className="w-full h-auto max-h-[30vh] md:max-h-[32vh] object-contain mx-auto mb-2"
                   />
@@ -114,11 +114,11 @@ export default function QuizStepToeShape({
       <div className="flex flex-row items-center justify-start gap-3 max-w-2xl flex-wrap">
         {toeShapes.map((shape, index) => (
           <QuizOptionButton
-            key={shape.value}
+              key={shape.value}
             active={selected === shape.value}
             onClick={() => handleSliderChange(index)}
-          >
-            {shape.label}
+            >
+              {shape.label}
           </QuizOptionButton>
         ))}
       </div>

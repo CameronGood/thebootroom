@@ -16,13 +16,6 @@ export async function POST(request: NextRequest) {
     // Server-side API calls cannot use keys with HTTP referrer restrictions
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     
-    // Debug logging (remove in production)
-    console.log("Environment check:", {
-      hasServerKey: !!process.env.GOOGLE_MAPS_API_KEY,
-      hasPublicKey: !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-      usingKey: apiKey ? "server-side (unrestricted)" : "none"
-    });
-    
     if (!apiKey) {
       console.error("Google Maps API key missing. You need GOOGLE_MAPS_API_KEY (without restrictions) for server-side API calls.");
       return NextResponse.json(
@@ -71,10 +64,10 @@ export async function POST(request: NextRequest) {
       country: country,
       countryLong: countryLong,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in geocoding:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }

@@ -1,5 +1,3 @@
-"use client";
-
 import { BootSummary, QuizAnswers, Volume, ToeShape } from "@/types";
 import { CheckCircle2, Circle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

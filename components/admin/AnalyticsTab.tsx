@@ -17,6 +17,7 @@ import {
   Line,
 } from "recharts";
 import Spinner from "@/components/Spinner";
+import { auth } from "@/lib/firebase";
 
 interface Metrics {
   usersCount: number;
@@ -62,11 +63,45 @@ export default function AnalyticsTab() {
 
   const fetchMetrics = async () => {
     try {
-      const response = await fetch("/api/admin/metrics");
+      // Get current user's auth token
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("No authenticated user");
+        alert("Please sign in to view analytics");
+        setLoading(false);
+        return;
+      }
+
+      const token = await user.getIdToken();
+      
+      // Fetch metrics with authentication
+      const response = await fetch("/api/admin/metrics", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // Try to parse error, but handle cases where response is not JSON
+        let errorMessage = `API returned status ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+          console.error("Metrics API error:", response.status, errorData);
+        } catch (parseError) {
+          // Response is not JSON, get text instead
+          const errorText = await response.text();
+          console.error("Metrics API error (non-JSON):", response.status, errorText);
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
       const data = await response.json();
       setMetrics(data);
     } catch (error) {
       console.error("Error fetching metrics:", error);
+      alert(`Failed to load analytics: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }
@@ -246,7 +281,7 @@ export default function AnalyticsTab() {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={({ region, count }) => `${region}: ${count}`}
+                label={(entry: any) => `${entry.region}: ${entry.count}`}
               >
                 {metrics.clicksByRegion.map((entry, index) => {
                   const colors = [

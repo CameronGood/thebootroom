@@ -16,7 +16,7 @@ import {
 import { User, SavedResult, QuizSession, FittingBreakdown } from "@/types";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BreakdownDisplay from "@/components/BreakdownDisplay";
 import ResultsCarousel from "@/components/ResultsCarousel";
 import {
@@ -157,11 +157,9 @@ export default function AccountPage() {
                     await breakdownResponse.json();
                   if (breakdown) {
                     breakdownsMap.set(result.quizId, breakdown);
-                    console.log(`Loaded breakdown for quiz ${result.quizId}`);
                   }
                 } else if (breakdownResponse.status === 404) {
                   // Breakdown doesn't exist yet - this is fine, it will be created when user generates it
-                  console.log(`No breakdown found for quiz ${result.quizId} - breakdown must be generated on results page first`);
                 } else {
                   console.warn(`Failed to fetch breakdown for ${result.quizId}:`, breakdownResponse.status, breakdownResponse.statusText);
                 }
@@ -257,6 +255,21 @@ export default function AccountPage() {
 
   const savedResults = userData?.savedResults || [];
 
+  const hasAffiliateLinks = savedResults.some((result) => {
+    const session = sessions.get(result.quizId);
+    const boots = session?.recommendedBoots || [];
+    return boots.some((boot) => {
+      const hasLinksObject =
+        boot.links &&
+        Object.values(boot.links).some(
+          (arr) => Array.isArray(arr) && arr.length > 0
+        );
+      const hasAffiliateUrl = !!boot.affiliateUrl;
+      const hasModelAffiliate = boot.models?.some((m) => !!m.affiliateUrl);
+      return hasLinksObject || hasAffiliateUrl || hasModelAffiliate;
+    });
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-[#040404]">
       <div className="sticky top-0 z-50 bg-[#040404] pt-2 pb-0">
@@ -264,14 +277,8 @@ export default function AccountPage() {
       </div>
       <main className="flex-grow bg-[#040404] pb-8">
         <div className="w-full px-4 md:px-[50px] pt-24 sm:pt-28 md:pt-32">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-[#F4F4F4]">My Account</h1>
-            <Link
-              href="/quiz"
-              className="px-6 py-3 bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8]"
-            >
-              Re-run Quiz
-            </Link>
+          <div className="flex flex-col gap-3 mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#F4F4F4]">My Account</h1>
           </div>
 
           {savedResults.length === 0 ? (
@@ -403,6 +410,16 @@ export default function AccountPage() {
                     return;
                   }
 
+                  // Prep UI: flip, compare mode, show models, clear previous breakdown for this quiz
+                  setIsFlippedForQuiz(true);
+                  setIsCompareModeForQuiz(true);
+                  setModelsVisibleForQuiz(true);
+                  setBreakdowns(prev => {
+                    const next = new Map(prev);
+                    next.delete(quizId);
+                    return next;
+                  });
+
                   setGeneratingBreakdown(true);
                   toast.loading("Generating your breakdown...", { id: "breakdown" });
 
@@ -457,10 +474,10 @@ export default function AccountPage() {
                     } else {
                       throw new Error(result.error || "Failed to generate breakdown");
                     }
-                  } catch (error: any) {
+                  } catch (error: unknown) {
                     console.error("Error generating breakdown:", error);
                     toast.error(
-                      error.message || "Failed to generate breakdown. Please try again.",
+                      error instanceof Error ? error.message : "Failed to generate breakdown. Please try again.",
                       { id: "breakdown" }
                     );
                   } finally {
@@ -549,6 +566,7 @@ export default function AccountPage() {
                         onPurchaseComparison={() => handleGetBreakdown()}
                         resetToFirst={!!breakdown}
                         isFlipped={getIsFlipped()}
+                        generatingBreakdown={generatingBreakdown}
                         breakdown={breakdown || undefined}
                         onFlipBack={handleFlipBack}
                         onViewComparison={handleViewComparison}
@@ -579,6 +597,7 @@ export default function AccountPage() {
                             onUpdateSelectedModels={setSelectedModelsForQuiz}
                             onPurchaseComparison={() => handleGetBreakdown()}
                             isFlipped={getIsFlipped()}
+                            generatingBreakdown={generatingBreakdown}
                             breakdownSection={breakdownSection}
                             bootScore={bootScore}
                             onFlipBack={handleFlipBack}
@@ -590,7 +609,7 @@ export default function AccountPage() {
                     </div>
 
                     {/* Breakdown Display - Only show comparison sections below flipped cards */}
-                    {getIsFlipped() && session && (
+                    {getIsFlipped() && session && session.recommendedBoots && (
                       <div className="mt-12">
                         <BreakdownDisplay
                           breakdown={breakdown || null}
@@ -613,6 +632,35 @@ export default function AccountPage() {
               })}
             </div>
             </>
+          )}
+
+          {savedResults.length > 0 && (
+            <div className="mt-8">
+              <Link
+                href="/quiz"
+                className="inline-flex justify-center items-center px-4 py-2 text-sm sm:text-base bg-[#F5E4D0] text-[#2B2D30] rounded-lg hover:bg-[#E8D4B8] w-full sm:w-auto"
+              >
+                Re-run Quiz
+              </Link>
+            </div>
+          )}
+
+          {hasAffiliateLinks && (
+            <div id="affiliate-disclosure" className="mt-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-2xl">Affiliate Disclosure</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-[#F4F4F4] text-base">
+                    Some links on this site are affiliate links, meaning The Boot
+                    Room may earn a small commission if you purchase through them
+                    — at no extra cost to you. We only recommend products we
+                    genuinely believe in.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
       </main>

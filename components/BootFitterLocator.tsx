@@ -55,8 +55,6 @@ export default function BootFitterLocator() {
       
       // Build URL - Google Static Maps API handles the encoding
       const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=${zoom}&size=600x400&markers=${markersParam}&key=${apiKey}`;
-      console.log("Generated static map URL (first 200 chars):", staticMapUrl.substring(0, 200));
-      console.log("Full URL available in console - check Network tab if image fails");
       setMapUrl(staticMapUrl);
     } else {
       setMapUrl(null);
@@ -392,9 +390,7 @@ export default function BootFitterLocator() {
                             }
                           }
                         }}
-                        onLoad={() => {
-                          console.log("Map image loaded successfully");
-                        }}
+                        onLoad={() => {}}
                       />
                     </div>
                     <p className="text-xs text-[#F4F4F4]/50">

@@ -99,11 +99,10 @@ export async function saveFittingBreakdownAdmin(
       ...breakdown,
       generatedAt: admin.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    console.log(`Successfully saved breakdown to Firestore: ${docId}`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error saving breakdown to Firestore (${docId}):`, error);
-    console.error(`Error type: ${error?.constructor?.name}`);
-    console.error(`Error message: ${error?.message}`);
+    console.error(`Error type: ${error && typeof error === "object" && error.constructor ? error.constructor.name : "unknown"}`);
+    console.error(`Error message: ${error instanceof Error ? error.message : String(error)}`);
     console.error(`Error code: ${error?.code}`);
     throw error; // Re-throw so API route can handle it
   }
