@@ -56,6 +56,10 @@ export async function createOrUpdateSessionAdmin(
 
   const cleanedUpdateData = removeUndefined(updateData);
 
+  if (!cleanedUpdateData) {
+    throw new Error("No valid data to update");
+  }
+
   if (!existingDoc.exists) {
     await sessionRef.set({
       startedAt: admin.firestore.FieldValue.serverTimestamp(),

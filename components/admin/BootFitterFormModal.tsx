@@ -99,8 +99,8 @@ export default function BootFitterFormModal({
         longitude: data.lng.toString(),
       });
       setError("");
-    } catch (err: any) {
-      setError(err.message || "Failed to geocode address");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to geocode address");
     }
   };
 
@@ -137,8 +137,8 @@ export default function BootFitterFormModal({
         longitude: lng,
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || "Failed to save boot fitter");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to save boot fitter");
     } finally {
       setSaving(false);
     }

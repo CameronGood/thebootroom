@@ -28,7 +28,7 @@ export default function LoginForm() {
       }
     } catch (err: unknown) {
       // Map common signup errors to a clearer message
-      const message = err?.message || "";
+      const message = err instanceof Error ? err.message : "";
       const isEmailInUse =
         message.toLowerCase().includes("email already in use") ||
         message.toLowerCase().includes("auth/email-already-in-use");

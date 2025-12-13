@@ -31,7 +31,7 @@ function removeUndefined<T>(obj: T): T | null {
         cleaned[key] = removeUndefined(value);
       }
     }
-    return cleaned;
+    return cleaned as T;
   }
   
   return obj;

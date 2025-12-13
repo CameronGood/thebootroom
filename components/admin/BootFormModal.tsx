@@ -180,7 +180,7 @@ export default function BootFormModal({
       onClose();
     } catch (error: unknown) {
       console.error("Error saving boot:", error);
-      if (error.message === "Duplicate Boot") {
+      if (error instanceof Error && error.message === "Duplicate Boot") {
         setError("Duplicate Boot");
       } else {
         setError("Failed to save boot");

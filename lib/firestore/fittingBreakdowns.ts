@@ -103,7 +103,8 @@ export async function saveFittingBreakdownAdmin(
     console.error(`Error saving breakdown to Firestore (${docId}):`, error);
     console.error(`Error type: ${error && typeof error === "object" && error.constructor ? error.constructor.name : "unknown"}`);
     console.error(`Error message: ${error instanceof Error ? error.message : String(error)}`);
-    console.error(`Error code: ${error?.code}`);
+    const errorCode = error && typeof error === "object" && "code" in error ? error.code : undefined;
+    console.error(`Error code: ${errorCode}`);
     throw error; // Re-throw so API route can handle it
   }
 }

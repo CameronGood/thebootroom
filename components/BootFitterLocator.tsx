@@ -98,8 +98,8 @@ export default function BootFitterLocator() {
 
       const fittersData = await fittersResponse.json();
       setFitters(fittersData.fitters || []);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An error occurred");
       setGeocodeResult(null);
       setFitters([]);
     } finally {

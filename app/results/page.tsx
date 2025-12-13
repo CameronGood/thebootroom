@@ -371,7 +371,7 @@ export default function ResultsPage() {
     } catch (error: unknown) {
       console.error("Error generating breakdown:", error);
       toast.error(
-        error.message || "Failed to generate breakdown. Please try again.",
+        error instanceof Error ? error.message : "Failed to generate breakdown. Please try again.",
         { id: "breakdown" }
       );
       setGeneratingBreakdown(false);

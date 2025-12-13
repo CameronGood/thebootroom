@@ -29,12 +29,12 @@ function toDate(value: TimestampLike): Date {
     return value;
   }
   // If it's a Firestore Timestamp
-  if (value && typeof value.toDate === "function") {
+  if (value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
     return value.toDate();
   }
   // If it's a timestamp object with seconds/nanoseconds
-  if (value && typeof value.seconds === "number") {
-    return new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
+  if (value && typeof value === "object" && "seconds" in value && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000 + ("nanoseconds" in value && typeof value.nanoseconds === "number" ? value.nanoseconds : 0) / 1000000);
   }
   // If it's a number (milliseconds since epoch)
   if (typeof value === "number") {

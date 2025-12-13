@@ -57,16 +57,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Payment intent creation error:", error);
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : String(error),
-      type: error.type,
-      code: error.code,
-      statusCode: error.statusCode,
-    });
+    const errorMessage = error instanceof Error ? error.message : "Failed to create payment intent";
+    const errorDetails = 
+      error && typeof error === "object" && "type" in error 
+        ? String(error.type) 
+        : error && typeof error === "object" && "code" in error 
+        ? String(error.code) 
+        : "Unknown error";
+    
     return NextResponse.json(
       {
-        error: error.message || "Failed to create payment intent",
-        details: error.type || error.code || "Unknown error",
+        error: errorMessage,
+        details: errorDetails,
       },
       { status: 500 }
     );

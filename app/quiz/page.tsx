@@ -272,7 +272,7 @@ export default function QuizPage() {
     } catch (error: unknown) {
       console.error("Error submitting quiz:", error);
       const errorMessage =
-        error.message || "Failed to submit quiz. Please try again.";
+        error instanceof Error ? error.message : "Failed to submit quiz. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
