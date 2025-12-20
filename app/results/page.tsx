@@ -6,9 +6,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ResultCard from "@/components/ResultCard";
 import ResultsCarousel from "@/components/ResultsCarousel";
-import Spinner from "@/components/Spinner";
+import DelayedSpinner from "@/components/DelayedSpinner";
 import BreakdownDisplay from "@/components/BreakdownDisplay";
-// PaymentForm import removed - payment wall temporarily disabled for testing
+import PaymentForm from "@/components/PaymentForm";
 import { QuizSession, BootSummary, FittingBreakdown, Region } from "@/types";
 import { useAuth } from "@/lib/auth";
 import { useRegion } from "@/lib/region";
@@ -197,7 +197,9 @@ export default function ResultsPage() {
   const [saving, setSaving] = useState(false);
   const [breakdown, setBreakdown] = useState<FittingBreakdown | null>(null);
   const [loadingBreakdown, setLoadingBreakdown] = useState(false);
-  // Payment form state removed - payment wall temporarily disabled for testing
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [generatingBreakdown, setGeneratingBreakdown] = useState(false);
   const [breakdownError, setBreakdownError] = useState(false);
   const [selectedPriceTab, setSelectedPriceTab] = useState<number>(0);
@@ -207,6 +209,8 @@ export default function ResultsPage() {
   // Track selected models for each boot (bootId -> Set of model indices)
   const [selectedModels, setSelectedModels] = useState<Record<string, Set<number>>>({});
   const { region, setRegion } = useRegion();
+  const [hasPaidForComparison, setHasPaidForComparison] = useState(false);
+  const [comparisonStatus, setComparisonStatus] = useState<'pending' | 'generating' | 'completed' | 'failed' | null>(null);
 
   // Clear breakdown when sessionId changes
   useEffect(() => {
@@ -267,6 +271,11 @@ export default function ResultsPage() {
         }
         setSession(sessionData);
 
+        // Check if user paid for comparison
+        const paidForComparison = sessionData.answers?.paidForComparison === true;
+        setHasPaidForComparison(paidForComparison);
+        setComparisonStatus(sessionData.comparisonStatus || null);
+
         // Use mondo from session if available, otherwise calculate from answers
         if (sessionData.recommendedMondo) {
           setRecommendedMondo(sessionData.recommendedMondo);
@@ -292,16 +301,167 @@ export default function ResultsPage() {
     fetchSession();
   }, [sessionId, router]);
 
+  // Poll for comparison status if paid and generating
+  useEffect(() => {
+    if (!hasPaidForComparison || !sessionId || !user) return;
+    
+    // If comparison is completed, try to fetch it
+    if (comparisonStatus === 'completed' && !breakdown) {
+      const fetchBreakdown = async () => {
+        try {
+          const response = await fetch("/api/breakdowns/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              quizId: sessionId,
+              userId: user.uid,
+              selectedModels: {},
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.breakdown) {
+              setBreakdown(result.breakdown);
+              setBreakdownError(false);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching breakdown:", error);
+        }
+      };
+      
+      fetchBreakdown();
+    }
+
+    // If comparison is generating, poll for updates
+    if (comparisonStatus === 'generating') {
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/sessions/${sessionId}`);
+          if (response.ok) {
+            const sessionData: QuizSession = await response.json();
+            const newStatus = sessionData.comparisonStatus;
+            
+            // Only update if status actually changed
+            if (newStatus && newStatus !== 'generating') {
+              // If completed, fetch the breakdown
+              if (newStatus === 'completed') {
+                const breakdownResponse = await fetch("/api/breakdowns/generate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    quizId: sessionId,
+                    userId: user.uid,
+                    selectedModels: {},
+                  }),
+                });
+
+                if (breakdownResponse.ok) {
+                  const result = await breakdownResponse.json();
+                  if (result.success && result.breakdown) {
+                    setBreakdown(result.breakdown);
+                    setBreakdownError(false);
+                    setGeneratingBreakdown(false);
+                    toast.success("Comparison generated successfully!", { id: "payment-breakdown" });
+                  }
+                } else {
+                  toast.error("Failed to fetch comparison", { id: "payment-breakdown" });
+                }
+                
+                // Update status AFTER handling to avoid re-triggering effect
+                setComparisonStatus(newStatus);
+              } else if (newStatus === 'failed') {
+                setBreakdownError(true);
+                setGeneratingBreakdown(false);
+                toast.error("Comparison generation failed. Please try again.", { id: "payment-breakdown" });
+                // Update status AFTER handling to avoid re-triggering effect
+                setComparisonStatus(newStatus);
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error polling comparison status:", error);
+        }
+      }, 3000); // Poll every 3 seconds
+
+      return () => clearInterval(pollInterval);
+    }
+  }, [hasPaidForComparison, sessionId, user, breakdown]);
+
   // Don't fetch breakdown automatically - only generate when user clicks button
   // Breakdowns are not persisted, so we don't fetch them on load
 
-  const handleGetBreakdown = async (selectedModelsForBreakdown?: Record<string, Set<number>>) => {
-    if (!user) {
-      toast.error("Please log in to get a breakdown");
-      router.push(`/account?saveResults=true&sessionId=${sessionId}`);
+  const handlePurchaseComparison = async () => {
+    if (!sessionId) {
+      toast.error("Session ID missing");
       return;
     }
 
+    setIsCreatingPayment(true);
+    try {
+      const response = await fetch("/api/payments/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: sessionId,
+          userId: user?.uid, // Optional - allows anonymous purchases
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create payment");
+      }
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      setShowPaymentForm(true);
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to initialize payment");
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    toast.success("Payment successful!");
+    setShowPaymentForm(false);
+    setClientSecret(null);
+    setHasPaidForComparison(true);
+    
+    // Refresh session data to get updated payment status
+    if (sessionId) {
+      try {
+        const response = await fetch(`/api/sessions/${sessionId}`);
+        if (response.ok) {
+          const sessionData: QuizSession = await response.json();
+          setSession(sessionData);
+          
+          // For authenticated users, the breakdown is generated automatically by the webhook
+          // For anonymous users, show a message that they can now generate the breakdown
+          if (!user) {
+            toast.success("You can now generate your detailed comparison!", { duration: 5000 });
+          } else {
+            toast.loading("Generating your comparison...", { id: "payment-breakdown" });
+          }
+        }
+      } catch (error) {
+        console.error("Error refreshing session:", error);
+      }
+    }
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
+    setClientSecret(null);
+  };
+
+  const handleGetBreakdown = async (selectedModelsForBreakdown?: Record<string, Set<number>>) => {
+    // Free users can now generate breakdowns without logging in
+    // They'll need to log in to SAVE, but can view the comparison
+    
     if (!sessionId) {
       toast.error("Session ID missing");
       return;
@@ -333,13 +493,14 @@ export default function ResultsPage() {
         }
       });
 
-      // Call breakdown generation endpoint directly (bypassing payment)
+      // Call breakdown generation endpoint
+      // userId is optional - if not provided, breakdown won't be saved but will still be generated
       const response = await fetch("/api/breakdowns/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quizId: sessionId,
-          userId: user.uid,
+          userId: user?.uid, // Optional - allows anonymous users to generate breakdowns
           selectedModels: modelsToInclude,
         }),
       });
@@ -363,7 +524,16 @@ export default function ResultsPage() {
         setBreakdown(result.breakdown);
         setBreakdownError(false);
         setGeneratingBreakdown(false);
-        toast.success("Breakdown generated successfully!", { id: "breakdown" });
+        
+        if (user) {
+          toast.success("Breakdown generated and saved successfully!", { id: "breakdown" });
+        } else {
+          // Anonymous user - show message about needing to log in to save
+          toast.success("Breakdown generated! Create an account to save your results.", { 
+            id: "breakdown",
+            duration: 5000,
+          });
+        }
       } else {
         throw new Error(result.error || "Failed to generate breakdown");
       }
@@ -424,7 +594,7 @@ export default function ResultsPage() {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
-          <Spinner size="lg" />
+          <DelayedSpinner size="lg" isLoading={loading} />
         </main>
         <Footer />
       </div>
@@ -501,13 +671,15 @@ export default function ResultsPage() {
                   [bootId]: modelIndices,
                 }));
               }}
-              onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
+              onPurchaseComparison={handlePurchaseComparison}
               resetToFirst={!!breakdown}
               isFlipped={isFlipped}
-              generatingBreakdown={generatingBreakdown}
+              generatingBreakdown={generatingBreakdown || comparisonStatus === 'generating'}
               breakdown={breakdown || undefined}
               onFlipBack={handleFlipBack}
               onViewComparison={handleViewComparison}
+              hasPaidForComparison={hasPaidForComparison}
+              isCreatingPayment={isCreatingPayment}
             />
           </div>
 
@@ -516,7 +688,6 @@ export default function ResultsPage() {
             {session.recommendedBoots.map((boot, index) => {
               // Find the breakdown section for this boot
               const breakdownSection = breakdown?.sections.find(s => s.bootId === boot.bootId);
-              const bootScore = boot.score;
               
               return (
                 <ResultCard
@@ -545,14 +716,15 @@ export default function ResultsPage() {
                       [bootId]: modelIndices,
                     }));
                   }}
-                  onPurchaseComparison={() => handleGetBreakdown(selectedModels)}
+                  onPurchaseComparison={handlePurchaseComparison}
                   isFlipped={isFlipped}
-                generatingBreakdown={generatingBreakdown}
+                generatingBreakdown={generatingBreakdown || comparisonStatus === 'generating'}
                   breakdownSection={breakdownSection}
-                  bootScore={bootScore}
                   onFlipBack={handleFlipBack}
                   onViewComparison={handleViewComparison}
                   hasBreakdown={!!breakdown}
+                  hasPaidForComparison={hasPaidForComparison}
+                  isCreatingPayment={isCreatingPayment}
                 />
               );
             })}
@@ -664,6 +836,34 @@ export default function ResultsPage() {
         </div>
       </main>
       <Footer />
+
+      {/* Payment Form Modal */}
+      <AnimatePresence>
+        {showPaymentForm && clientSecret && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={handlePaymentCancel}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PaymentForm
+                clientSecret={clientSecret}
+                quizId={sessionId || ""}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

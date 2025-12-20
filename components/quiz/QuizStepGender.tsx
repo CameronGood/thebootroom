@@ -38,10 +38,10 @@ export default function QuizStepGender({ value, onNext, onChange, currentStep, t
         <>
         <button
           onClick={() => setShowCard(!showCard)}
-          className="w-8 h-8 border border-[#F5E4D0]/10 bg-[#F4F4F4] hover:bg-[#E8D4B8] text-[#2B2D30] inline-flex items-center justify-center font-bold text-lg rounded-[4px] transition-colors"
+          className="text-[#F5E4D0] font-bold uppercase text-sm underline hover:text-[#E8D4B8] transition-colors cursor-pointer"
           title="Anatomy information"
         >
-          ?
+          MORE INFO
         </button>
           <HelpModal
             isOpen={showCard}
@@ -65,7 +65,7 @@ export default function QuizStepGender({ value, onNext, onChange, currentStep, t
       isValid={!!selected}
       showBackButton={false}
     >
-      <div className="flex flex-row items-center justify-start gap-3 max-w-2xl flex-wrap">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 max-w-2xl">
         <QuizOptionButton active={selected === "Male"} onClick={() => handleSelect("Male")}>
           Male
         </QuizOptionButton>

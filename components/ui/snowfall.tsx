@@ -131,8 +131,9 @@ export const Snowfall = React.memo(function Snowfall({ startDelay = 1.4, flakeCo
     const container = containerRef.current;
     if (!container) return;
 
-    const width = container.offsetWidth || window.innerWidth || 1920;
-    const height = container.offsetHeight || window.innerHeight || 1080;
+    // Use viewport dimensions for fixed positioning
+    const width = window.innerWidth || 1920;
+    const height = window.innerHeight || 1080;
     containerDimensionsRef.current = { width, height };
 
     // When collisions are enabled, update button positions after a short delay
@@ -163,6 +164,20 @@ export const Snowfall = React.memo(function Snowfall({ startDelay = 1.4, flakeCo
     setSnowflakes(newFlakes);
     flakesDataRef.current = newFlakes;
   }, [isActive, flakeCount]);
+
+  // Update dimensions on window resize (important for fixed positioning)
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleResize = () => {
+      const width = window.innerWidth || 1920;
+      const height = window.innerHeight || 1080;
+      containerDimensionsRef.current = { width, height };
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isActive]);
 
   // Update button positions periodically
   useEffect(() => {
@@ -307,8 +322,8 @@ export const Snowfall = React.memo(function Snowfall({ startDelay = 1.4, flakeCo
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 w-full h-full min-h-screen overflow-hidden pointer-events-none"
-      style={{ zIndex: 40 }}
+      className="fixed inset-0 w-full h-full overflow-hidden pointer-events-none"
+      style={{ zIndex: 1 }}
     >
       <div className="absolute inset-0 w-full h-full" style={{ contain: 'layout style paint' }}>
         {snowflakes.map((flake) => (

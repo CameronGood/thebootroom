@@ -4,7 +4,7 @@
   --background: #2b2d30;
   --foreground: #F4F4F4;
   --button-bg: #F5E4D0;
-  --button-text: #2B2D30;
+  --button-text: #2b2d30;
 }
 
 /* @theme is a Tailwind CSS v4 directive - valid syntax */
@@ -13,13 +13,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-sans);
+  --font-heading: Helvetica, Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-mono), monospace;
+  font-family: var(--font-geist-sans), sans-serif !important;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -47,14 +48,15 @@ body {
   }
 }
 
-/* Apply mono font to all text elements except headings */
+/* Apply sans font to all text elements except headings */
 p, span, div, a, li, td, th, label, input, textarea, select, button, small {
-  font-family: var(--font-geist-mono), monospace;
+  font-family: var(--font-geist-sans), sans-serif !important;
 }
 
-/* Keep headings with default sans-serif */
+/* Headings use Helvetica Bold */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: Helvetica, Arial, sans-serif !important;
+  font-weight: bold !important;
 }
 
 html {
@@ -255,4 +257,28 @@ html {
 .backface-hidden {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+}
+
+/* Stripe PaymentElement - Position icons to the left of payment type options */
+[class*="Tab"] {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+[class*="Tab"] img,
+[class*="Tab"] svg,
+[class*="Tab"] [class*="Icon"] {
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+  order: 0 !important;
+}
+
+[class*="Tab"] span,
+[class*="Tab"] label,
+[class*="Tab"] [class*="Label"] {
+  margin-top: 0 !important;
+  order: 1 !important;
 }

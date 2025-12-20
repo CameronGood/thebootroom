@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
-import Spinner from "@/components/Spinner";
+import DelayedSpinner from "@/components/DelayedSpinner";
 import { QuizAnswers } from "@/types";
 import {
   createOrUpdateSession,
@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BrutalistQuizForm from "@/components/quiz/BrutalistQuizForm";
+import PaymentForm from "@/components/PaymentForm";
 
 // Import all quiz step components directly (no dynamic loading to prevent delays)
 import QuizStepGender from "@/components/quiz/QuizStepGender";
@@ -28,8 +29,9 @@ import QuizStepWeight from "@/components/quiz/QuizStepWeight";
 import QuizStepAbility from "@/components/quiz/QuizStepAbility";
 import QuizStepBootType from "@/components/quiz/QuizStepBootType";
 import QuizStepAnkleVolume from "@/components/quiz/QuizStepAnkleVolume";
+import QuizStepPricingTier from "@/components/quiz/QuizStepPricingTier";
 
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS = 11;
 
 export default function QuizPage() {
   const router = useRouter();
@@ -41,6 +43,9 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Partial<QuizAnswers>>({});
   const [loadingAnswers, setLoadingAnswers] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
 
   useEffect(() => {
     if (initialized) return;
@@ -208,6 +213,62 @@ export default function QuizPage() {
     }
   };
 
+  const handlePurchaseClick = async () => {
+    if (!user) {
+      toast.error("Please log in to purchase the comparison");
+      return;
+    }
+
+    if (!sessionId) {
+      toast.error("Session ID missing");
+      return;
+    }
+
+    setIsCreatingPayment(true);
+    try {
+      const response = await fetch("/api/payments/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          quizId: sessionId,
+          userId: user.uid,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create payment");
+      }
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      setShowPaymentForm(true);
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to initialize payment");
+    } finally {
+      setIsCreatingPayment(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    toast.success("Payment successful!");
+    setShowPaymentForm(false);
+    setClientSecret(null);
+    // Update answers with paid tier
+    const updatedAnswers = { 
+      ...answers, 
+      selectedTier: 'paid' as const,
+      paidForComparison: true,
+    };
+    handleSubmitWithAnswers(updatedAnswers);
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
+    setClientSecret(null);
+  };
+
   const handleSubmitWithAnswers = async (answersToSubmit: Partial<QuizAnswers> = answers) => {
     if (!sessionId) return;
 
@@ -234,13 +295,20 @@ export default function QuizPage() {
 
     setLoading(true);
     try {
+      const requestBody: any = {
+        sessionId,
+        answers: completeAnswers,
+      };
+      
+      // If user paid for comparison, include userId for background generation
+      if (completeAnswers.paidForComparison && user?.uid) {
+        requestBody.userId = user.uid;
+      }
+      
       const response = await fetch("/api/match", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          answers: completeAnswers,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -422,16 +490,46 @@ export default function QuizPage() {
             value={answers.calfVolume}
             onChange={(value) => updateAnswers({ calfVolume: value })}
             onNext={(value) => {
-              // Update answers with calf volume and ensure features is empty array
-              const updatedAnswers = { ...answers, calfVolume: value, features: [] };
+              // Update answers with calf volume and move to pricing tier
               updateAnswers({ calfVolume: value, features: [] });
+              handleNext();
+            }}
+            onBack={handleBack}
+            currentStep={currentStep}
+            totalSteps={TOTAL_STEPS}
+          />
+        );
+      case 11:
+        // Pricing Tier
+        return (
+          <QuizStepPricingTier
+            value={answers.selectedTier}
+            onChange={(value) => updateAnswers({ selectedTier: value })}
+            onNext={(value) => {
+              // Update answers with tier selection
+              const paidForComparison = value === 'paid';
+              const updatedAnswers = { 
+                ...answers, 
+                selectedTier: value,
+                paidForComparison,
+                features: []
+              };
+              updateAnswers({ 
+                selectedTier: value,
+                paidForComparison,
+                features: []
+              });
               
-              // Submit directly after calf step
+              // Submit quiz with tier information
               handleSubmitWithAnswers(updatedAnswers);
             }}
             onBack={handleBack}
             currentStep={currentStep}
             totalSteps={TOTAL_STEPS}
+            sessionId={sessionId || ''}
+            userId={user?.uid}
+            onPurchaseClick={handlePurchaseClick}
+            isCreatingPayment={isCreatingPayment}
           />
         );
       default:
@@ -461,6 +559,8 @@ export default function QuizPage() {
         return "Ankle Volume";
       case 10:
         return "Calf Volume";
+      case 11:
+        return "Results";
       default:
         return "";
     }
@@ -488,6 +588,8 @@ export default function QuizPage() {
         return "Select the ankle volume that best matches your foot.";
       case 10:
         return "Select the calf volume that best matches your leg.";
+      case 11:
+        return "Choose between free or premium results with detailed comparison.";
       default:
         return "";
     }
@@ -516,7 +618,7 @@ export default function QuizPage() {
         <main
           className="flex-grow flex items-center justify-center bg-[#040404]"
         >
-          <Spinner size="lg" />
+          <DelayedSpinner size="lg" isLoading={loadingAnswers} />
         </main>
       </div>
     );
@@ -558,6 +660,8 @@ export default function QuizPage() {
                 return !!answers.ankleVolume;
               case 10:
                 return !!answers.calfVolume;
+              case 11:
+                return !!answers.selectedTier;
               default:
                 return false;
             }
@@ -568,6 +672,34 @@ export default function QuizPage() {
           }
         }}
       />
+
+      {/* Payment Form Modal */}
+      <AnimatePresence>
+        {showPaymentForm && clientSecret && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            onClick={handlePaymentCancel}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PaymentForm
+                clientSecret={clientSecret}
+                quizId={sessionId || ""}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

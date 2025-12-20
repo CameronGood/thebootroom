@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, X, ShoppingBag, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, X, ShoppingBag, Search, Loader2 } from "lucide-react";
 import { EncryptedText } from "@/components/ui/encrypted-text";
 import { useRegion } from "@/lib/region";
 import { useAuth } from "@/lib/auth";
@@ -48,11 +48,12 @@ interface Props {
   onPurchaseComparison?: () => void;
   isFlipped?: boolean;
   breakdownSection?: FittingBreakdown['sections'][0];
-  bootScore?: number;
   onFlipBack?: () => void;
   onViewComparison?: () => void;
   hasBreakdown?: boolean; // Indicates if a breakdown exists (even if this boot doesn't have a section)
   generatingBreakdown?: boolean;
+  hasPaidForComparison?: boolean;
+  isCreatingPayment?: boolean;
 }
 
 export default function ResultCard({
@@ -71,11 +72,12 @@ export default function ResultCard({
   onPurchaseComparison,
   isFlipped = false,
   breakdownSection,
-  bootScore,
   onFlipBack,
   onViewComparison,
   hasBreakdown = false,
   generatingBreakdown = false,
+  hasPaidForComparison = false,
+  isCreatingPayment = false,
 }: Props) {
   const { region, loading: regionLoading } = useRegion();
   const { user } = useAuth();
@@ -260,40 +262,6 @@ export default function ResultCard({
     }
   }, [isCompareMode, boot.bootId]);
 
-  // Handle Match Score button click
-  const handleMatchScoreClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Set flag to scroll when compare mode is enabled
-    shouldScrollRef.current = true;
-    
-    // Enable compare mode if not already enabled (this will also show models)
-    if (!isCompareMode && onToggleCompareMode) {
-      onToggleCompareMode();
-    } else {
-      // Already in compare mode - scroll immediately
-      if (!modelsVisible && onToggleModelsVisibility) {
-        onToggleModelsVisibility();
-      }
-      
-      // Scroll to comparison section immediately if already in compare mode
-      requestAnimationFrame(() => {
-        const element = comparisonSectionRef.current || document.getElementById(`comparison-section-${boot.bootId}`);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const scrollY = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
-          const headerOffset = 150;
-          const targetY = scrollY + rect.top - headerOffset;
-          
-          window.scrollTo({
-            top: Math.max(0, targetY),
-            behavior: "smooth"
-          });
-        }
-      });
-    }
-  };
 
   // Render breakdown content for back side
   const renderBreakdownContent = () => {
@@ -325,12 +293,6 @@ export default function ResultCard({
                 </p>
               )}
             </div>
-
-            {bootScore !== undefined && (
-              <p className="text-lg font-semibold text-white mt-2 mb-6">
-                Match Score: <span className="font-bold text-[#F5E4D0]">{bootScore}</span>
-              </p>
-            )}
           </CardHeader>
           <div className="px-8 pt-3 pb-6 mb-0 flex-1 flex items-center justify-center" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
             <div className="flex flex-col items-center gap-3 text-center">
@@ -416,13 +378,6 @@ export default function ResultCard({
               </p>
             )}
           </div>
-
-          {/* Match Score */}
-          {bootScore !== undefined && (
-            <p className="text-lg font-semibold text-white mt-2 mb-6">
-              Match Score: <span className="font-bold text-[#F5E4D0]">{bootScore}</span>
-            </p>
-          )}
         </CardHeader>
         <div className="px-8 pt-3 pb-6 mb-0 flex-1" style={{ paddingBottom: '1.5rem', marginBottom: 0 }}>
           <div className="text-[#F4F4F4] text-base leading-[1.8] [&>*:last-child]:!mb-0">
@@ -530,7 +485,7 @@ export default function ResultCard({
           }}
         >
           <Card className="flex flex-col overflow-hidden hover:shadow-xl border-[#F5E4D0]/20 transition-all duration-300 bg-[#2B2D30] h-full">
-        {/* 1. Image with Match Score Overlay */}
+        {/* 1. Boot Image */}
         {currentImageUrl && (
           <motion.div
             className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden relative border-b border-gray-200"
@@ -546,14 +501,6 @@ export default function ResultCard({
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             />
-            {/* Match Score Button Overlay */}
-            <button
-              onClick={handleMatchScoreClick}
-              className="absolute top-3 right-3 bg-[#2B2D30] text-white px-3 py-1.5 rounded-[4px] font-semibold text-sm hover:bg-[#2B2D30]/80 transition-colors shadow-lg z-10"
-              aria-label="View Match Score"
-            >
-              Match Score
-            </button>
           </motion.div>
         )}
         
@@ -784,7 +731,8 @@ export default function ResultCard({
                         </motion.a>
                         <Link
                           href="/affiliate-disclosure"
-                          className="text-xs text-[#F5E4D0] self-end text-right"
+                          prefetch={true}
+                          className="text-xs text-[#F5E4D0] self-end text-right hover:text-[#E8D4B8] transition-colors"
                         >
                           <span className="underline underline-offset-2">Affiliate Disclosure</span> *
                         </Link>
@@ -825,7 +773,7 @@ export default function ResultCard({
               <ul className="space-y-2.5 text-base text-[#F4F4F4] leading-relaxed">
                 <li className="flex items-start gap-3">
                   <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
-                  <span>Breakdown of your Match Score</span>
+                  <span>Detailed Fit Analysis</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-[#F5E4D0] mt-0.5 flex-shrink-0">✓</span>
@@ -843,45 +791,37 @@ export default function ResultCard({
               </div>
             )}
             
-            {isCompareMode ? (
-              <div className="space-y-4">
-              <div className="bg-[#F5E4D0]/5 border border-[#F5E4D0]/20 rounded-[4px] p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-semibold text-white">Price:</span>
-                  <span className="text-xl font-bold text-[#F5E4D0]">£2.99</span>
-                </div>
-              </div>
+            {!hasPaidForComparison && !breakdownSection ? (
               <button
                 onClick={() => {
                   if (onPurchaseComparison) {
                     onPurchaseComparison();
                   }
                 }}
-                className="w-full bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border border-[#F5E4D0] font-bold text-base p-4 rounded-[4px] transition-all duration-200 shadow-lg hover:shadow-xl"
+                disabled={isCreatingPayment}
+                className="w-full bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border border-[#F5E4D0] disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-bold text-base p-4 rounded-[4px] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
               >
-                Purchase Comparison
+                {isCreatingPayment ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading Payment...
+                  </>
+                ) : (
+                  "PURCHASE COMPARISON £2.99"
+                )}
               </button>
-              <div className="flex items-start gap-2">
-                <span className="text-base text-[#F5E4D0] font-bold flex-shrink-0">*</span>
-                <p className="text-base text-[#F4F4F4]/80">
-                  Make sure you have selected all the models you want to compare!
-                </p>
-              </div>
-              </div>
             ) : (
               <Button
               onClick={() => {
-                if (breakdownSection && onViewComparison) {
+                if (onViewComparison) {
                   onViewComparison();
-                } else if (onToggleCompareMode) {
-                  onToggleCompareMode();
                 }
               }}
               variant="outline"
               size="lg"
               className="w-full border-[#F5E4D0] text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 rounded-[4px]"
             >
-              {breakdownSection ? "View Comparison" : "Compare"}
+              View Comparison
             </Button>
             )}
           </div>

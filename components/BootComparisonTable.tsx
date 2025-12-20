@@ -20,6 +20,14 @@ export default function BootComparisonTable({
   // Check if a boot is selected for comparison
   const isBootSelected = (boot: BootSummary): boolean => {
     if (!selectedModels) return true; // If no selection data, assume all are selected
+    
+    // Check if selectedModels is empty (no selections made at all)
+    const hasAnySelections = Object.keys(selectedModels).length > 0 && 
+      Object.values(selectedModels).some(set => set.size > 0);
+    
+    // If no selections have been made at all, show all boots
+    if (!hasAnySelections) return true;
+    
     const selectedIndices = selectedModels[boot.bootId];
     if (!selectedIndices || selectedIndices.size === 0) return false;
     

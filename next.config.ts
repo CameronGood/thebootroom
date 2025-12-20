@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   compress: true,
   poweredByHeader: false,
+  reactStrictMode: true,
   
   // Image optimization
   images: {

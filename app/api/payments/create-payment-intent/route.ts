@@ -27,24 +27,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
+    // userId is optional - allows anonymous purchases
+    // For anonymous purchases, the breakdown will be generated but not saved to user's account
 
     // Create Payment Intent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: BREAKDOWN_PRICE_GBP,
       currency: "gbp",
       metadata: {
-        userId,
+        userId: userId || "", // Empty string for anonymous users
         quizId,
         selectedModels: selectedModels ? JSON.stringify(selectedModels) : "",
       },
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: 'never', // Disables Klarna and other redirect-based payment methods
       },
     });
 

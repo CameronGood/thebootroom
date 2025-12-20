@@ -39,6 +39,8 @@ export async function createOrUpdateSession(
     recommendedBoots?: BootSummary[];
     recommendedMondo?: string;
     completedAt?: Date;
+    comparisonStatus?: 'pending' | 'generating' | 'completed' | 'failed';
+    paymentIntentId?: string;
   }
 ): Promise<void> {
   const sessionRef = doc(firestore, "quizSessions", sessionId);
@@ -62,6 +64,12 @@ export async function createOrUpdateSession(
   }
   if (data.completedAt) {
     updateData.completedAt = serverTimestamp();
+  }
+  if (data.comparisonStatus !== undefined) {
+    updateData.comparisonStatus = data.comparisonStatus;
+  }
+  if (data.paymentIntentId !== undefined) {
+    updateData.paymentIntentId = data.paymentIntentId;
   }
 
   // Remove any undefined values from updateData itself
@@ -97,5 +105,7 @@ export async function getSession(
     answers: data.answers,
     recommendedBoots: data.recommendedBoots,
     recommendedMondo: data.recommendedMondo,
+    comparisonStatus: data.comparisonStatus,
+    paymentIntentId: data.paymentIntentId,
   } as QuizSession;
 }

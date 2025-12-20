@@ -63,7 +63,7 @@ export default function Footer() {
               <li>
                 <Link
                   href="/affiliate-disclosure"
-                  prefetch={false}
+                  prefetch={true}
                   className="text-[#F4F4F4]/80 hover:text-[#F5E4D0] transition-colors"
                 >
                   Affiliate Disclosure

@@ -24,6 +24,8 @@ interface ResultsCarouselProps {
   generatingBreakdown?: boolean;
   onFlipBack?: () => void;
   onViewComparison?: () => void;
+  hasPaidForComparison?: boolean;
+  isCreatingPayment?: boolean;
 }
 
 const CARD_OFFSET = 60; // How much of the next/prev card is visible (in pixels)
@@ -49,6 +51,8 @@ export default function ResultsCarousel({
   generatingBreakdown,
   onFlipBack,
   onViewComparison,
+  hasPaidForComparison = false,
+  isCreatingPayment = false,
 }: ResultsCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -146,6 +150,8 @@ export default function ResultsCarousel({
               onPurchaseComparison={onPurchaseComparison}
               hasBreakdown={!!breakdown}
               generatingBreakdown={!!generatingBreakdown}
+              hasPaidForComparison={hasPaidForComparison}
+              isCreatingPayment={isCreatingPayment}
             />
           )}
       </div>
@@ -198,7 +204,6 @@ export default function ResultsCarousel({
           >
               {(() => {
                 const breakdownSection = breakdown?.sections.find(s => s.bootId === boot.bootId);
-                const bootScore = boot.score;
                 return (
               <ResultCard
                 boot={boot}
@@ -217,10 +222,11 @@ export default function ResultsCarousel({
                 isFlipped={isFlipped}
                 generatingBreakdown={!!generatingBreakdown}
                 breakdownSection={breakdownSection}
-                bootScore={bootScore}
                 onFlipBack={onFlipBack}
                 onViewComparison={onViewComparison}
                 hasBreakdown={!!breakdown}
+                hasPaidForComparison={hasPaidForComparison}
+                isCreatingPayment={isCreatingPayment}
               />
                 );
               })()}

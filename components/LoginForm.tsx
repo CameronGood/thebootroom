@@ -47,9 +47,23 @@ export default function LoginForm() {
       await loginWithGoogle();
       toast.success("Logged in with Google!");
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : "Google login failed";
-      setError(errorMsg);
-      toast.error(errorMsg);
+      const error = err instanceof Error ? err : new Error(String(err));
+      let errorMsg = "Google login failed";
+      
+      // Handle specific error cases
+      if (error.message.includes("popup blocked") || error.message.includes("Popup blocked")) {
+        errorMsg = "Popup was blocked. Please allow popups for this site in your browser settings and try again.";
+        setError(errorMsg);
+        toast.error(errorMsg, { duration: 5000 });
+      } else if (error.message.includes("popup-closed-by-user")) {
+        errorMsg = "Login cancelled. Please try again.";
+        setError(errorMsg);
+        toast.error(errorMsg);
+      } else {
+        errorMsg = error.message || "Google login failed";
+        setError(errorMsg);
+        toast.error(errorMsg);
+      }
     } finally {
       setLoading(false);
     }

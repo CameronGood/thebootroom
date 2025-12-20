@@ -13,7 +13,7 @@ export default function QuizOptionButton({
   ...rest
 }: QuizOptionButtonProps) {
   const baseClasses =
-    "px-6 py-2 border font-bold uppercase text-lg rounded-[4px] transition-all duration-200 bg-[#2B2D30]";
+    "px-6 py-2 border font-bold uppercase text-lg rounded-[4px] transition-all duration-200 bg-[#2B2D30] w-full sm:w-auto";
   const activeClasses =
     "bg-[#F5E4D0] text-[#2B2D30] border-[#F5E4D0]";
   const inactiveClasses =

@@ -65,11 +65,25 @@ const flexInfoMap: Record<number, FlexInfo> = {
     practicalDifferences: "More immediate response and strong support for committed, fast skiing.",
   },
   120: {
+    rating: 120,
+    plasticsUsed: "Very stiff PU/Grilamid blend with reinforced construction.",
+    linerMaterials: "Performance liner with firm support and precise heel hold.",
+    bestFor: "Advanced skiers who want strong, responsive support for aggressive skiing and high speeds.",
+    practicalDifferences: "Very stiff and responsive — provides excellent power transfer and control for committed, dynamic skiing.",
+  },
+  130: {
     rating: 130,
-    plasticsUsed: "Very stiff PU/Grilamid with strong torsional support.",
-    linerMaterials: "Low-bulk, race-inspired liner with a firmer, cooler, minimal-padding feel.",
-    bestFor: "Someone who skis aggressively or wants race-level precision in every movement.",
-    practicalDifferences: "Maximum control and energy transfer — built for skiers who prioritise performance over comfort.",
+    plasticsUsed: "Race-grade PU/Grilamid with maximum torsional rigidity and reinforced shell construction.",
+    linerMaterials: "Low-bulk, race-inspired liner with minimal padding, firm structure, and a cooler, more direct feel.",
+    bestFor: "Expert and race-level skiers who demand absolute maximum control and precision in every movement.",
+    practicalDifferences: "Extremely stiff and unforgiving — built for maximum energy transfer, instant response, and race-level performance. Not suitable for casual or recreational skiing.",
+  },
+  140: {
+    rating: 140,
+    plasticsUsed: "Ultra-stiff race construction with carbon fiber reinforcements and maximum shell rigidity.",
+    linerMaterials: "Minimal race liner with extremely firm support, minimal cushioning for direct power transfer.",
+    bestFor: "World Cup racers and elite-level competitors who require absolute maximum stiffness and zero flex.",
+    practicalDifferences: "The stiffest available — designed exclusively for racing gates at high speeds. Requires exceptional strength and technique.",
   },
   // Women's flexes
   65: {
@@ -113,6 +127,13 @@ const flexInfoMap: Record<number, FlexInfo> = {
     linerMaterials: "Race-style liner with a firmer, cooler, minimal-padding fit built for precision.",
     bestFor: "A highly skilled skier who demands maximum control — carving hard, skiing steep terrain, or pushing the limits of performance.",
     practicalDifferences: "Very direct, powerful connection; ideal for strong and technically capable skiers.",
+  },
+  125: {
+    rating: 125,
+    plasticsUsed: "Race-grade reinforced PU/Grilamid with high torsional stiffness.",
+    linerMaterials: "Firm, minimal-padding race liner designed for maximum precision and power.",
+    bestFor: "Expert female skiers and competitors who need race-level stiffness and control.",
+    practicalDifferences: "Extremely responsive and powerful — designed for aggressive, technical skiing at the highest level.",
   },
 };
 
@@ -163,22 +184,36 @@ export default function FlexSelectionGuide({
   if (recommendedBoots && selectedModels) {
     recommendedBoots.forEach((boot) => {
       const selectedIndices = selectedModels[boot.bootId];
-      if (selectedIndices && boot.models) {
+      if (selectedIndices && selectedIndices.size > 0 && boot.models) {
         // Add flex from selected models
         selectedIndices.forEach((index) => {
           if (boot.models && boot.models[index]) {
             selectedFlexes.add(boot.models[index].flex);
           }
         });
-      } else if (!selectedIndices && boot.flex) {
-        // If no models selected for this boot, use the boot's base flex
-        selectedFlexes.add(boot.flex);
+      } else {
+        // If no models selected for this boot, include ALL available flex options
+        if (boot.models && boot.models.length > 0) {
+          // Add all flex values from all models
+          boot.models.forEach((model) => {
+            selectedFlexes.add(model.flex);
+          });
+        } else if (boot.flex) {
+          // If boot has no models array, use base flex
+          selectedFlexes.add(boot.flex);
+        }
       }
     });
   } else if (recommendedBoots) {
-    // If no selectedModels provided, use all boots' base flex
+    // If no selectedModels provided, include ALL flex options from all boots
     recommendedBoots.forEach((boot) => {
-      if (boot.flex) {
+      if (boot.models && boot.models.length > 0) {
+        // Add all flex values from all models
+        boot.models.forEach((model) => {
+          selectedFlexes.add(model.flex);
+        });
+      } else if (boot.flex) {
+        // If boot has no models array, use base flex
         selectedFlexes.add(boot.flex);
       }
     });

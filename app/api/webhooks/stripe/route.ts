@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { getSession } from "@/lib/firestore/quizSessions";
+import { createOrUpdateSessionAdmin } from "@/lib/firestore/quizSessionsAdmin";
 import { generateBreakdown } from "@/lib/aiProvider";
 import {
   saveFittingBreakdown,
@@ -56,19 +57,24 @@ export async function POST(request: NextRequest) {
     const paymentIntent = event.data.object as any;
     const { userId, quizId, selectedModels: selectedModelsStr } = paymentIntent.metadata;
 
-    if (!userId || !quizId) {
-      console.error("Missing userId or quizId in payment intent metadata");
+    if (!quizId) {
+      console.error("Missing quizId in payment intent metadata");
       return NextResponse.json(
         { error: "Missing required metadata" },
         { status: 400 }
       );
     }
 
+    // userId is optional - for anonymous purchases
+    const isAnonymous = !userId || userId === "";
+
     try {
-      // Check if breakdown already exists (idempotency)
+      // Check if breakdown already exists (idempotency) - only for authenticated users
+      if (!isAnonymous) {
       const exists = await breakdownExists(userId, quizId);
       if (exists) {
         return NextResponse.json({ received: true, skipped: true });
+        }
       }
 
       // Fetch quiz session
@@ -81,6 +87,19 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (isAnonymous) {
+        // For anonymous users: just mark the session as paid
+        // The breakdown will be generated on-demand when they click the button
+        await createOrUpdateSessionAdmin(quizId, {
+          paymentIntentId: paymentIntent.id,
+          answers: {
+            ...session.answers,
+            paidForComparison: true,
+          },
+        });
+        console.log(`Payment received for anonymous user - session ${quizId} marked as paid`);
+      } else {
+        // For authenticated users: generate and save breakdown automatically
       // Parse selected models if provided
       let selectedModels: Record<string, number[]> | undefined;
       if (selectedModelsStr) {
@@ -140,6 +159,17 @@ export async function POST(request: NextRequest) {
         wordCount,
         sections,
       });
+        
+        // Update the session to mark payment received
+        await createOrUpdateSessionAdmin(quizId, {
+          paymentIntentId: paymentIntent.id,
+          answers: {
+            ...session.answers,
+            paidForComparison: true,
+          },
+        });
+        console.log(`Breakdown saved and session ${quizId} marked as paid for user ${userId}`);
+      }
 
       // Increment billing metrics
       const amountGBP = BREAKDOWN_PRICE_GBP / 100; // Convert pennies to pounds

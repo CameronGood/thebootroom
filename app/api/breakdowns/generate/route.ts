@@ -9,25 +9,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, quizId, selectedModels } = body;
 
-    if (!userId || !quizId) {
+    if (!quizId) {
       return NextResponse.json(
-        { error: "Missing userId or quizId" },
+        { error: "Missing quizId" },
         { status: 400 }
       );
     }
 
-    // If we already have a stored breakdown for this user/quiz, return it immediately
-    try {
-      const existing = await getFittingBreakdownAdmin(userId, quizId);
-      if (existing?.sections?.length) {
-        return NextResponse.json({
-          success: true,
-          message: "Breakdown already generated",
-          breakdown: existing,
-        });
+    // If userId is provided and we already have a stored breakdown, return it immediately
+    if (userId) {
+      try {
+        const existing = await getFittingBreakdownAdmin(userId, quizId);
+        if (existing?.sections?.length) {
+          return NextResponse.json({
+            success: true,
+            message: "Breakdown already generated",
+            breakdown: existing,
+          });
+        }
+      } catch (existingErr) {
+        console.warn("Existing breakdown lookup failed, continuing to generate", existingErr);
       }
-    } catch (existingErr) {
-      console.warn("Existing breakdown lookup failed, continuing to generate", existingErr);
     }
 
     // Fetch quiz session
@@ -127,28 +129,33 @@ export async function POST(request: NextRequest) {
       sections,
     };
 
-    // Save breakdown to Firestore - MUST succeed before returning
-    try {
-      await saveFittingBreakdownAdmin(userId, quizId, breakdown);
-    } catch (saveError: any) {
-      console.error("✗ CRITICAL: Failed to save breakdown to Firestore");
-      console.error("Save error details:", {
-        userId,
-        quizId,
-        errorMessage: saveError?.message,
-        errorCode: saveError?.code,
-        errorStack: saveError?.stack,
-        errorType: saveError?.constructor?.name,
-      });
-      // Still return breakdown so user can see it, but log the failure
-      // Breakdown will be lost on refresh, but at least user can view it now
-      console.warn("⚠ Returning breakdown despite save failure - it will not persist");
+    // Save breakdown to Firestore only if userId is provided
+    if (userId) {
+      try {
+        await saveFittingBreakdownAdmin(userId, quizId, breakdown);
+        console.log(`✓ Breakdown saved to Firestore for user ${userId}, quiz ${quizId}`);
+      } catch (saveError: any) {
+        console.error("✗ CRITICAL: Failed to save breakdown to Firestore");
+        console.error("Save error details:", {
+          userId,
+          quizId,
+          errorMessage: saveError?.message,
+          errorCode: saveError?.code,
+          errorStack: saveError?.stack,
+          errorType: saveError?.constructor?.name,
+        });
+        // Still return breakdown so user can see it, but log the failure
+        // Breakdown will be lost on refresh, but at least user can view it now
+        console.warn("⚠ Returning breakdown despite save failure - it will not persist");
+      }
+    } else {
+      console.log(`ℹ Anonymous breakdown generation for quiz ${quizId} - not saved to Firestore`);
     }
 
-    // Return breakdown (save should have succeeded, but return even if it failed)
+    // Return breakdown
     return NextResponse.json({ 
       success: true,
-      message: "Breakdown generated successfully",
+      message: userId ? "Breakdown generated and saved successfully" : "Breakdown generated successfully (not saved - login to save)",
       breakdown,
     });
   } catch (error: unknown) {

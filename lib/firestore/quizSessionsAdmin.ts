@@ -29,6 +29,8 @@ export async function createOrUpdateSessionAdmin(
     recommendedBoots?: BootSummary[];
     recommendedMondo?: string;
     completedAt?: Date;
+    comparisonStatus?: 'pending' | 'generating' | 'completed' | 'failed';
+    paymentIntentId?: string;
   }
 ): Promise<void> {
   const sessionRef = adminFirestore.collection("quizSessions").doc(sessionId);
@@ -52,6 +54,12 @@ export async function createOrUpdateSessionAdmin(
   }
   if (data.completedAt) {
     updateData.completedAt = admin.firestore.FieldValue.serverTimestamp();
+  }
+  if (data.comparisonStatus !== undefined) {
+    updateData.comparisonStatus = data.comparisonStatus;
+  }
+  if (data.paymentIntentId !== undefined) {
+    updateData.paymentIntentId = data.paymentIntentId;
   }
 
   const cleanedUpdateData = removeUndefined(updateData);

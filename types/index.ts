@@ -32,6 +32,8 @@ export interface QuizAnswers {
   ankleVolume: Volume;
   calfVolume: Volume;
   features: Feature[];
+  selectedTier?: 'free' | 'paid';
+  paidForComparison?: boolean;
 }
 
 export interface BootSummary {
@@ -107,6 +109,8 @@ export interface QuizSession {
   answers: QuizAnswers;
   recommendedBoots?: BootSummary[];
   recommendedMondo?: string;
+  comparisonStatus?: 'pending' | 'generating' | 'completed' | 'failed';
+  paymentIntentId?: string;
 }
 
 export interface AffiliateClick {

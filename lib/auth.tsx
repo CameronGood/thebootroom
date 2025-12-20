@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -31,6 +32,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // Handle redirect result when page loads (for when popup is blocked and Firebase falls back to redirect)
+  useEffect(() => {
+    // Check for redirect result on mount
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User signed in via redirect - onAuthStateChanged will handle updating the user state
+          // The redirect result is processed, which completes the authentication
+          console.log("Redirect authentication successful");
+        }
+      })
+      .catch((error) => {
+        // Only log actual errors, not expected cases like no redirect pending or user cancellation
+        const isExpectedError = 
+          error.code === 'auth/operation-not-allowed' ||
+          error.code === 'auth/popup-closed-by-user' ||
+          error.message?.includes('no pending') ||
+          error.message?.includes('cancelled');
+        
+        if (!isExpectedError) {
+          console.error("Redirect result error:", error);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -63,7 +89,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      // If popup is blocked, Firebase will automatically fall back to redirect
+      // But we should throw the error so the UI can handle it
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups for this site and try again, or the page will redirect automatically.');
+      }
+      throw error;
+    }
   };
 
   const loginAnonymously = async () => {

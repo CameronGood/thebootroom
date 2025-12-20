@@ -46,6 +46,8 @@ export const quizAnswersSchema = z.object({
   features: z
     .array(z.enum(["Walk Mode", "Rear Entry", "Calf Adjustment"]))
     .default([]),
+  selectedTier: z.enum(["free", "paid"]).optional(),
+  paidForComparison: z.boolean().optional(),
 });
 
 export const matchRequestSchema = z.object({

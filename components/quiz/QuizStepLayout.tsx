@@ -4,11 +4,11 @@ import { ReactNode } from "react";
 
 interface QuizStepLayoutProps {
   title: string;
-  description: string;
+  description?: string;
   helpContent?: ReactNode;
   onBack?: () => void;
-  onNext: () => void;
-  isValid: boolean;
+  onNext?: () => void;
+  isValid?: boolean;
   nextButtonText?: string;
   showBackButton?: boolean;
   children: ReactNode;
@@ -49,24 +49,19 @@ export default function QuizStepLayout({
       <div className="w-full border border-[#F5E4D0]/20 rounded-[8px] overflow-hidden">
         {/* Header Section */}
         <div className="px-6 py-4 border-b border-[#F5E4D0]/20 bg-[#2B2D30]">
-          <div className="relative">
-            <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold uppercase text-[#F4F4F4] pr-8">
+          <h2 className="text-2xl lg:text-3xl xl:text-4xl font-bold uppercase text-[#F4F4F4]">
               {title}
             </h2>
-            {helpContent && (
-              <div className="absolute top-0 right-0">
-                {helpContent}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Question/Description Section */}
+        {description && (
         <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 w-full bg-[#2B2D30]/50 ${removeQuestionBottomBorder && !toggleContent ? '' : 'border-b border-[#F5E4D0]/20'}`}>
-          <p className="text-[#F4F4F4] text-base lg:text-lg xl:text-xl text-left leading-relaxed">
+            <p className="text-[#F4F4F4] text-lg lg:text-xl xl:text-2xl text-left leading-relaxed">
             {description}
           </p>
         </div>
+        )}
 
         {/* Toggle Section */}
         {toggleContent && (
@@ -76,34 +71,41 @@ export default function QuizStepLayout({
         )}
 
         {/* Content/Input Section */}
-        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 bg-[#2B2D30]/50 ${toggleContent || addInputTopBorder ? 'border-t border-[#F5E4D0]/20' : ''} w-full`}>
-          <div className={`${noContentSpacing ? '' : 'max-h-[60vh] overflow-y-auto hide-scrollbar'}`}>
+        <div className={`px-6 py-4 sm:border-r border-[#F5E4D0]/20 bg-[#2B2D30]/50 ${toggleContent || addInputTopBorder ? 'border-t border-[#F5E4D0]/20' : ''} w-full relative overflow-visible`}>
+          {helpContent && (
+            <div className="absolute top-4 left-6 z-20 pointer-events-auto">
+              {helpContent}
+            </div>
+          )}
+          <div className={`${noContentSpacing ? '' : 'max-h-[60vh] overflow-y-auto hide-scrollbar'} ${helpContent ? 'pt-10 sm:pt-12' : ''}`}>
             {children}
           </div>
         </div>
 
         {/* Button Section */}
-        <div className="px-6 py-4 border-t border-[#F5E4D0]/20 bg-[#2B2D30]/50">
-          <div className="flex justify-between items-center">
-            {showBackButton && onBack ? (
+        {onNext && (
+          <div className="px-6 py-4 border-t border-[#F5E4D0]/20 bg-[#2B2D30]/50">
+            <div className="flex justify-between items-center">
+              {showBackButton && onBack ? (
+                <button
+                  onClick={onBack}
+                  className="px-4 py-2 border border-[#F5E4D0]/10 text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 font-bold uppercase rounded-[4px] transition-colors"
+                >
+                  Back
+                </button>
+              ) : (
+                <div></div>
+              )}
               <button
-                onClick={onBack}
-                className="px-4 py-2 border border-[#F5E4D0]/10 text-[#F5E4D0] bg-transparent hover:bg-[#F5E4D0]/10 font-bold uppercase rounded-[4px] transition-colors"
+                onClick={onNext}
+                disabled={!isValid}
+                className="px-4 py-2 bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border border-[#F5E4D0]/10 disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-bold uppercase rounded-[4px] transition-colors ml-auto"
               >
-                Back
+                {nextButtonText}
               </button>
-            ) : (
-              <div></div>
-            )}
-            <button
-              onClick={onNext}
-              disabled={!isValid}
-              className="px-4 py-2 bg-[#F5E4D0] text-[#2B2D30] hover:bg-[#E8D4B8] border border-[#F5E4D0]/10 disabled:bg-gray-300 disabled:border-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-bold uppercase rounded-[4px] transition-colors ml-auto"
-            >
-              {nextButtonText}
-            </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
   );
 }

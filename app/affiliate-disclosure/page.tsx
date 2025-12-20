@@ -1,5 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Affiliate Disclosure | The Boot Room",
+  description: "Learn about how The Boot Room uses affiliate links and our commitment to transparency.",
+};
 
 export default function AffiliateDisclosurePage() {
   return (
