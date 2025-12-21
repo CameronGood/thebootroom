@@ -215,7 +215,11 @@ export default function AccountPage() {
         <Header />
         <main className="flex-grow flex items-center justify-center bg-[#040404] pt-[120px]">
           <div className="text-center">
+<<<<<<< HEAD
             <DelayedSpinner size="lg" isLoading={isLoadingState} />
+=======
+            <DelayedSpinner size="lg" isLoading={!!(authLoading || (user && (loading || savingResults)))} />
+>>>>>>> efb9c54 (New Branch for Measurements from Photos)
             {savingResults && (
               <p className="mt-4 text-[#F4F4F4]/80">Saving your results...</p>
             )}

@@ -18,6 +18,7 @@ const Card = React.forwardRef<
 ));
 Card.displayName = "Card";
 
+<<<<<<< HEAD
 const cardHeaderVariants = cva(
   "flex flex-col space-y-1.5 p-6 justify-start",
   {
@@ -46,6 +47,18 @@ const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
     />
   )
 );
+=======
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6 justify-start", className)}
+    {...props}
+  />
+));
+>>>>>>> efb9c54 (New Branch for Measurements from Photos)
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<
