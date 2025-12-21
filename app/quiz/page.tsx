@@ -417,6 +417,7 @@ export default function QuizPage() {
             onBack={handleBack}
             currentStep={currentStep}
             totalSteps={TOTAL_STEPS}
+            quizSessionId={sessionId || undefined}
           />
         );
       case 6:
@@ -431,6 +432,7 @@ export default function QuizPage() {
             onBack={handleBack}
             currentStep={currentStep}
             totalSteps={TOTAL_STEPS}
+            quizSessionId={sessionId || undefined}
           />
         );
       case 7:
