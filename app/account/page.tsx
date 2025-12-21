@@ -213,7 +213,7 @@ export default function AccountPage() {
         <Header />
         <main className="flex-grow flex items-center justify-center bg-[#040404] pt-[120px]">
           <div className="text-center">
-            <DelayedSpinner size="lg" isLoading={authLoading || (user && (loading || savingResults))} />
+            <DelayedSpinner size="lg" isLoading={!!(authLoading || (user && (loading || savingResults)))} />
             {savingResults && (
               <p className="mt-4 text-[#F4F4F4]/80">Saving your results...</p>
             )}

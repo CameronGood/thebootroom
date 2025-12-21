@@ -52,6 +52,34 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.token.admin == true;
       allow write: if false; // Only via server/API (uses Admin SDK which bypasses rules)
     }
+
+    // Measurement Sessions: linked to quiz sessions, same ownership rules
+    match /measurementSessions/{sessionId} {
+      // Helper function to check if user owns the linked quiz session
+      function ownsQuizSession() {
+        let quizSessionId = resource.data.quizSessionId;
+        let quizSession = get(/databases/$(database)/documents/quizSessions/$(quizSessionId));
+        return request.auth == null || 
+          request.auth.uid == quizSession.data.userId ||
+          !('userId' in quizSession.data);
+      }
+      
+      // For creation: allow if quiz session exists and matches ownership rules
+      // Similar to quizSessions - allow creation broadly, then validate on read/update
+      allow create: if request.resource.data.quizSessionId != null;
+      
+      allow read: if resource.data.quizSessionId != null && 
+        (ownsQuizSession() || 
+         (request.auth != null && request.auth.token.admin == true));
+      
+      allow update: if resource.data.quizSessionId != null && 
+        (ownsQuizSession() || 
+         (request.auth != null && request.auth.token.admin == true));
+      
+      allow delete: if resource.data.quizSessionId != null && 
+        (ownsQuizSession() || 
+         (request.auth != null && request.auth.token.admin == true));
+    }
   }
 }
 

@@ -149,3 +149,40 @@ export interface BillingMetrics {
   revenueGBP: number;
   month: string; // YYYY-MM format
 }
+
+// Foot measurement types
+export type SockThickness = "thin" | "medium" | "thick";
+
+export type MeasurementSessionStatus = 
+  | "idle" 
+  | "capturing" 
+  | "processing" 
+  | "complete" 
+  | "failed";
+
+export interface MeasurementResult {
+  lengthMm: number;
+  widthMm: number;
+  confidence: number;
+}
+
+export interface MeasurementPhotoResult {
+  processed: boolean;
+  left?: MeasurementResult;
+  right?: MeasurementResult;
+}
+
+export interface MeasurementSession {
+  quizSessionId: string;
+  status: MeasurementSessionStatus;
+  sockThickness: SockThickness;
+  photo1?: MeasurementPhotoResult;
+  photo2?: MeasurementPhotoResult;
+  final?: {
+    left: MeasurementResult;
+    right: MeasurementResult;
+  };
+  createdAt: Date;
+  completedAt?: Date;
+  errorMessage?: string;
+}

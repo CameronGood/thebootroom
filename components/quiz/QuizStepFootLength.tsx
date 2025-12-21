@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { QuizAnswers } from "@/types";
 import HelpModal from "./HelpModal";
 import QuizOptionButton from "./QuizOptionButton";
 import QuizStepLayout from "./QuizStepLayout";
 import { convertShoeSize } from "@/lib/mondo-conversions";
+import { Camera } from "lucide-react";
+import toast from "react-hot-toast";
+import DesktopMeasurementFlow from "@/components/measure/DesktopMeasurementFlow";
 
 interface Props {
   footLengthMM?: { left: number; right: number };
@@ -18,6 +22,7 @@ interface Props {
   onBack: () => void;
   currentStep?: number;
   totalSteps?: number;
+  quizSessionId?: string;
 }
 
 export default function QuizStepFootLength({
@@ -28,6 +33,7 @@ export default function QuizStepFootLength({
   onBack,
   currentStep,
   totalSteps,
+  quizSessionId,
 }: Props) {
   const [inputType, setInputType] = useState<"mm" | "shoe">(
     footLengthMM ? "mm" : shoeSize ? "shoe" : "mm"
@@ -47,6 +53,12 @@ export default function QuizStepFootLength({
   const [showCard, setShowCard] = useState(false);
   const [isSystemDropdownOpen, setIsSystemDropdownOpen] = useState(false);
   const systemDropdownRef = useRef<HTMLDivElement>(null);
+  const [measuring, setMeasuring] = useState(false);
+  const [desktopFlow, setDesktopFlow] = useState<{
+    sessionId: string;
+    qrCode: string;
+    url: string;
+  } | null>(null);
   
   // Get min/max values based on shoe system
   const getShoeSizeMinMax = () => {
@@ -196,34 +208,127 @@ export default function QuizStepFootLength({
       onNext={handleSubmit}
       isValid={isValid}
       toggleContent={
-        <div className="flex gap-3">
-          <QuizOptionButton
-            active={inputType === "mm"}
-            onClick={() => {
-              setInputType("mm");
-              setShoeSystem("UK");
-              setShoeValue("");
-            }}
-          >
-            Your feet
-          </QuizOptionButton>
-          <QuizOptionButton
-            active={inputType === "shoe"}
-            onClick={() => {
-              setInputType("shoe");
-              setLeftMM("");
-              setRightMM("");
-              // Set default shoe size based on gender
-              const defaultSize = getDefaultShoeSize();
-              setShoeValue(defaultSize.toString());
-              setShoeSystem("UK");
-            }}
-          >
-            Quick
-          </QuizOptionButton>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
+            <QuizOptionButton
+              active={inputType === "mm"}
+              onClick={() => {
+                setInputType("mm");
+                setShoeSystem("UK");
+                setShoeValue("");
+              }}
+            >
+              Your feet
+            </QuizOptionButton>
+            <QuizOptionButton
+              active={inputType === "shoe"}
+              onClick={() => {
+                setInputType("shoe");
+                setLeftMM("");
+                setRightMM("");
+                // Set default shoe size based on gender
+                const defaultSize = getDefaultShoeSize();
+                setShoeValue(defaultSize.toString());
+                setShoeSystem("UK");
+              }}
+            >
+              Quick
+            </QuizOptionButton>
+          </div>
+          {inputType === "mm" && quizSessionId && (
+            <button
+              onClick={async () => {
+                try {
+                  setMeasuring(true);
+                  const createRes = await fetch(
+                    "/api/measurements/create-session",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        quizSessionId,
+                        sockThickness: "thin",
+                      }),
+                    }
+                  );
+
+                  if (!createRes.ok) {
+                    const errData = await createRes.json().catch(() => ({}));
+                    throw new Error(errData.error || "Failed to create session");
+                  }
+
+                  const { sessionId: measurementSessionId } =
+                    await createRes.json();
+                  
+                  // Check if mobile or desktop
+                  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                  if (isMobile) {
+                    window.location.href = `/measure/${measurementSessionId}`;
+                  } else {
+                    // Desktop: stay on quiz page and show QR modal
+                    const qrRes = await fetch(
+                      `/api/measurements/session-link?sessionId=${measurementSessionId}`
+                    );
+                    if (!qrRes.ok) {
+                      const errData = await qrRes.json().catch(() => ({}));
+                      throw new Error(errData.error || "Failed to generate QR code");
+                    }
+                    const qrData = await qrRes.json();
+                    setDesktopFlow({
+                      sessionId: measurementSessionId,
+                      qrCode: qrData.qrCode,
+                      url: qrData.url,
+                    });
+                  }
+                } catch (error) {
+                  console.error("Error starting measurement:", error);
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to start measurement"
+                  );
+                } finally {
+                  setMeasuring(false);
+                }
+              }}
+              disabled={measuring}
+              className="px-4 py-2 border border-[#F5E4D0] bg-transparent text-[#F5E4D0] hover:bg-[#F5E4D0]/10 font-bold uppercase text-sm rounded-[4px] transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              <Camera className="w-4 h-4" />
+              {measuring ? "Starting..." : "Measure for me"}
+            </button>
+          )}
         </div>
       }
     >
+      {desktopFlow &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[20000] bg-black/80 backdrop-blur-sm p-4 flex items-center justify-center">
+            <div className="w-full max-w-2xl border border-[#F5E4D0]/20 bg-[#2B2D30] rounded-[8px] overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#F5E4D0]/20">
+                <h3 className="text-xl font-bold uppercase text-[#F4F4F4]">
+                  Measure Your Feet
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setDesktopFlow(null)}
+                  className="px-3 py-1 border border-[#F5E4D0]/20 text-[#F5E4D0] hover:bg-[#F5E4D0]/10 rounded-[4px] uppercase font-bold text-sm"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-6 bg-[#040404]">
+                <DesktopMeasurementFlow
+                  sessionId={desktopFlow.sessionId}
+                  qrCodeUrl={desktopFlow.qrCode}
+                  measurementUrl={desktopFlow.url}
+                />
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
       {inputType === "mm" ? (
         <div className="flex gap-4 w-full">
           <div className="inline-flex sm:flex sm:flex-1 items-center justify-center gap-2 border border-[#F5E4D0] bg-[#2B2D30]/50 px-2 py-2 rounded-[4px] transition-all duration-200 hover:border-[#F5E4D0] focus-within:border-[#F5E4D0] focus-within:bg-[#2B2D30]/70 w-auto sm:w-full">
