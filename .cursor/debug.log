@@ -1,2 +1,0 @@
-{"location":"match/route.ts:29","message":"userId extraction logic","data":{"paidForComparison":false,"selectedTier":"free"},"timestamp":1766077152917,"sessionId":"debug-session","hypothesisId":"H1,H2,H3"}
-{"location":"match/route.ts:41","message":"Background generation condition check","data":{"paidForComparison":false,"willGenerate":false},"timestamp":1766077153144,"sessionId":"debug-session","hypothesisId":"H1,H2,H3"}

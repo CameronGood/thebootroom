@@ -92,6 +92,42 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_unrestricted_api_key_here
 
 **Note:** If you get "API keys with referer restrictions cannot be used with this API" error, you need to create a separate unrestricted key for server-side use.
 
+### Cloudflare R2 Configuration (Required for Foot Measurement Feature)
+
+```env
+CLOUDFLARE_API_TOKEN=your_single_token_here
+CLOUDFLARE_ACCOUNT_ID=your_account_id
+CLOUDFLARE_R2_BUCKET_NAME=tbr-foot-measurements
+```
+
+**How to Get Your R2 Credentials:**
+
+1. Go to: https://dash.cloudflare.com/
+2. Select your account
+3. Navigate to **R2** in the left sidebar
+4. Note your **Account ID** (found at the top of the R2 dashboard)
+5. Go to **API Tokens** (user menu → **My Profile** → **API Tokens**)
+6. Click **Create Token**
+7. Use the **Edit Cloudflare Workers** template or create a custom token with:
+   - **Permissions**: 
+     - Account → Cloudflare R2 → Edit
+     - Zone → Zone Settings → Read (if needed)
+   - **Account Resources**: Include your account
+8. Copy the **API Token** (only shown once - save it!)
+
+**Bucket Setup:**
+
+1. In R2 dashboard, click **Create bucket**
+2. Name it: `tbr-foot-measurements` (or use your preferred name)
+3. Set **Public Access** to **Disabled** (private bucket)
+4. After creating, go to bucket settings → **Lifecycle Rules**
+5. Add a rule to delete objects after **1 hour**
+
+**Important:** 
+- The bucket must be private (no public access) since images contain sensitive user data and are deleted immediately after processing.
+- This implementation uses Cloudflare API Token authentication with Bearer token auth (not S3-compatible credentials).
+- Uploads are handled via server-side proxy endpoint for security.
+
 ## Important Notes
 
 - **Never commit `.env.local` to git** - it's already in `.gitignore`
