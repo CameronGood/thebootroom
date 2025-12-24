@@ -272,7 +272,7 @@ export default function ResultCard({
     if (generatingBreakdown) {
       return (
         <>
-          <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+          <CardHeader align="left" className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
             {onFlipBack && (
               <button
                 onClick={onFlipBack}
@@ -314,7 +314,7 @@ export default function ResultCard({
     if (shouldShowNotIncluded) {
       return (
         <>
-          <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+          <CardHeader align="left" className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
             {/* Close button */}
             {onFlipBack && (
               <button
@@ -355,7 +355,7 @@ export default function ResultCard({
 
     return (
       <>
-        <CardHeader className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
+        <CardHeader align="left" className="px-8 py-8 !pb-4 !mb-0 relative flex-shrink-0" style={{ marginBottom: 0 }}>
           {/* Close button */}
           {onFlipBack && (
             <button
@@ -504,7 +504,7 @@ export default function ResultCard({
           </motion.div>
         )}
         
-        <CardHeader className="px-8 py-6">
+        <CardHeader align="left" className="px-8 py-6">
           {/* Brand and Range - Primary hierarchy, grouped together */}
           <div className="mb-6">
             <p className="text-4xl font-bold text-[#F5E4D0] leading-tight mb-1">

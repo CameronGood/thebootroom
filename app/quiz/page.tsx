@@ -214,11 +214,6 @@ export default function QuizPage() {
   };
 
   const handlePurchaseClick = async () => {
-    if (!user) {
-      toast.error("Please log in to purchase the comparison");
-      return;
-    }
-
     if (!sessionId) {
       toast.error("Session ID missing");
       return;
@@ -231,7 +226,7 @@ export default function QuizPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quizId: sessionId,
-          userId: user.uid,
+          userId: user?.uid, // Optional - allows anonymous purchases
         }),
       });
 
@@ -680,7 +675,7 @@ export default function QuizPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
             onClick={handlePaymentCancel}
           >
             <motion.div

@@ -12,7 +12,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle, Lock, Shield, CreditCard } from "lucide-react";
+import { Loader2, AlertCircle, Lock, Shield, CreditCard, ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
 
 const stripePromise = loadStripe(
@@ -37,10 +37,21 @@ function CheckoutForm({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  // Show card form by default if no digital wallet is available
+  const [showCardForm, setShowCardForm] = useState(false);
+  
+  // Auto-show card form if no payment request is available
+  useEffect(() => {
+    if (!paymentRequest) {
+      setShowCardForm(true);
+    }
+  }, [paymentRequest]);
 
   // Setup Apple Pay / Google Pay
   useEffect(() => {
     if (!stripe) return;
+
+    let paymentRequestInstance: any = null;
 
     const pr = stripe.paymentRequest({
       country: 'GB',
@@ -53,6 +64,8 @@ function CheckoutForm({
       requestPayerEmail: true,
     });
 
+    paymentRequestInstance = pr;
+
     // Check if Apple Pay / Google Pay is available
     // This works on:
     // - Apple Pay: Safari on iOS/macOS with Apple Pay enabled
@@ -60,14 +73,19 @@ function CheckoutForm({
     pr.canMakePayment().then(result => {
       if (result) {
         setPaymentRequest(pr);
-        console.log('Digital wallet available:', result.applePay ? 'Apple Pay' : result.googlePay ? 'Google Pay' : 'Digital wallet');
+        const walletType = result.applePay ? 'Apple Pay' : result.googlePay ? 'Google Pay' : 'Digital wallet';
+        console.log('Digital wallet available:', walletType);
+      } else {
+        // No digital wallet available, ensure card form shows
+        setPaymentRequest(null);
       }
     }).catch(error => {
       console.error('Error checking payment request availability:', error);
+      setPaymentRequest(null);
     });
 
     // Handle payment method from Apple Pay / Google Pay
-    pr.on('paymentmethod', async (ev) => {
+    const handlePaymentMethod = async (ev: any) => {
       setIsProcessing(true);
       setError(null);
 
@@ -95,7 +113,16 @@ function CheckoutForm({
         setError(err.message || "An unexpected error occurred");
         setIsProcessing(false);
       }
-    });
+    };
+
+    pr.on('paymentmethod', handlePaymentMethod);
+
+    // Cleanup function
+    return () => {
+      if (paymentRequestInstance) {
+        paymentRequestInstance.off('paymentmethod', handlePaymentMethod);
+      }
+    };
   }, [stripe, clientSecret, quizId, onSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,7 +166,7 @@ function CheckoutForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       {/* Apple Pay / Google Pay Button */}
       {paymentRequest && (
         <div className="space-y-3">
@@ -150,7 +177,7 @@ function CheckoutForm({
                 paymentRequestButton: {
                   type: 'default', // Shows "Pay with Apple Pay" or "Pay with Google Pay"
                   theme: 'dark', // Dark theme to match the UI
-                  height: '48px',
+                  height: '44px',
                 },
               },
             }}
@@ -166,21 +193,56 @@ function CheckoutForm({
         </div>
       )}
 
-      {/* Card Payment Form */}
-      <div className="space-y-4">
-        <PaymentElement
-          options={{
-            layout: {
-              type: 'tabs',
-              defaultCollapsed: false,
-            },
-            wallets: {
-              applePay: 'never', // Hide Apple Pay here since we show it above with PaymentRequestButton
-              googlePay: 'never', // Hide Google Pay here since we show it above with PaymentRequestButton
-            },
-          }}
-        />
-      </div>
+      {/* Card Payment Option Toggle - Only show if digital wallet is available */}
+      {paymentRequest && !showCardForm && (
+        <button
+          type="button"
+          onClick={() => setShowCardForm(true)}
+          className="w-full p-4 border-2 border-[#F5E4D0]/20 rounded-[4px] bg-[#040404] hover:border-[#F5E4D0]/40 hover:bg-[#040404]/80 transition-all duration-200 flex items-center justify-between group"
+        >
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-5 h-5 text-[#F5E4D0] group-hover:scale-110 transition-transform" />
+            <span className="text-[#F4F4F4] font-medium">Pay with Card</span>
+          </div>
+          <ChevronDown className="w-5 h-5 text-[#F5E4D0]/60 group-hover:text-[#F5E4D0] transition-colors" />
+        </button>
+      )}
+
+      {/* Card Payment Form - Shown when selected or if no digital wallet */}
+      {showCardForm && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="space-y-3 overflow-hidden"
+        >
+          {paymentRequest && (
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-[#F4F4F4]">Card Details</span>
+              <button
+                type="button"
+                onClick={() => setShowCardForm(false)}
+                className="text-xs text-[#F4F4F4]/60 hover:text-[#F4F4F4] transition-colors"
+              >
+                Collapse
+              </button>
+            </div>
+          )}
+          <PaymentElement
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: true,
+              },
+              wallets: {
+                applePay: 'never', // Hide Apple Pay here since we show it above with PaymentRequestButton
+                googlePay: 'never', // Hide Google Pay here since we show it above with PaymentRequestButton
+              },
+            }}
+          />
+        </motion.div>
+      )}
 
       {/* Error Message */}
       <AnimatePresence>
@@ -189,16 +251,16 @@ function CheckoutForm({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="flex items-center gap-2 p-4 bg-red-500/10 border border-red-500/30 rounded-[4px] text-red-400"
+            className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-[4px] text-red-400"
           >
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Action Buttons */}
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-1">
         <Button
           type="button"
           variant="outline"
@@ -258,12 +320,13 @@ export default function PaymentForm({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.3 }}
-      className="max-w-2xl mx-auto"
+      className="max-w-2xl mx-auto w-full max-h-[90vh] flex flex-col"
     >
-      <Card className="border-[#F5E4D0]/20 bg-[#2B2D30] shadow-2xl">
-        <CardHeader className="space-y-4 pb-4">
-          <div className="flex items-center justify-between">
+      <Card className="border-[#F5E4D0]/20 bg-[#2B2D30] shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <CardHeader align="left" className="space-y-4 pb-6 pt-6 px-6 flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
             <CardTitle className="text-2xl font-bold text-[#F4F4F4]">
               Secure Checkout
             </CardTitle>
@@ -274,7 +337,7 @@ export default function PaymentForm({
           </div>
           
           {/* Total */}
-          <div className="bg-[#F5E4D0]/5 border border-[#F5E4D0]/20 rounded-[4px] p-4">
+          <div className="bg-[#F5E4D0]/5 border border-[#F5E4D0]/20 rounded-[4px] p-4 w-full">
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold text-[#F4F4F4]">Total</span>
               <span className="text-2xl font-bold text-[#F5E4D0]">£2.99</span>
@@ -282,7 +345,7 @@ export default function PaymentForm({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 flex-1 overflow-y-auto min-h-0 px-6 pb-6">
           {/* Payment Form */}
           <Elements
             stripe={stripePromise}
@@ -338,23 +401,23 @@ export default function PaymentForm({
             />
           </Elements>
 
-          {/* Trust Badges */}
-          <div className="pt-4 border-t border-[#F5E4D0]/20">
-            <div className="flex items-center justify-center gap-6 flex-wrap">
-              <div className="flex items-center gap-2 text-[#F4F4F4]/70">
-                <Shield className="w-5 h-5 text-[#F5E4D0]" />
+          {/* Trust Badges - Compact */}
+          <div className="pt-3 border-t border-[#F5E4D0]/20 flex-shrink-0">
+            <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap">
+              <div className="flex items-center gap-1.5 text-[#F4F4F4]/70">
+                <Shield className="w-4 h-4 text-[#F5E4D0]" />
                 <span className="text-xs font-medium">256-bit SSL</span>
               </div>
-              <div className="flex items-center gap-2 text-[#F4F4F4]/70">
-                <CreditCard className="w-5 h-5 text-[#F5E4D0]" />
+              <div className="flex items-center gap-1.5 text-[#F4F4F4]/70">
+                <CreditCard className="w-4 h-4 text-[#F5E4D0]" />
                 <span className="text-xs font-medium">Secure Payment</span>
               </div>
-              <div className="flex items-center gap-2 text-[#F4F4F4]/70">
-                <Lock className="w-5 h-5 text-[#F5E4D0]" />
+              <div className="flex items-center gap-1.5 text-[#F4F4F4]/70">
+                <Lock className="w-4 h-4 text-[#F5E4D0]" />
                 <span className="text-xs font-medium">PCI Compliant</span>
               </div>
             </div>
-            <p className="text-center text-xs text-[#F4F4F4]/50 mt-3">
+            <p className="text-center text-xs text-[#F4F4F4]/50 mt-2">
               Powered by Stripe • Your payment information is encrypted and secure
             </p>
           </div>

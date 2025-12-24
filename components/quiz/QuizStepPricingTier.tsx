@@ -99,10 +99,6 @@ export default function QuizStepPricingTier({
 
               <Button
                 onClick={() => {
-                  if (!userId) {
-                    toast.error("Please log in to purchase the comparison");
-                    return;
-                  }
                   onPurchaseClick?.();
                 }}
                 disabled={isCreatingPayment}

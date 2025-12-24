@@ -1,4 +1,5 @@
 import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
@@ -17,16 +18,34 @@ const Card = React.forwardRef<
 ));
 Card.displayName = "Card";
 
-const CardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6 justify-start items-center", className)}
-    {...props}
-  />
-));
+const cardHeaderVariants = cva(
+  "flex flex-col space-y-1.5 p-6 justify-start",
+  {
+    variants: {
+      align: {
+        center: "items-center",
+        left: "items-start",
+      },
+    },
+    defaultVariants: {
+      align: "center",
+    },
+  }
+);
+
+export interface CardHeaderProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardHeaderVariants> {}
+
+const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
+  ({ className, align, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn(cardHeaderVariants({ align, className }))}
+      {...props}
+    />
+  )
+);
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<
@@ -79,4 +98,5 @@ export {
   CardTitle,
   CardDescription,
   CardContent,
+  cardHeaderVariants,
 };

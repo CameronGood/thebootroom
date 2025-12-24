@@ -301,7 +301,8 @@ export default function ResultsPage() {
     fetchSession();
   }, [sessionId, router]);
 
-  // Poll for comparison status if paid and generating
+  // Poll for comparison status if paid and generating (only for authenticated users)
+  // Anonymous users who paid will need to manually generate breakdown via button click
   useEffect(() => {
     if (!hasPaidForComparison || !sessionId || !user) return;
     
@@ -387,7 +388,7 @@ export default function ResultsPage() {
 
       return () => clearInterval(pollInterval);
     }
-  }, [hasPaidForComparison, sessionId, user, breakdown]);
+  }, [hasPaidForComparison, sessionId, user, breakdown, comparisonStatus]);
 
   // Don't fetch breakdown automatically - only generate when user clicks button
   // Breakdowns are not persisted, so we don't fetch them on load
@@ -844,7 +845,7 @@ export default function ResultsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
             onClick={handlePaymentCancel}
           >
             <motion.div
