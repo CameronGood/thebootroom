@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getMeasurementSession } from "@/lib/firestore/measurementSessions";
 import { MeasurementSession } from "@/types";
 import FootMeasurementCamera from "@/components/measure/FootMeasurementCamera";
 import DelayedSpinner from "@/components/DelayedSpinner";
@@ -26,6 +25,21 @@ function isMobileOrTablet(): boolean {
   return isMobileUA || (hasTouchScreen && isSmallScreen);
 }
 
+// Helper to convert API response to MeasurementSession type
+function convertApiResponseToSession(apiData: any): MeasurementSession {
+  return {
+    quizSessionId: apiData.quizSessionId,
+    status: apiData.status,
+    sockThickness: apiData.sockThickness,
+    photo1: apiData.photo1,
+    photo2: apiData.photo2,
+    final: apiData.final,
+    createdAt: new Date(apiData.createdAt),
+    completedAt: apiData.completedAt ? new Date(apiData.completedAt) : undefined,
+    errorMessage: apiData.errorMessage,
+  };
+}
+
 export default function MeasurePage() {
   const params = useParams();
   const sessionId = params.sessionId as string;
@@ -35,6 +49,7 @@ export default function MeasurePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!sessionId) {
@@ -47,14 +62,30 @@ export default function MeasurePage() {
     const isMobile = isMobileOrTablet();
     setIsDesktop(!isMobile);
 
-    const loadSession = async () => {
+    const loadSession = async (retry = 0) => {
       try {
-        const loadedSession = await getMeasurementSession(sessionId);
-        if (!loadedSession) {
-          setError("Measurement session not found");
-        } else {
-          setSession(loadedSession);
+        // Use API route instead of direct Firestore access
+        const response = await fetch(
+          `/api/measurements/get-session?sessionId=${sessionId}`
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData.error || `Failed to load session (${response.status})`;
+          
+          // Retry once if it's a 404 (might be propagation delay)
+          if (response.status === 404 && retry < 1) {
+            console.log(`Session not found, retrying... (attempt ${retry + 1})`);
+            setTimeout(() => loadSession(retry + 1), 1000);
+            return;
+          }
+          
+          throw new Error(errorMessage);
         }
+
+        const apiData = await response.json();
+        const loadedSession = convertApiResponseToSession(apiData);
+        setSession(loadedSession);
 
         // If desktop flow, also fetch QR code payload
         if (!isMobile) {
@@ -62,7 +93,8 @@ export default function MeasurePage() {
             `/api/measurements/session-link?sessionId=${sessionId}`
           );
           if (!qrRes.ok) {
-            throw new Error("Failed to generate QR code");
+            const qrErrorData = await qrRes.json().catch(() => ({}));
+            throw new Error(qrErrorData.error || "Failed to generate QR code");
           }
           const qrData = await qrRes.json();
           setQrCode(qrData.qrCode);
@@ -70,7 +102,8 @@ export default function MeasurePage() {
         }
       } catch (err) {
         console.error("Error loading session:", err);
-        setError("Failed to load measurement session");
+        const errorMessage = err instanceof Error ? err.message : "Failed to load measurement session";
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
