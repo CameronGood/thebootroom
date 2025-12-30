@@ -1,22 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { getMeasurementSession } from "@/lib/firestore/measurementSessions";
 import { MeasurementSession } from "@/types";
 import FootMeasurementCamera from "@/components/measure/FootMeasurementCamera";
 import DelayedSpinner from "@/components/DelayedSpinner";
 import DesktopMeasurementFlow from "@/components/measure/DesktopMeasurementFlow";
 
+// Improved device detection function
+function isMobileOrTablet(): boolean {
+  if (typeof window === "undefined") return false;
+  
+  // Check user agent for mobile/tablet devices
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  const isMobileUA = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+  
+  // Check for touch support (tablets often have this)
+  const hasTouchScreen = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  
+  // Check screen width (mobile/tablet typically < 1024px, but this is less reliable)
+  const isSmallScreen = window.innerWidth < 1024;
+  
+  // Mobile/tablet if: has mobile UA OR (has touch AND small screen)
+  return isMobileUA || (hasTouchScreen && isSmallScreen);
+}
+
 export default function MeasurePage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const sessionId = params.sessionId as string;
   const [session, setSession] = useState<MeasurementSession | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [measurementUrl, setMeasurementUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     if (!sessionId) {
@@ -24,6 +42,10 @@ export default function MeasurePage() {
       setLoading(false);
       return;
     }
+
+    // Detect device type
+    const isMobile = isMobileOrTablet();
+    setIsDesktop(!isMobile);
 
     const loadSession = async () => {
       try {
@@ -35,8 +57,7 @@ export default function MeasurePage() {
         }
 
         // If desktop flow, also fetch QR code payload
-        const isDesktop = searchParams.get("desktop") === "true";
-        if (isDesktop) {
+        if (!isMobile) {
           const qrRes = await fetch(
             `/api/measurements/session-link?sessionId=${sessionId}`
           );
@@ -56,7 +77,7 @@ export default function MeasurePage() {
     };
 
     loadSession();
-  }, [sessionId, searchParams]);
+  }, [sessionId]);
 
   if (loading) {
     return (
@@ -79,7 +100,7 @@ export default function MeasurePage() {
     );
   }
 
-  const isDesktop = searchParams.get("desktop") === "true";
+  // Desktop: Show QR code flow
   if (isDesktop) {
     if (!qrCode || !measurementUrl) {
       return (
@@ -101,6 +122,7 @@ export default function MeasurePage() {
     );
   }
 
+  // Mobile/Tablet: Show camera directly
   return <FootMeasurementCamera sessionId={sessionId} session={session} />;
 }
 

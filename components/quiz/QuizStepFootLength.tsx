@@ -260,9 +260,16 @@ export default function QuizStepFootLength({
                   const { sessionId: measurementSessionId } =
                     await createRes.json();
                   
-                  // Check if mobile or desktop
-                  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-                  if (isMobile) {
+                  // Check if mobile or tablet (improved detection)
+                  const isMobileOrTablet = (): boolean => {
+                    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+                    const isMobileUA = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+                    const hasTouchScreen = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+                    const isSmallScreen = window.innerWidth < 1024;
+                    return isMobileUA || (hasTouchScreen && isSmallScreen);
+                  };
+                  
+                  if (isMobileOrTablet()) {
                     window.location.href = `/measure/${measurementSessionId}`;
                   } else {
                     // Desktop: stay on quiz page and show QR modal
