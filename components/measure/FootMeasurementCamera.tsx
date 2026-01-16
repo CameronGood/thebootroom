@@ -38,6 +38,7 @@ export default function FootMeasurementCamera({
   });
   const [clientReady, setClientReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,42 +98,71 @@ export default function FootMeasurementCamera({
 
     // Draw overlay
     ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    ctx.strokeStyle = "#F5E4D0";
-    ctx.lineWidth = 2;
-
-    // Draw A4 guide rectangle (center, portrait)
+    
     const centerX = overlayCanvas.width / 2;
     const centerY = overlayCanvas.height / 2;
-    const a4Width = overlayCanvas.width * 0.6;
-    const a4Height = a4Width * 1.414; // A4 aspect ratio
-
+    const a4Width = overlayCanvas.width * 0.5; // Slightly smaller for better visibility
+    const a4Height = a4Width * 1.414; // A4 aspect ratio (297mm x 210mm)
+    
+    // Draw A4 paper guide (solid, prominent rectangle)
+    ctx.strokeStyle = "#F5E4D0";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
     ctx.strokeRect(
       centerX - a4Width / 2,
       centerY - a4Height / 2,
       a4Width,
       a4Height
     );
-
-    // Draw foot placement zones
-    const zoneWidth = (overlayCanvas.width - a4Width) / 4;
     
-    // Left zone
-    ctx.strokeStyle = "#F5E4D0";
-    ctx.setLineDash([5, 5]);
-    ctx.strokeRect(
-      centerX - a4Width / 2 - zoneWidth,
-      centerY - a4Height / 2,
-      zoneWidth,
-      a4Height
+    // Add label for A4 paper
+    ctx.fillStyle = "#F5E4D0";
+    ctx.font = "bold 16px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("A4 PAPER", centerX, centerY);
+    
+    // Draw foot placement zones with labels
+    const zoneWidth = overlayCanvas.width * 0.15;
+    const zoneHeight = a4Height * 0.6; // Foot-sized zones
+    
+    // Determine which foot goes where based on capture state
+    const isPhoto1 = captureState === "photo1";
+    const leftFootZone = isPhoto1 ? "LEFT" : "RIGHT";
+    const rightFootZone = isPhoto1 ? "RIGHT" : "LEFT";
+    
+    // Left foot zone (beside long edge)
+    ctx.strokeStyle = "#4ADE80"; // Green for active zone
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 4]);
+    const leftZoneX = centerX - a4Width / 2 - zoneWidth - 10;
+    const leftZoneY = centerY - zoneHeight / 2;
+    ctx.strokeRect(leftZoneX, leftZoneY, zoneWidth, zoneHeight);
+    
+    // Label for left zone
+    ctx.fillStyle = "#4ADE80";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      `${leftFootZone} FOOT`,
+      leftZoneX + zoneWidth / 2,
+      leftZoneY - 10
     );
-
-    // Right zone
-    ctx.strokeRect(
-      centerX + a4Width / 2,
-      centerY - a4Height / 2,
-      zoneWidth,
-      a4Height
+    
+    // Right foot zone (below short edge)
+    ctx.strokeStyle = "#60A5FA"; // Blue for secondary zone
+    const rightZoneX = centerX - zoneWidth / 2;
+    const rightZoneY = centerY + a4Height / 2 + 10;
+    ctx.strokeRect(rightZoneX, rightZoneY, zoneWidth, zoneHeight);
+    
+    // Label for right zone
+    ctx.fillStyle = "#60A5FA";
+    ctx.fillText(
+      `${rightFootZone} FOOT`,
+      rightZoneX + zoneWidth / 2,
+      rightZoneY + zoneHeight + 20
     );
+    
     ctx.setLineDash([]);
 
     // Basic detection status (simplified for client-side)
@@ -146,15 +176,6 @@ export default function FootMeasurementCamera({
     };
 
     setDetectionStatus(status);
-
-    // Draw status indicators
-    const statusY = 20;
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(10, statusY, 200, 80);
-    ctx.fillStyle = status.a4Detected ? "#00FF00" : "#FF0000";
-    ctx.fillText("A4: " + (status.a4Detected ? "✓" : "✗"), 20, statusY + 20);
-    ctx.fillStyle = status.feetDetected ? "#00FF00" : "#FF0000";
-    ctx.fillText("Feet: " + (status.feetDetected ? "✓" : "✗"), 20, statusY + 40);
 
     animationFrameRef.current = requestAnimationFrame(processFrame);
   }, [clientReady, captureState]);
@@ -298,30 +319,74 @@ export default function FootMeasurementCamera({
       return (
         <>
           <h3 className="text-xl font-bold text-[#F4F4F4] mb-4">
-            Photo 1: Left foot beside long edge
+            Photo 1: Position Your Feet
           </h3>
-          <ol className="list-decimal list-inside space-y-2 text-[#F4F4F4]/90">
-            <li>Place A4 paper in the center (portrait orientation)</li>
-            <li>Place your LEFT foot beside the long edge of the A4</li>
-            <li>Place your RIGHT foot below the short edge</li>
-            <li>Make sure both feet are fully visible and don't touch the paper</li>
-            <li>Tap capture when ready</li>
-          </ol>
+          <div className="space-y-3 text-[#F4F4F4]/90 text-left">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                1
+              </div>
+              <p className="flex-1">Place <strong className="text-[#F5E4D0]">A4 paper</strong> in the center (portrait orientation) - see the white rectangle on screen</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#4ADE80] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <p className="flex-1">Place your <strong className="text-[#4ADE80]">LEFT foot</strong> beside the long edge (left side of paper) - see the green dashed box</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#60A5FA] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                3
+              </div>
+              <p className="flex-1">Place your <strong className="text-[#60A5FA]">RIGHT foot</strong> below the short edge (bottom of paper) - see the blue dashed box</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F5E4D0]/20 text-[#F5E4D0] flex items-center justify-center font-bold text-sm">
+                ✓
+              </div>
+              <p className="flex-1">Make sure both feet are fully visible and don't touch the paper</p>
+            </div>
+            <div className="pt-2 border-t border-[#F5E4D0]/20">
+              <p className="text-center text-[#F5E4D0] font-semibold">Tap the camera button when ready</p>
+            </div>
+          </div>
         </>
       );
     } else if (captureState === "photo2") {
       return (
         <>
           <h3 className="text-xl font-bold text-[#F4F4F4] mb-4">
-            Photo 2: Right foot beside long edge
+            Photo 2: Swap Your Feet
           </h3>
-          <ol className="list-decimal list-inside space-y-2 text-[#F4F4F4]/90">
-            <li>Keep the same A4 paper placement</li>
-            <li>Place your RIGHT foot beside the long edge of the A4</li>
-            <li>Place your LEFT foot below the short edge</li>
-            <li>Make sure both feet are fully visible and don't touch the paper</li>
-            <li>Tap capture when ready</li>
-          </ol>
+          <div className="space-y-3 text-[#F4F4F4]/90 text-left">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F5E4D0] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                1
+              </div>
+              <p className="flex-1">Keep the <strong className="text-[#F5E4D0]">A4 paper</strong> in the same position</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#4ADE80] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                2
+              </div>
+              <p className="flex-1">Place your <strong className="text-[#4ADE80]">RIGHT foot</strong> beside the long edge (left side of paper) - see the green dashed box</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#60A5FA] text-[#2B2D30] flex items-center justify-center font-bold text-sm">
+                3
+              </div>
+              <p className="flex-1">Place your <strong className="text-[#60A5FA]">LEFT foot</strong> below the short edge (bottom of paper) - see the blue dashed box</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#F5E4D0]/20 text-[#F5E4D0] flex items-center justify-center font-bold text-sm">
+                ✓
+              </div>
+              <p className="flex-1">Make sure both feet are fully visible and don't touch the paper</p>
+            </div>
+            <div className="pt-2 border-t border-[#F5E4D0]/20">
+              <p className="text-center text-[#F5E4D0] font-semibold">Tap the camera button when ready</p>
+            </div>
+          </div>
         </>
       );
     }
@@ -377,9 +442,29 @@ export default function FootMeasurementCamera({
               ref={overlayCanvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
             />
-            <div className="absolute top-4 left-4 right-4 bg-black/70 p-4 rounded-[4px] text-white text-sm">
-              {getInstructions()}
-            </div>
+            {showInstructions && (
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-black/85 backdrop-blur-sm p-6 rounded-lg border border-[#F5E4D0]/30 shadow-2xl z-10">
+                <button
+                  onClick={() => setShowInstructions(false)}
+                  className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-[#F5E4D0]/20 hover:bg-[#F5E4D0]/30 transition-colors"
+                  aria-label="Close instructions"
+                >
+                  <X className="w-5 h-5 text-[#F5E4D0]" />
+                </button>
+                <div className="text-center">
+                  {getInstructions()}
+                </div>
+              </div>
+            )}
+            {!showInstructions && (
+              <button
+                onClick={() => setShowInstructions(true)}
+                className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-sm border border-[#F5E4D0]/30 transition-colors z-10"
+                aria-label="Show instructions"
+              >
+                <AlertCircle className="w-5 h-5 text-[#F5E4D0]" />
+              </button>
+            )}
             <div className="absolute bottom-4 left-4 right-4 flex flex-col items-center gap-4">
               <button
                 onClick={capturePhoto}
